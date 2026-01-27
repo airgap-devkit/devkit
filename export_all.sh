@@ -2,6 +2,7 @@
 
 ##############################################################################
 # export_all.sh
+# Author: Nima Shafie
 # 
 # Purpose: Extract and recreate a Git super repository with all its submodules
 #          from git bundles on an air-gapped network. Maintains the original

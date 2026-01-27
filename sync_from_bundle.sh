@@ -2,6 +2,7 @@
 
 ##############################################################################
 # sync_from_bundle.sh
+# Author: Nima Shafie
 # 
 # Purpose: Update an existing Git repository with bundles from a newer source,
 #          treating the bundle as the source of truth and overwriting any
@@ -27,7 +28,8 @@ set -u  # Exit on undefined variable
 EXISTING_REPO_PATH=""
 
 # Path to the import folder (the folder created by bundle_all.sh)
-# Leave empty to auto-detect the most recent *_import folder
+# Leave empty to auto-detect (finds the most recent *_import folder by timestamp in name)
+# Example: "20260126_2140_import" or leave "" for auto-detect
 IMPORT_FOLDER=""
 
 # Default branch to force checkout (typically 'main' or 'master')
@@ -148,15 +150,16 @@ if [ "$CREATE_BACKUP" = true ]; then
     print_header "Step 1: Creating Backup"
     
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    BACKUP_PATH="${EXISTING_REPO_PATH}_backup_${TIMESTAMP}"
+    REPO_BASENAME=$(basename "$EXISTING_REPO_PATH")
+    BACKUP_PATH="${SCRIPT_DIR}/${REPO_BASENAME}_backup_${TIMESTAMP}"
     
     print_info "Creating backup at: $BACKUP_PATH"
     print_warning "This may take a moment for large repositories..."
     
     cp -r "$EXISTING_REPO_PATH" "$BACKUP_PATH"
     
-    print_success "Backup created: $BACKUP_PATH"
-    print_info "If something goes wrong, you can restore from this backup"
+    print_success "Backup created: $(basename $BACKUP_PATH)"
+    print_info "Location: git-bundles/$(basename $BACKUP_PATH)"
 else
     print_header "Step 1: Backup"
     print_warning "Backup disabled - proceeding without backup"
@@ -387,7 +390,8 @@ print_success "Submodules: $SUBMODULE_COUNT processed"
 echo ""
 
 if [ "$CREATE_BACKUP" = true ]; then
-    print_info "Backup location: $BACKUP_PATH"
+    print_info "Backup location (in git-bundles folder):"
+    echo "  $(basename $BACKUP_PATH)"
     echo ""
 fi
 
@@ -396,7 +400,7 @@ echo "  1. All local changes have been OVERWRITTEN by the bundle"
 echo "  2. The bundle is now the source of truth for this repository"
 echo "  3. Any commits not in the bundle have been LOST"
 if [ "$CREATE_BACKUP" = true ]; then
-    echo "  4. Your backup is available if you need to recover anything"
+    echo "  4. Your backup is in the git-bundles folder if you need to recover"
 fi
 echo ""
 
