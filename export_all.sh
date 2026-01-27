@@ -31,6 +31,9 @@ DEFAULT_BRANCH="main"
 # SCRIPT CONFIGURATION - Generally no need to edit below
 ##############################################################################
 
+# Store the original working directory (where the script is run from)
+SCRIPT_DIR="$(pwd)"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -104,10 +107,15 @@ else
 fi
 
 # Extract timestamp from import folder name
-TIMESTAMP=$(echo "$IMPORT_FOLDER" | sed 's/_import$//')
-EXPORT_FOLDER="${TIMESTAMP}_export"
+TIMESTAMP=$(basename "$IMPORT_FOLDER" | sed 's/_import$//')
+EXPORT_FOLDER="${SCRIPT_DIR}/${TIMESTAMP}_export"
 
-print_info "Export folder will be: $EXPORT_FOLDER"
+# Make IMPORT_FOLDER absolute if it's relative
+if [[ "$IMPORT_FOLDER" != /* ]]; then
+    IMPORT_FOLDER="${SCRIPT_DIR}/${IMPORT_FOLDER}"
+fi
+
+print_info "Export folder will be: $(basename $EXPORT_FOLDER)"
 
 # Check if export folder already exists
 if [ -d "$EXPORT_FOLDER" ]; then
@@ -149,11 +157,58 @@ log_message() {
 print_header "Step 1: Locating Super Repository Bundle"
 
 # The super repository bundle should be in the root of the import folder
-# It's the bundle that's not in any subdirectory
-SUPER_BUNDLE=$(find "$IMPORT_FOLDER" -maxdepth 1 -name "*.bundle" -type f | head -n 1)
+# We need to identify which one is the super repo by checking metadata
+# or by finding the largest bundle (super repos are usually larger)
+# Better approach: check which bundles are NOT in the .gitmodules reference
 
-if [ -z "$SUPER_BUNDLE" ]; then
-    print_error "No super repository bundle found in $IMPORT_FOLDER"
+cd "$IMPORT_FOLDER"
+
+# Get all bundles in the root directory
+ROOT_BUNDLES=$(find . -maxdepth 1 -name "*.bundle" -type f)
+
+if [ -z "$ROOT_BUNDLES" ]; then
+    print_error "No bundles found in $IMPORT_FOLDER"
+    exit 1
+fi
+
+# If there's only one bundle in root, that's the super repository
+BUNDLE_COUNT=$(echo "$ROOT_BUNDLES" | wc -l)
+
+if [ "$BUNDLE_COUNT" -eq 1 ]; then
+    SUPER_BUNDLE="$ROOT_BUNDLES"
+else
+    # Multiple bundles in root - we need to identify the super repo
+    # Check metadata.txt if available
+    if [ -f "metadata.txt" ]; then
+        SUPER_REPO_NAME=$(grep "Super Repository:" metadata.txt | awk '{print $3}')
+        if [ -n "$SUPER_REPO_NAME" ]; then
+            SUPER_BUNDLE="./${SUPER_REPO_NAME}.bundle"
+            if [ ! -f "$SUPER_BUNDLE" ]; then
+                print_warning "Super repository name from metadata not found: $SUPER_BUNDLE"
+                # Fall back to largest bundle
+                SUPER_BUNDLE=$(ls -S *.bundle 2>/dev/null | head -n 1)
+                SUPER_BUNDLE="./$SUPER_BUNDLE"
+            fi
+        else
+            # No metadata, use largest bundle as super repository
+            print_warning "Could not determine super repository from metadata, using largest bundle"
+            SUPER_BUNDLE=$(ls -S *.bundle 2>/dev/null | head -n 1)
+            SUPER_BUNDLE="./$SUPER_BUNDLE"
+        fi
+    else
+        # No metadata.txt, use largest bundle
+        print_warning "No metadata.txt found, using largest bundle as super repository"
+        SUPER_BUNDLE=$(ls -S *.bundle 2>/dev/null | head -n 1)
+        SUPER_BUNDLE="./$SUPER_BUNDLE"
+    fi
+fi
+
+cd "$SCRIPT_DIR"
+
+SUPER_BUNDLE="${IMPORT_FOLDER}/${SUPER_BUNDLE#./}"
+
+if [ ! -f "$SUPER_BUNDLE" ]; then
+    print_error "Could not locate super repository bundle"
     exit 1
 fi
 
@@ -176,15 +231,31 @@ git clone "$SUPER_BUNDLE" "$SUPER_REPO_PATH"
 
 cd "$SUPER_REPO_PATH"
 
-# Checkout default branch
-print_info "Checking out branch: $DEFAULT_BRANCH"
-if git show-ref --verify --quiet "refs/heads/$DEFAULT_BRANCH"; then
-    git checkout "$DEFAULT_BRANCH"
-    print_success "Checked out branch: $DEFAULT_BRANCH"
+# Determine and checkout the default branch
+print_info "Determining default branch..."
+
+# Check branches in order of preference: main, master, develop, then default
+if git show-ref --verify --quiet "refs/heads/main"; then
+    git checkout main
+    print_success "Checked out branch: main"
+elif git show-ref --verify --quiet "refs/heads/master"; then
+    git checkout master
+    print_success "Checked out branch: master"
 else
-    print_warning "Branch '$DEFAULT_BRANCH' not found, staying on current branch"
+    # Get the current branch (whatever git cloned to by default)
     CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    print_info "Current branch: $CURRENT_BRANCH"
+    if [ "$CURRENT_BRANCH" = "HEAD" ]; then
+        # Detached HEAD state, try to find any branch
+        AVAILABLE_BRANCH=$(git branch | head -n 1 | sed 's/^[ *]*//')
+        if [ -n "$AVAILABLE_BRANCH" ]; then
+            git checkout "$AVAILABLE_BRANCH"
+            print_warning "No main/master branch found, checked out: $AVAILABLE_BRANCH"
+        else
+            print_warning "Repository is in detached HEAD state with no branches"
+        fi
+    else
+        print_warning "No main/master branch found, staying on: $CURRENT_BRANCH"
+    fi
 fi
 
 # Get statistics
@@ -203,7 +274,7 @@ log_message ""
 
 print_success "Super repository cloned successfully"
 
-cd - > /dev/null
+cd "$SCRIPT_DIR"
 
 ##############################################################################
 # DISCOVER SUBMODULE BUNDLES
@@ -211,147 +282,115 @@ cd - > /dev/null
 
 print_header "Step 3: Discovering Submodule Bundles"
 
-# Find all bundle files except the super repository bundle
-SUBMODULE_BUNDLES=$(find "$IMPORT_FOLDER" -name "*.bundle" -type f | grep -v "^${IMPORT_FOLDER}/[^/]*\.bundle$" || true)
+# Find all bundle files except the super repository bundle  
+# Use mindepth 2 to skip root-level bundles (which is the super repo)
+SUBMODULE_BUNDLES=$(find "$IMPORT_FOLDER" -mindepth 2 -name "*.bundle" -type f | sort || true)
+
+# Sort by directory depth (shallowest first) to ensure parent directories are created before nested ones
+SUBMODULE_BUNDLES=$(echo "$SUBMODULE_BUNDLES" | awk '{ print length, $0 }' | sort -n | cut -d" " -f2-)
 
 if [ -z "$SUBMODULE_BUNDLES" ]; then
     print_warning "No submodule bundles found"
     SUBMODULE_COUNT=0
 else
     SUBMODULE_COUNT=$(echo "$SUBMODULE_BUNDLES" | wc -l)
-    print_success "Found $SUBMODULE_COUNT submodule bundle(s)"
+    print_success "Found $SUBMODULE_COUNT submodule bundle(s) at all levels"
 fi
 
 ##############################################################################
-# CHECK FOR .gitmodules FILE
+# PROCESS ALL SUBMODULE BUNDLES
 ##############################################################################
 
 print_header "Step 4: Processing Submodules"
 
 cd "$SUPER_REPO_PATH"
 
-if [ ! -f ".gitmodules" ]; then
-    if [ "$SUBMODULE_COUNT" -gt 0 ]; then
-        print_warning "Found submodule bundles but no .gitmodules file in super repository"
-        print_warning "This may indicate an issue with the source repository"
-    else
-        print_info "No .gitmodules file found (no submodules configured)"
-    fi
-    cd - > /dev/null
+if [ "$SUBMODULE_COUNT" -eq 0 ]; then
+    print_info "No submodule bundles to process"
 else
-    print_info "Found .gitmodules configuration"
+    log_message "================================================================="
+    log_message "SUBMODULES ($SUBMODULE_COUNT total - including nested)"
+    log_message "================================================================="
     
-    # Get list of configured submodules
-    CONFIGURED_SUBMODULES=$(git config --file .gitmodules --get-regexp path | awk '{print $2}' || true)
-    
-    if [ -z "$CONFIGURED_SUBMODULES" ]; then
-        print_warning "No submodules configured in .gitmodules"
-        cd - > /dev/null
-    else
-        CONFIGURED_COUNT=$(echo "$CONFIGURED_SUBMODULES" | wc -l)
-        print_success "Found $CONFIGURED_COUNT configured submodule(s)"
+    SUBMODULE_NUM=0
+    while IFS= read -r BUNDLE_FULL_PATH; do
+        SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
         
-        log_message "================================================================="
-        log_message "SUBMODULES ($CONFIGURED_COUNT total)"
-        log_message "================================================================="
+        # Get the relative path from import folder
+        BUNDLE_REL_PATH="${BUNDLE_FULL_PATH#$IMPORT_FOLDER/}"
+        BUNDLE_REL_DIR=$(dirname "$BUNDLE_REL_PATH")
+        BUNDLE_NAME=$(basename "$BUNDLE_REL_PATH" .bundle)
         
-        SUBMODULE_NUM=0
-        echo "$CONFIGURED_SUBMODULES" | while IFS= read -r SUBMODULE_PATH; do
-            SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
-            
-            print_info "[$SUBMODULE_NUM/$CONFIGURED_COUNT] Processing: $SUBMODULE_PATH"
-            
-            SUBMODULE_NAME=$(basename "$SUBMODULE_PATH")
-            SUBMODULE_DIR=$(dirname "$SUBMODULE_PATH")
-            
-            # Construct bundle path
-            if [ "$SUBMODULE_DIR" = "." ]; then
-                SUBMODULE_BUNDLE="../../../${IMPORT_FOLDER}/${SUBMODULE_NAME}.bundle"
-            else
-                SUBMODULE_BUNDLE="../../../${IMPORT_FOLDER}/${SUBMODULE_DIR}/${SUBMODULE_NAME}.bundle"
-            fi
-            
-            # Check if bundle exists
-            if [ ! -f "$SUBMODULE_BUNDLE" ]; then
-                print_error "Bundle not found for submodule: $SUBMODULE_PATH"
-                print_error "Expected: $SUBMODULE_BUNDLE"
-                log_message ""
-                log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
-                log_message "Status: ✗ BUNDLE NOT FOUND"
-                log_message ""
-                continue
-            fi
-            
-            # Get the submodule URL from .gitmodules
-            SUBMODULE_URL=$(git config --file .gitmodules --get "submodule.${SUBMODULE_PATH}.url" || echo "")
-            
-            # Update .gitmodules to point to the bundle file temporarily
-            # Note: For air-gapped networks, we'll use the bundle file path
-            # For future network connectivity, you can update these URLs later
-            
-            print_info "  Initializing submodule from bundle..."
-            
-            # Create submodule directory if it doesn't exist
-            mkdir -p "$SUBMODULE_PATH"
-            
-            # Clone the submodule from bundle
-            git clone "$SUBMODULE_BUNDLE" "$SUBMODULE_PATH"
-            
-            # Navigate to submodule
-            cd "$SUBMODULE_PATH"
-            
-            # Checkout default branch
-            if git show-ref --verify --quiet "refs/heads/$DEFAULT_BRANCH"; then
-                git checkout "$DEFAULT_BRANCH" 2>/dev/null || true
-                print_success "  Checked out branch: $DEFAULT_BRANCH"
-            else
-                print_warning "  Branch '$DEFAULT_BRANCH' not found in submodule"
-            fi
-            
-            # Get statistics
-            SUB_BRANCH_COUNT=$(git branch -a | wc -l)
-            SUB_TAG_COUNT=$(git tag | wc -l)
-            SUB_COMMIT_COUNT=$(git rev-list --all --count)
-            
-            # For future network connectivity: Set the original remote URL
-            # This is commented out for air-gapped use, but can be enabled later
-            if [ -n "$SUBMODULE_URL" ]; then
-                git remote remove origin 2>/dev/null || true
-                # Uncomment the next line when network connectivity is available:
-                # git remote add origin "$SUBMODULE_URL"
-                print_info "  Original URL: $SUBMODULE_URL (not set as remote for air-gapped use)"
-            fi
-            
+        # The submodule path is the bundle path without .bundle extension
+        if [ "$BUNDLE_REL_DIR" = "." ]; then
+            SUBMODULE_PATH="$BUNDLE_NAME"
+        else
+            SUBMODULE_PATH="${BUNDLE_REL_DIR}/${BUNDLE_NAME}"
+        fi
+        
+        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_PATH"
+        
+        # Create parent directory structure if needed
+        SUBMODULE_PARENT=$(dirname "$SUBMODULE_PATH")
+        if [ "$SUBMODULE_PARENT" != "." ] && [ ! -d "$SUBMODULE_PARENT" ]; then
+            mkdir -p "$SUBMODULE_PARENT"
+        fi
+        
+        # Clone the submodule from bundle
+        print_info "  Cloning from bundle..."
+        if git clone "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>/dev/null; then
+            print_success "  Cloned successfully"
+        else
+            print_error "  Failed to clone from bundle"
             log_message ""
             log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
-            log_message "-----------------------------------------------------------------"
-            log_message "Status: ✓ CLONED"
-            log_message "Branches: $SUB_BRANCH_COUNT"
-            log_message "Tags: $SUB_TAG_COUNT"
-            log_message "Total Commits: $SUB_COMMIT_COUNT"
-            log_message "Original URL: $SUBMODULE_URL"
+            log_message "Status: ✗ CLONE FAILED"
             log_message ""
-            
-            print_success "  Submodule initialized: $SUBMODULE_PATH"
-            
-            # Return to super repository root
-            cd - > /dev/null
-        done
+            continue
+        fi
         
-        cd - > /dev/null
+        # Navigate to submodule
+        cd "$SUBMODULE_PATH"
         
-        # Re-enter super repository for final steps
+        # Determine and checkout the default branch
+        if git show-ref --verify --quiet "refs/heads/main"; then
+            git checkout main 2>/dev/null
+            print_success "  Checked out branch: main"
+        elif git show-ref --verify --quiet "refs/heads/master"; then
+            git checkout master 2>/dev/null
+            print_success "  Checked out branch: master"
+        else
+            CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+            print_warning "  No main/master branch, staying on: $CURRENT_BRANCH"
+        fi
+        
+        # Get statistics
+        SUB_BRANCH_COUNT=$(git branch -a | wc -l)
+        SUB_TAG_COUNT=$(git tag | wc -l)
+        SUB_COMMIT_COUNT=$(git rev-list --all --count)
+        
+        # Remove remote origin (air-gapped)
+        git remote remove origin 2>/dev/null || true
+        
+        log_message ""
+        log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
+        log_message "-----------------------------------------------------------------"
+        log_message "Status: ✓ CLONED"
+        log_message "Branches: $SUB_BRANCH_COUNT"
+        log_message "Tags: $SUB_TAG_COUNT"
+        log_message "Total Commits: $SUB_COMMIT_COUNT"
+        log_message ""
+        
+        print_success "  Submodule initialized: $SUBMODULE_PATH"
+        
+        # Return to super repository root
         cd "$SUPER_REPO_PATH"
-        
-        # Initialize git submodule tracking
-        print_info "Registering submodules with Git..."
-        git submodule init 2>/dev/null || true
-        
-        print_success "All submodules processed"
-        
-        cd - > /dev/null
-    fi
+    done < <(echo "$SUBMODULE_BUNDLES")
+    
+    print_success "All submodules processed"
 fi
+
+cd "$SCRIPT_DIR"
 
 ##############################################################################
 # CREATE NETWORK CONNECTIVITY NOTES
@@ -428,7 +467,7 @@ echo ""
 print_success "Export folder: $EXPORT_FOLDER"
 print_success "Total size: $TOTAL_SIZE"
 print_success "Super repository: $SUPER_REPO_NAME"
-print_success "Submodules: $CONFIGURED_COUNT initialized"
+print_success "Submodules: $SUBMODULE_COUNT initialized"
 echo ""
 print_info "Repository location:"
 echo "  $SUPER_REPO_PATH"
@@ -448,7 +487,7 @@ log_message "SUMMARY"
 log_message "================================================================="
 log_message "Total Export Size: $TOTAL_SIZE"
 log_message "Super Repository: $SUPER_REPO_NAME"
-log_message "Submodules Initialized: $CONFIGURED_COUNT"
+log_message "Submodules Initialized: $SUBMODULE_COUNT"
 log_message "Repository Path: $SUPER_REPO_PATH"
 log_message "Script Completed: $(date)"
 log_message "================================================================="

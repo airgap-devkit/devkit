@@ -2,6 +2,7 @@
 
 ##############################################################################
 # bundle_all.sh
+# Author: Nima Shafie
 # 
 # Purpose: Bundle a Git super repository with all its submodules for transfer
 #          to air-gapped networks. Creates git bundles with full history and
@@ -20,19 +21,22 @@ set -u  # Exit on undefined variable
 ##############################################################################
 
 # Local path to the Git super repository you want to bundle
-REPO_PATH="/path/to/your/super-repository"
+REPO_PATH="$HOME/Desktop/test-parent"
 
 # SSH remote Git address (for reference/documentation purposes)
 # Example: git@bitbucket.org:company/super-repo.git
-REMOTE_GIT_ADDRESS="git@bitbucket.org:your-org/your-repo.git"
+REMOTE_GIT_ADDRESS="file://$HOME/Desktop/test-parent"
 
 ##############################################################################
 # SCRIPT CONFIGURATION - Generally no need to edit below
 ##############################################################################
 
+# Store the original working directory (where the script is run from)
+SCRIPT_DIR="$(pwd)"
+
 # Generate timestamp for export folder
 TIMESTAMP=$(date +%Y%m%d_%H%M)
-EXPORT_FOLDER="${TIMESTAMP}_import"
+EXPORT_FOLDER="${SCRIPT_DIR}/${TIMESTAMP}_import"
 LOG_FILE="${EXPORT_FOLDER}/bundle_verification.txt"
 
 # Colors for output
@@ -130,7 +134,7 @@ cd "$REPO_PATH"
 # Get the repository name from the path
 REPO_NAME=$(basename "$REPO_PATH")
 BUNDLE_NAME="${REPO_NAME}.bundle"
-BUNDLE_PATH="../${EXPORT_FOLDER}/${BUNDLE_NAME}"
+BUNDLE_PATH="${EXPORT_FOLDER}/${BUNDLE_NAME}"
 
 print_info "Repository: $REPO_NAME"
 print_info "Bundling to: $BUNDLE_PATH"
@@ -179,111 +183,123 @@ COMMIT_COUNT=$(git rev-list --all --count)
 
 print_header "Step 2: Discovering and Bundling Submodules"
 
-# Initialize submodules if not already initialized
-print_info "Initializing submodules..."
-git submodule update --init --recursive
-
-# Get list of submodules with their paths
-SUBMODULE_COUNT=$(git config --file .gitmodules --get-regexp path | wc -l || echo "0")
-
-if [ "$SUBMODULE_COUNT" -eq 0 ]; then
-    print_warning "No submodules found in this repository"
-    log_message "No submodules found."
+# Check if .gitmodules file exists (indicates submodules are configured)
+if [ ! -f ".gitmodules" ]; then
+    print_warning "No .gitmodules file found - repository has no submodules"
+    SUBMODULE_COUNT=0
+    log_message "No submodules found in this repository."
 else
-    print_success "Found $SUBMODULE_COUNT submodule(s)"
-    log_message "================================================================="
-    log_message "SUBMODULES ($SUBMODULE_COUNT total)"
-    log_message "================================================================="
+    # Enable file:// protocol for local submodules (needed for test repos)
+    git config --local protocol.file.allow always
     
-    # Create a temporary file to store submodule paths
-    SUBMODULE_LIST=$(mktemp)
-    git config --file .gitmodules --get-regexp path | awk '{print $2}' > "$SUBMODULE_LIST"
+    # Initialize submodules only for bundling purposes
+    print_info "Initializing submodules recursively..."
+    git -c protocol.file.allow=always submodule update --init --recursive
     
-    SUBMODULE_NUM=0
-    while IFS= read -r SUBMODULE_PATH; do
-        SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
-        
-        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_PATH"
-        
-        # Get absolute path to submodule
-        SUBMODULE_FULL_PATH="$REPO_PATH/$SUBMODULE_PATH"
-        
-        if [ ! -d "$SUBMODULE_FULL_PATH/.git" ]; then
-            print_warning "Submodule not initialized: $SUBMODULE_PATH (skipping)"
-            log_message ""
-            log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
-            log_message "Status: ✗ NOT INITIALIZED (skipped)"
-            log_message ""
-            continue
-        fi
-        
-        # Create directory structure in export folder
-        SUBMODULE_DIR=$(dirname "$SUBMODULE_PATH")
-        SUBMODULE_NAME=$(basename "$SUBMODULE_PATH")
-        
-        if [ "$SUBMODULE_DIR" != "." ]; then
-            mkdir -p "../${EXPORT_FOLDER}/${SUBMODULE_DIR}"
-        fi
-        
-        # Bundle filename and path
-        SUBMODULE_BUNDLE_NAME="${SUBMODULE_NAME}.bundle"
-        if [ "$SUBMODULE_DIR" != "." ]; then
-            SUBMODULE_BUNDLE_PATH="../${EXPORT_FOLDER}/${SUBMODULE_DIR}/${SUBMODULE_BUNDLE_NAME}"
-        else
-            SUBMODULE_BUNDLE_PATH="../${EXPORT_FOLDER}/${SUBMODULE_BUNDLE_NAME}"
-        fi
-        
-        # Navigate to submodule and create bundle
-        cd "$SUBMODULE_FULL_PATH"
-        
-        print_info "  Creating bundle..."
-        git bundle create "$SUBMODULE_BUNDLE_PATH" --all
-        
-        # Verify bundle
-        if git bundle verify "$SUBMODULE_BUNDLE_PATH" &> /dev/null; then
-            print_success "  Bundle verified"
-            SUBMODULE_VERIFIED="✓ VERIFIED"
-        else
-            print_error "  Bundle verification FAILED"
-            SUBMODULE_VERIFIED="✗ FAILED"
-        fi
-        
-        # Calculate SHA256
-        SUBMODULE_SHA256=$(sha256sum "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
-        SUBMODULE_SIZE=$(du -h "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
-        
-        # Get Git statistics
-        SUB_BRANCH_COUNT=$(git branch -a | wc -l)
-        SUB_TAG_COUNT=$(git tag | wc -l)
-        SUB_COMMIT_COUNT=$(git rev-list --all --count)
-        
-        # Get remote URL if available
-        SUBMODULE_URL=$(git config --get remote.origin.url || echo "N/A")
-        
-        # Log submodule info
-        {
-            echo ""
-            echo "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
-            echo "-----------------------------------------------------------------"
-            echo "Bundle File: $SUBMODULE_BUNDLE_NAME"
-            echo "Verification: $SUBMODULE_VERIFIED"
-            echo "SHA256: $SUBMODULE_SHA256"
-            echo "File Size: $SUBMODULE_SIZE"
-            echo "Branches: $SUB_BRANCH_COUNT"
-            echo "Tags: $SUB_TAG_COUNT"
-            echo "Total Commits: $SUB_COMMIT_COUNT"
-            echo "Remote URL: $SUBMODULE_URL"
-            echo "Path in Export: ./$SUBMODULE_DIR/$SUBMODULE_BUNDLE_NAME"
-            echo ""
-        } >> "$LOG_FILE"
-        
-        # Return to super repository
-        cd "$REPO_PATH"
-        
-    done < "$SUBMODULE_LIST"
+    # Get list of ALL submodules recursively (not just root level)
+    # This finds submodules at any depth in the tree
+    print_info "Discovering all submodules at all levels..."
     
-    # Clean up temp file
-    rm -f "$SUBMODULE_LIST"
+    # Find all .git files/directories under the repository (submodules)
+    # Exclude the root .git directory
+    SUBMODULE_PATHS=$(find . -name ".git" -type f -o \( -name ".git" -type d -not -path "./.git" \) | sed 's|/\.git$||' | sed 's|^\./||' | sort)
+    
+    if [ -z "$SUBMODULE_PATHS" ]; then
+        SUBMODULE_COUNT=0
+        print_warning "No submodules found after initialization"
+        log_message "No submodules found."
+    else
+        SUBMODULE_COUNT=$(echo "$SUBMODULE_PATHS" | wc -l)
+        print_success "Found $SUBMODULE_COUNT submodule(s) at all levels"
+        
+        log_message "================================================================="
+        log_message "SUBMODULES ($SUBMODULE_COUNT total - including nested)"
+        log_message "================================================================="
+        
+        SUBMODULE_NUM=0
+        echo "$SUBMODULE_PATHS" | while IFS= read -r SUBMODULE_PATH; do
+            SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
+            
+            print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_PATH"
+            
+            # Get absolute path to submodule
+            SUBMODULE_FULL_PATH="$REPO_PATH/$SUBMODULE_PATH"
+            
+            # Check if submodule is initialized (.git can be a directory or a file)
+            if [ ! -e "$SUBMODULE_FULL_PATH/.git" ]; then
+                print_warning "Submodule not initialized: $SUBMODULE_PATH (skipping)"
+                log_message ""
+                log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
+                log_message "Status: ✗ NOT INITIALIZED (skipped)"
+                log_message ""
+                continue
+            fi
+            
+            # Create directory structure in export folder
+            SUBMODULE_DIR=$(dirname "$SUBMODULE_PATH")
+            SUBMODULE_NAME=$(basename "$SUBMODULE_PATH")
+            
+            if [ "$SUBMODULE_DIR" != "." ]; then
+                mkdir -p "${EXPORT_FOLDER}/${SUBMODULE_DIR}"
+            fi
+            
+            # Bundle filename and path
+            SUBMODULE_BUNDLE_NAME="${SUBMODULE_NAME}.bundle"
+            if [ "$SUBMODULE_DIR" != "." ]; then
+                SUBMODULE_BUNDLE_PATH="${EXPORT_FOLDER}/${SUBMODULE_DIR}/${SUBMODULE_BUNDLE_NAME}"
+            else
+                SUBMODULE_BUNDLE_PATH="${EXPORT_FOLDER}/${SUBMODULE_BUNDLE_NAME}"
+            fi
+            
+            # Navigate to submodule and create bundle
+            cd "$SUBMODULE_FULL_PATH"
+            
+            print_info "  Creating bundle..."
+            git bundle create "$SUBMODULE_BUNDLE_PATH" --all
+            
+            # Verify bundle
+            if git bundle verify "$SUBMODULE_BUNDLE_PATH" &> /dev/null; then
+                print_success "  Bundle verified"
+                SUBMODULE_VERIFIED="✓ VERIFIED"
+            else
+                print_error "  Bundle verification FAILED"
+                SUBMODULE_VERIFIED="✗ FAILED"
+            fi
+            
+            # Calculate SHA256
+            SUBMODULE_SHA256=$(sha256sum "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
+            SUBMODULE_SIZE=$(du -h "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
+            
+            # Get Git statistics
+            SUB_BRANCH_COUNT=$(git branch -a | wc -l)
+            SUB_TAG_COUNT=$(git tag | wc -l)
+            SUB_COMMIT_COUNT=$(git rev-list --all --count)
+            
+            # Get remote URL if available
+            SUBMODULE_URL=$(git config --get remote.origin.url || echo "N/A")
+            
+            # Log submodule info
+            {
+                echo ""
+                echo "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
+                echo "-----------------------------------------------------------------"
+                echo "Bundle File: $SUBMODULE_BUNDLE_NAME"
+                echo "Verification: $SUBMODULE_VERIFIED"
+                echo "SHA256: $SUBMODULE_SHA256"
+                echo "File Size: $SUBMODULE_SIZE"
+                echo "Branches: $SUB_BRANCH_COUNT"
+                echo "Tags: $SUB_TAG_COUNT"
+                echo "Total Commits: $SUB_COMMIT_COUNT"
+                echo "Remote URL: $SUBMODULE_URL"
+                echo "Path in Export: ./$SUBMODULE_DIR/$SUBMODULE_BUNDLE_NAME"
+                echo ""
+            } >> "$LOG_FILE"
+            
+            # Return to super repository
+            cd "$REPO_PATH"
+            
+        done
+    fi
 fi
 
 ##############################################################################
@@ -310,7 +326,7 @@ METADATA_FILE="${EXPORT_FOLDER}/metadata.txt"
 } > "$METADATA_FILE"
 
 # List all bundles with their relative paths
-cd "../${EXPORT_FOLDER}"
+cd "${EXPORT_FOLDER}"
 find . -name "*.bundle" -type f | sort >> "$METADATA_FILE"
 
 {
@@ -327,7 +343,7 @@ find . -name "*.bundle" -type f | sort >> "$METADATA_FILE"
     echo "================================================================="
 } >> "$METADATA_FILE"
 
-cd - > /dev/null
+cd "${SCRIPT_DIR}"
 
 print_success "Metadata file created: $METADATA_FILE"
 
@@ -337,10 +353,10 @@ print_success "Metadata file created: $METADATA_FILE"
 
 print_header "Bundling Complete!"
 
-TOTAL_SIZE=$(du -sh "../${EXPORT_FOLDER}" | awk '{print $1}')
+TOTAL_SIZE=$(du -sh "${EXPORT_FOLDER}" | awk '{print $1}')
 
 echo ""
-print_success "Export folder: $EXPORT_FOLDER"
+print_success "Export folder: $(basename ${EXPORT_FOLDER})"
 print_success "Total size: $TOTAL_SIZE"
 print_success "Super repository: 1 bundle created"
 print_success "Submodules: $SUBMODULE_COUNT bundle(s) created"
@@ -350,8 +366,8 @@ echo "  - bundle_verification.txt (detailed verification log)"
 echo "  - metadata.txt (export metadata and instructions)"
 echo ""
 print_warning "Next Steps:"
-echo "  1. Review the verification log: ${EXPORT_FOLDER}/bundle_verification.txt"
-echo "  2. Transfer the entire '${EXPORT_FOLDER}' folder to destination network"
+echo "  1. Review the verification log: $(basename ${EXPORT_FOLDER})/bundle_verification.txt"
+echo "  2. Transfer the entire '$(basename ${EXPORT_FOLDER})' folder to destination network"
 echo "  3. Run export_all.sh on the destination network"
 echo ""
 

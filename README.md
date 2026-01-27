@@ -1,6 +1,6 @@
 # Git Bundle Scripts for Air-Gapped Networks
 
-This repository contains two bash scripts designed to bundle and export Git repositories with submodules across air-gapped networks.
+This repository contains two bash scripts designed to bundle and export Git repositories with submodules (including nested submodules at any depth) across air-gapped networks.
 
 ## Overview
 
@@ -10,11 +10,21 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 2. **Transfer** - Moving the bundles via physical media (CD/DVD/USB)
 3. **Export** - Recreating the repository structure on the destination network
 
+## Key Features
+
+✅ **Handles nested submodules** - Automatically discovers and bundles submodules at ANY depth  
+✅ **Works without pre-initialization** - Detects submodules from `.gitmodules` files  
+✅ **Windows & Linux compatible** - Tested on Windows Git Bash and Linux  
+✅ **Smart branch detection** - Automatically checks out main, master, or default branch  
+✅ **Comprehensive verification** - SHA256 checksums and detailed logging  
+✅ **Preserves complete history** - All branches, tags, and commits included  
+✅ **Air-gap ready** - No network dependencies after bundling
+
 ## Prerequisites
 
 - Git installed on both source and destination systems
 - `sha256sum` utility (typically included in coreutils)
-- Bash shell
+- Bash shell (Git Bash on Windows, native bash on Linux/Mac)
 
 ## Scripts
 
@@ -23,7 +33,7 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 **Purpose**: Bundles a Git super repository with all its submodules for transfer to air-gapped networks.
 
 **What it does**:
-- Scans and identifies all submodules in your repository
+- Recursively scans and identifies ALL submodules at any depth
 - Creates git bundles with full history (all branches, tags, commits)
 - Maintains the exact folder structure of submodules
 - Generates verification logs with SHA256 checksums
@@ -38,8 +48,8 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 **What it does**:
 - Auto-detects the import folder from `bundle_all.sh`
 - Clones the super repository from the bundle
-- Recreates all submodules in their original folder structure
-- Checks out the default branch (`main` by default)
+- Recreates all submodules in their original folder structure (including nested ones)
+- Checks out the default branch (tries main → master → current)
 - Generates documentation for future network connectivity
 
 **Output**: Creates a timestamped folder `YYYYMMDD_HHmm_export/` with the complete repository
@@ -52,10 +62,15 @@ Edit the `bundle_all.sh` script and configure these variables:
 
 ```bash
 # Local path to the Git super repository you want to bundle
-REPO_PATH="/path/to/your/super-repository"
+REPO_PATH="$HOME/Desktop/your-super-repository"
 
 # SSH remote Git address (for reference/documentation purposes)
 REMOTE_GIT_ADDRESS="git@bitbucket.org:your-org/your-repo.git"
+```
+
+**Windows Git Bash users**: Always use `$HOME` for portability:
+```bash
+REPO_PATH="$HOME/Desktop/submodule-docker-dev-workflow"
 ```
 
 ### Step 2: Run bundle_all.sh (Source Network)
@@ -64,6 +79,12 @@ REMOTE_GIT_ADDRESS="git@bitbucket.org:your-org/your-repo.git"
 chmod +x bundle_all.sh
 ./bundle_all.sh
 ```
+
+**Important Notes:**
+- ✅ **Submodules do NOT need to be initialized beforehand** - The script will automatically detect submodules from `.gitmodules` files and initialize them only for bundling purposes
+- ✅ **Works with or without submodules** - If your repository has no submodules, the script will simply bundle the main repository
+- ✅ **Handles nested submodules** - Submodules within submodules at any depth are automatically discovered and bundled
+- ✅ **Run from any directory** - The script uses the `REPO_PATH` you configured, so you can run it from anywhere
 
 This will create a folder named like `20260126_2051_import/` containing:
 - All git bundles (maintaining folder structure)
@@ -95,7 +116,7 @@ Edit the `export_all.sh` script if needed:
 # Path to the import folder (leave empty for auto-detection)
 IMPORT_FOLDER=""
 
-# Default branch to checkout
+# Default branch to checkout (automatically tries main, then master, then current)
 DEFAULT_BRANCH="main"
 ```
 
@@ -110,7 +131,7 @@ chmod +x export_all.sh
 
 This will create a folder named like `20260126_2051_export/` containing:
 - The complete repository structure
-- All submodules initialized and checked out
+- All submodules initialized and checked out (including nested ones)
 - `export_log.txt` - Detailed export log
 - `NETWORK_CONNECTIVITY_NOTES.txt` - Guide for future remote setup
 
@@ -121,7 +142,7 @@ Navigate to the exported repository and verify:
 ```bash
 cd 20260126_2051_export/your-repo-name/
 git log --oneline -10
-git submodule status
+git submodule status --recursive
 ```
 
 ## Folder Structure Example
@@ -136,6 +157,8 @@ git submodule status
 ├── folder_c/
 │   └── folder_d/
 │       └── submodule-c.bundle
+│           └── nested/
+│               └── submodule-d.bundle    ← Nested submodule!
 ├── bundle_verification.txt
 └── metadata.txt
 ```
@@ -154,9 +177,29 @@ git submodule status
 │   └── folder_c/
 │       └── folder_d/
 │           └── submodule-c/
-│               └── .git/
+│               ├── .git/
+│               └── nested/
+│                   └── submodule-d/      ← Nested submodule!
+│                       └── .git/
 ├── export_log.txt
 └── NETWORK_CONNECTIVITY_NOTES.txt
+```
+
+## Nested Submodules
+
+These scripts fully support **nested submodules** (submodules within submodules) at any depth:
+
+- The `bundle_all.sh` script recursively discovers ALL `.git` files/directories
+- The `export_all.sh` script processes bundles in the correct order (parent before child)
+- No manual configuration needed - it just works!
+
+**Example structure:**
+```
+parent-repo/
+└── level1/
+    └── submodule-a/           ← First level submodule
+        └── nested/
+            └── submodule-b/   ← Nested submodule (2nd level)
 ```
 
 ## Air-Gapped Network Considerations
@@ -180,49 +223,68 @@ The script automatically:
 - Verifies each bundle using `git bundle verify`
 - Calculates SHA256 checksums for integrity checking
 - Records file sizes for each bundle
-- Logs branch, tag, and commit counts
+- Logs branch, tag, and commit counts for all repositories
 
 ### export_all.sh Verification
 The script:
 - Validates bundle integrity before cloning
 - Ensures folder structure matches the original
-- Initializes all submodules correctly
+- Processes bundles in correct order (parent directories before nested)
 - Logs all operations for audit purposes
 
 ## Troubleshooting
 
 ### Bundle verification fails
-- Ensure the source repository is fully initialized
-- Run `git submodule update --init --recursive` in the source repository
-- Check that all submodules are accessible
+- Ensure the source repository is accessible at the configured `REPO_PATH`
+- The script will automatically initialize submodules - no manual action needed
+- Check that all submodules are accessible (network or file:// paths)
 
 ### Submodule not found during export
 - Verify the bundle exists in the correct folder in the import directory
-- Check that the folder structure matches between import and the original repository
-- Review `bundle_verification.txt` for any missing bundles
+- Check `bundle_verification.txt` for any bundles that failed verification
+- Ensure the entire import folder was transferred (including subdirectories)
 
 ### Branch not found
-- Edit `DEFAULT_BRANCH` in `export_all.sh` to match your repository's main branch
-- Common alternatives: `master`, `develop`
+- The script automatically tries `main`, then `master`, then the current branch
+- No manual configuration needed unless you want a specific branch
+- Check the export log to see which branch was checked out
 
 ### Permission denied
 - Ensure scripts are executable: `chmod +x *.sh`
 - Check file permissions on the import/export folders
+- On Windows, run Git Bash with appropriate permissions
+
+### Windows-Specific Issues
+
+**Path format**: Always use `$HOME` or forward slashes:
+- ✅ Good: `$HOME/Desktop/my-repo`
+- ✅ Good: `/c/Users/username/Desktop/my-repo`
+- ❌ Bad: `C:\Users\username\Desktop\my-repo`
+
+**Line endings**: Scripts use Unix line endings (LF) - Git Bash handles this automatically
 
 ## Advanced Usage
 
-### Custom timestamp folders
-The scripts use `YYYYMMDD_HHmm` format. If you need to work with multiple exports on the same day, the timestamp will differentiate them.
+### Testing with Nested Submodules
 
-### Selective bundling
-To bundle only specific submodules, you can modify `bundle_all.sh` to skip certain paths. Add exclusion logic in the submodule processing section.
+Use the included `create_nested_test_repo.sh` script to create a test repository with nested submodules:
+
+```bash
+cd ~/Desktop
+./create_nested_test_repo.sh
+```
+
+This creates a `test-parent` repository with nested submodules for testing.
+
+### Custom timestamp folders
+The scripts use `YYYYMMDD_HHmm` format. Multiple exports on the same day will have different timestamps (down to the minute).
 
 ### Network transition
 When transitioning from air-gapped to networked:
 1. Update `.gitmodules` with correct URLs
-2. Run `git submodule sync`
+2. Run `git submodule sync --recursive`
 3. Add remote origins: `git remote add origin <URL>`
-4. Configure submodule remotes as documented
+4. Configure submodule remotes: `git submodule foreach --recursive 'git remote add origin <URL>'`
 
 ## Security Notes
 
@@ -230,13 +292,26 @@ When transitioning from air-gapped to networked:
 - Review `bundle_verification.txt` before transferring
 - Keep audit logs of all transfers between networks
 - Follow your organization's air-gap transfer procedures
+- For local test repositories, the scripts enable `file://` protocol automatically
+
+## Platform Support
+
+- ✅ **Linux** - Native bash support
+- ✅ **macOS** - Native bash support  
+- ✅ **Windows** - Git Bash (MINGW64)
+- ✅ **WSL** - Windows Subsystem for Linux
 
 ## Support
 
 For issues or questions:
 1. Check the verification logs (`bundle_verification.txt`, `export_log.txt`)
 2. Review `NETWORK_CONNECTIVITY_NOTES.txt` for remote setup
-3. Ensure Git version compatibility between networks
+3. Ensure Git version compatibility between networks (Git 2.x recommended)
+
+## Additional Documentation
+
+- `WINDOWS_QUICK_START.md` - Windows-specific setup guide
+- `BETTER_TEST_REPOS.md` - Recommended repositories for testing
 
 ## License
 
@@ -245,3 +320,4 @@ These scripts are provided as-is for use in managing Git repositories across air
 ---
 
 **Last Updated**: January 26, 2026
+**Tested With**: Git 2.x on Windows Git Bash, Linux, and macOS
