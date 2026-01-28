@@ -2,6 +2,7 @@
 
 ##############################################################################
 # sync_from_bundle.sh
+#
 # Author: Nima Shafie
 # 
 # Purpose: Update an existing Git repository with bundles from a newer source,

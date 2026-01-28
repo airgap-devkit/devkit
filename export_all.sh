@@ -2,6 +2,7 @@
 
 ##############################################################################
 # export_all.sh
+#
 # Author: Nima Shafie
 # 
 # Purpose: Extract and recreate a Git super repository with all its submodules
@@ -22,7 +23,8 @@ set -u  # Exit on undefined variable
 
 # Path to the import folder (the folder created by bundle_all.sh)
 # This should be the YYYYMMDD_HHmm_import folder
-# Leave empty to auto-detect the most recent *_import folder
+# Leave empty to auto-detect (finds the most recent *_import folder by timestamp in name)
+# Example: "20260126_2140_import" or leave "" for auto-detect
 IMPORT_FOLDER=""
 
 # Default branch to checkout (typically 'main' or 'master')
@@ -235,32 +237,54 @@ cd "$SUPER_REPO_PATH"
 # Determine and checkout the default branch
 print_info "Determining default branch..."
 
-# Check branches in order of preference: main, master, develop, then default
-if git show-ref --verify --quiet "refs/heads/main"; then
-    git checkout main
-    print_success "Checked out branch: main"
-elif git show-ref --verify --quiet "refs/heads/master"; then
-    git checkout master
-    print_success "Checked out branch: master"
+# Check if we already have a local branch (bundle may have set HEAD)
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+
+if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "HEAD" ]; then
+    # Already on a branch
+    print_success "Checked out branch: $CURRENT_BRANCH"
 else
-    # Get the current branch (whatever git cloned to by default)
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    if [ "$CURRENT_BRANCH" = "HEAD" ]; then
-        # Detached HEAD state, try to find any branch
-        AVAILABLE_BRANCH=$(git branch | head -n 1 | sed 's/^[ *]*//')
-        if [ -n "$AVAILABLE_BRANCH" ]; then
-            git checkout "$AVAILABLE_BRANCH"
-            print_warning "No main/master branch found, checked out: $AVAILABLE_BRANCH"
-        else
-            print_warning "Repository is in detached HEAD state with no branches"
-        fi
+    # No local branch yet, create one from remote refs
+    AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
+    
+    # Check branches in order of preference
+    if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
+        git checkout -b main origin/main
+        print_success "Checked out branch: main"
+    elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
+        git checkout -b master origin/master
+        print_success "Checked out branch: master"
+    elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
+        git checkout -b develop origin/develop
+        print_success "Checked out branch: develop"
     else
-        print_warning "No main/master branch found, staying on: $CURRENT_BRANCH"
+        # Use the first available branch
+        FIRST_BRANCH=$(echo "$AVAILABLE_BRANCHES" | head -n 1)
+        if [ -n "$FIRST_BRANCH" ]; then
+            git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH"
+            print_warning "No main/master branch found, checked out: $FIRST_BRANCH"
+        else
+            print_error "No branches found in bundle"
+            exit 1
+        fi
     fi
 fi
 
-# Get statistics
-BRANCH_COUNT=$(git branch -a | wc -l)
+# Create local tracking branches for all remote branches
+print_info "Creating local branches from bundle refs..."
+for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:space:]]*||'); do
+    branch_name=$(echo "$remote" | sed 's|origin/||' | sed 's|^[[:space:]]*||')
+    if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
+        git branch "$branch_name" "$remote" 2>/dev/null
+    fi
+done
+
+# Remove the remote - all branches are now local
+git remote remove origin 2>/dev/null || true
+print_success "Local branches created for all remote refs"
+
+# Get statistics (after removing remote so we only count local branches)
+BRANCH_COUNT=$(git branch | wc -l)
 TAG_COUNT=$(git tag | wc -l)
 COMMIT_COUNT=$(git rev-list --all --count)
 
@@ -354,24 +378,45 @@ else
         cd "$SUBMODULE_PATH"
         
         # Determine and checkout the default branch
-        if git show-ref --verify --quiet "refs/heads/main"; then
-            git checkout main 2>/dev/null
-            print_success "  Checked out branch: main"
-        elif git show-ref --verify --quiet "refs/heads/master"; then
-            git checkout master 2>/dev/null
-            print_success "  Checked out branch: master"
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        
+        if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "HEAD" ]; then
+            # Already on a branch
+            print_success "  Checked out branch: $CURRENT_BRANCH"
         else
-            CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-            print_warning "  No main/master branch, staying on: $CURRENT_BRANCH"
+            # No local branch yet, create one from remote refs
+            AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
+            
+            if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
+                git checkout -b main origin/main 2>/dev/null
+                print_success "  Checked out branch: main"
+            elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
+                git checkout -b master origin/master 2>/dev/null
+                print_success "  Checked out branch: master"
+            else
+                FIRST_BRANCH=$(echo "$AVAILABLE_BRANCHES" | head -n 1)
+                if [ -n "$FIRST_BRANCH" ]; then
+                    git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH" 2>/dev/null
+                    print_warning "  Checked out: $FIRST_BRANCH"
+                fi
+            fi
         fi
         
-        # Get statistics
-        SUB_BRANCH_COUNT=$(git branch -a | wc -l)
+        # Create local tracking branches for all remote branches
+        for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:space:]]*||'); do
+            branch_name=$(echo "$remote" | sed 's|origin/||' | sed 's|^[[:space:]]*||')
+            if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
+                git branch "$branch_name" "$remote" 2>/dev/null || true
+            fi
+        done
+        
+        # Remove remote origin (air-gapped) - do this AFTER creating local branches
+        git remote remove origin 2>/dev/null || true
+        
+        # Get statistics (after removing remote so we only count local branches)
+        SUB_BRANCH_COUNT=$(git branch | wc -l)
         SUB_TAG_COUNT=$(git tag | wc -l)
         SUB_COMMIT_COUNT=$(git rev-list --all --count)
-        
-        # Remove remote origin (air-gapped)
-        git remote remove origin 2>/dev/null || true
         
         log_message ""
         log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"

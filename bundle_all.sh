@@ -2,6 +2,7 @@
 
 ##############################################################################
 # bundle_all.sh
+#
 # Author: Nima Shafie
 # 
 # Purpose: Bundle a Git super repository with all its submodules for transfer
@@ -21,11 +22,11 @@ set -u  # Exit on undefined variable
 ##############################################################################
 
 # Local path to the Git super repository you want to bundle
-REPO_PATH="$HOME/Desktop/new_directory"
+REPO_PATH="/path/to/your/super-repository"
 
 # SSH remote Git address (for reference/documentation purposes)
 # Example: git@bitbucket.org:company/super-repo.git
-REMOTE_GIT_ADDRESS="file://$HOME/Desktop/new_directory"
+REMOTE_GIT_ADDRESS="git@bitbucket.org:your-org/your-repo.git"
 
 ##############################################################################
 # SCRIPT CONFIGURATION - Generally no need to edit below
@@ -139,7 +140,8 @@ BUNDLE_PATH="${EXPORT_FOLDER}/${BUNDLE_NAME}"
 print_info "Repository: $REPO_NAME"
 print_info "Bundling to: $BUNDLE_PATH"
 
-# Create bundle with all references
+# Create bundle with all references (local branches, remote branches, tags)
+# Note: Can't use --all with explicit refs, so just use --all
 git bundle create "$BUNDLE_PATH" --all
 
 # Verify bundle
@@ -217,7 +219,7 @@ else
         log_message "================================================================="
         
         SUBMODULE_NUM=0
-        echo "$SUBMODULE_PATHS" | while IFS= read -r SUBMODULE_PATH; do
+        while IFS= read -r SUBMODULE_PATH; do
             SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
             
             print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_PATH"
@@ -253,6 +255,18 @@ else
             
             # Navigate to submodule and create bundle
             cd "$SUBMODULE_FULL_PATH"
+            
+            # Fetch all branches and tags from remote before bundling 
+            # (submodules may only have one commit checked out)
+            if git config --get remote.origin.url &> /dev/null; then
+                print_info "  Fetching all refs from remote..."
+                # Fetch all heads (branches) and tags
+                git -c protocol.file.allow=always fetch origin --all --tags 2>/dev/null || true
+                # Also explicitly fetch all branches as local branches
+                for branch in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|origin/||'); do
+                    git branch -f "$branch" "origin/$branch" 2>/dev/null || true
+                done
+            fi
             
             print_info "  Creating bundle..."
             git bundle create "$SUBMODULE_BUNDLE_PATH" --all
@@ -298,7 +312,7 @@ else
             # Return to super repository
             cd "$REPO_PATH"
             
-        done
+        done < <(echo "$SUBMODULE_PATHS")
     fi
 fi
 
