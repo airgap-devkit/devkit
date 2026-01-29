@@ -219,7 +219,7 @@ else
     
     # Initialize submodules only for bundling purposes
     print_info "Initializing submodules recursively..."
-    git -c protocol.file.allow=always submodule update --init --recursive
+    git -c protocol.file.allow=always submodule update --init --recursive >> "$LOG_FILE" 2>&1
     
     # Get list of ALL submodules recursively (not just root level)
     # This finds submodules at any depth in the tree
@@ -245,7 +245,7 @@ else
         while IFS= read -r SUBMODULE_PATH; do
             SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
             
-            print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_PATH"
+            print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Bundling: $SUBMODULE_PATH"
             
             # Get absolute path to submodule
             SUBMODULE_FULL_PATH="$REPO_PATH/$SUBMODULE_PATH"
@@ -284,50 +284,45 @@ else
             # and NO local branches. git bundle --all only bundles LOCAL refs.
             # We must convert all remote-tracking branches to local branches first.
             if git config --get remote.origin.url &> /dev/null; then
-                print_info "  Fetching all refs from remote..."
+                # Redirect verbose fetch output to log
+                git -c protocol.file.allow=always fetch origin --all --tags >> "$LOG_FILE" 2>&1 || true
                 
-                # Fetch all remote branches and tags
-                git -c protocol.file.allow=always fetch origin --all --tags 2>/dev/null || true
-                
-                # Create local branches for EVERY remote branch
-                # This ensures git bundle --all will include them
+                # Create local branches for EVERY remote branch (suppress output)
                 for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
-                    # Force create/update local branch to match remote
-                    git branch -f "$remote" "origin/$remote" 2>/dev/null || true
+                    git branch -f "$remote" "origin/$remote" >> "$LOG_FILE" 2>&1 || true
                 done
             fi
             
             # Verify we have local branches before bundling
             LOCAL_BRANCH_COUNT=$(git branch | wc -l)
             if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
-                print_warning "  No local branches found - trying to recover..."
                 # Last resort: create local branch from HEAD
                 CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
                 if [ -n "$CURRENT_COMMIT" ]; then
-                    git branch main HEAD 2>/dev/null || git branch master HEAD 2>/dev/null || true
+                    git branch main HEAD >> "$LOG_FILE" 2>&1 || git branch master HEAD >> "$LOG_FILE" 2>&1 || true
                 fi
             fi
             
-            print_info "  Creating bundle..."
-            git bundle create "$SUBMODULE_BUNDLE_PATH" --all
+            # Create bundle (suppress verbose output)
+            git bundle create "$SUBMODULE_BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
+            
+            # Get Git statistics
+            SUB_BRANCH_COUNT=$(git branch | wc -l)
+            SUB_TAG_COUNT=$(git tag | wc -l)
+            SUB_COMMIT_COUNT=$(git rev-list --all --count)
             
             # Verify bundle
             if git bundle verify "$SUBMODULE_BUNDLE_PATH" &> /dev/null; then
-                print_success "  Bundle verified"
+                print_success "  ✓ Bundled ($SUB_BRANCH_COUNT branches, $SUB_TAG_COUNT tags)"
                 SUBMODULE_VERIFIED="✓ VERIFIED"
             else
-                print_error "  Bundle verification FAILED"
+                print_error "  ✗ Verification failed"
                 SUBMODULE_VERIFIED="✗ FAILED"
             fi
             
             # Calculate SHA256
             SUBMODULE_SHA256=$(sha256sum "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
             SUBMODULE_SIZE=$(du -h "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
-            
-            # Get Git statistics
-            SUB_BRANCH_COUNT=$(git branch -a | wc -l)
-            SUB_TAG_COUNT=$(git tag | wc -l)
-            SUB_COMMIT_COUNT=$(git rev-list --all --count)
             
             # Get remote URL if available
             SUBMODULE_URL=$(git config --get remote.origin.url || echo "N/A")

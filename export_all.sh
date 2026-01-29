@@ -229,8 +229,8 @@ SUPER_REPO_PATH="${EXPORT_FOLDER}/${SUPER_REPO_NAME}"
 
 print_info "Cloning to: $SUPER_REPO_PATH"
 
-# Clone from bundle
-git clone "$SUPER_BUNDLE" "$SUPER_REPO_PATH"
+# Clone from bundle (suppress verbose output)
+git clone --quiet "$SUPER_BUNDLE" "$SUPER_REPO_PATH" 2>&1 | grep -v "^Receiving\|^Resolving" || true
 
 cd "$SUPER_REPO_PATH"
 
@@ -277,7 +277,7 @@ for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:spac
     if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
         git branch "$branch_name" "$remote" 2>/dev/null
     fi
-done
+done &> /dev/null
 
 # Remove the remote - all branches are now local
 git remote remove origin 2>/dev/null || true
@@ -353,7 +353,7 @@ else
             SUBMODULE_PATH="${BUNDLE_REL_DIR}/${BUNDLE_NAME}"
         fi
         
-        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_PATH"
+        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Exporting: $SUBMODULE_PATH"
         
         # Create parent directory structure if needed
         SUBMODULE_PARENT=$(dirname "$SUBMODULE_PATH")
@@ -362,11 +362,10 @@ else
         fi
         
         # Clone the submodule from bundle
-        print_info "  Cloning from bundle..."
-        if git clone "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>/dev/null; then
-            print_success "  Cloned successfully"
+        if git clone --quiet "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1 | grep -v "^Receiving\|^Resolving" || true; then
+            :  # Clone successful, continue
         else
-            print_error "  Failed to clone from bundle"
+            print_error "  ✗ Clone failed"
             log_message ""
             log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
             log_message "Status: ✗ CLONE FAILED"
@@ -377,27 +376,21 @@ else
         # Navigate to submodule
         cd "$SUBMODULE_PATH"
         
-        # Determine and checkout the default branch
+        # Determine and checkout the default branch (suppress output)
         CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
         
-        if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "HEAD" ]; then
-            # Already on a branch
-            print_success "  Checked out branch: $CURRENT_BRANCH"
-        else
+        if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
             # No local branch yet, create one from remote refs
             AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
             
             if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
-                git checkout -b main origin/main 2>/dev/null
-                print_success "  Checked out branch: main"
+                git checkout -b main origin/main &>/dev/null
             elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
-                git checkout -b master origin/master 2>/dev/null
-                print_success "  Checked out branch: master"
+                git checkout -b master origin/master &>/dev/null
             else
                 FIRST_BRANCH=$(echo "$AVAILABLE_BRANCHES" | head -n 1)
                 if [ -n "$FIRST_BRANCH" ]; then
-                    git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH" 2>/dev/null
-                    print_warning "  Checked out: $FIRST_BRANCH"
+                    git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH" &>/dev/null
                 fi
             fi
         fi
@@ -408,7 +401,7 @@ else
             if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
                 git branch "$branch_name" "$remote" 2>/dev/null || true
             fi
-        done
+        done &> /dev/null
         
         # Remove remote origin (air-gapped) - do this AFTER creating local branches
         git remote remove origin 2>/dev/null || true
@@ -418,6 +411,8 @@ else
         SUB_TAG_COUNT=$(git tag | wc -l)
         SUB_COMMIT_COUNT=$(git rev-list --all --count)
         
+        print_success "  ✓ Exported ($SUB_BRANCH_COUNT branches, $SUB_TAG_COUNT tags)"
+        
         log_message ""
         log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
         log_message "-----------------------------------------------------------------"
@@ -426,8 +421,6 @@ else
         log_message "Tags: $SUB_TAG_COUNT"
         log_message "Total Commits: $SUB_COMMIT_COUNT"
         log_message ""
-        
-        print_success "  Submodule initialized: $SUBMODULE_PATH"
         
         # Return to super repository root
         cd "$SUPER_REPO_PATH"
