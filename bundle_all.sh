@@ -140,8 +140,31 @@ BUNDLE_PATH="${EXPORT_FOLDER}/${BUNDLE_NAME}"
 print_info "Repository: $REPO_NAME"
 print_info "Bundling to: $BUNDLE_PATH"
 
-# Create bundle with all references (local branches, remote branches, tags)
-# Note: Can't use --all with explicit refs, so just use --all
+# CRITICAL: Ensure we have local branches, not just remote-tracking branches
+# git bundle --all only bundles LOCAL refs (branches, tags)
+# If repo only has remotes/origin/*, those won't be included!
+
+# Check if we have any local branches
+LOCAL_BRANCH_COUNT=$(git branch | wc -l)
+if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
+    print_warning "No local branches found - creating from remote refs..."
+    
+    # If we have a remote, fetch and create local branches
+    if git config --get remote.origin.url &> /dev/null; then
+        git fetch origin --all --tags 2>/dev/null || true
+        
+        # Create local branches from all remote branches
+        for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
+            git branch -f "$remote" "origin/$remote" 2>/dev/null || true
+        done
+    else
+        # No remote, no local branches - this is a problem
+        print_error "Repository has no local branches and no remote to fetch from"
+        exit 1
+    fi
+fi
+
+# Create bundle with all references
 git bundle create "$BUNDLE_PATH" --all
 
 # Verify bundle
@@ -256,16 +279,33 @@ else
             # Navigate to submodule and create bundle
             cd "$SUBMODULE_FULL_PATH"
             
-            # Fetch all branches and tags from remote before bundling 
-            # (submodules may only have one commit checked out)
+            # CRITICAL: Fetch all branches and tags from remote before bundling
+            # Submodules often only have remote-tracking branches (remotes/origin/*) 
+            # and NO local branches. git bundle --all only bundles LOCAL refs.
+            # We must convert all remote-tracking branches to local branches first.
             if git config --get remote.origin.url &> /dev/null; then
                 print_info "  Fetching all refs from remote..."
-                # Fetch all heads (branches) and tags
+                
+                # Fetch all remote branches and tags
                 git -c protocol.file.allow=always fetch origin --all --tags 2>/dev/null || true
-                # Also explicitly fetch all branches as local branches
-                for branch in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|origin/||'); do
-                    git branch -f "$branch" "origin/$branch" 2>/dev/null || true
+                
+                # Create local branches for EVERY remote branch
+                # This ensures git bundle --all will include them
+                for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
+                    # Force create/update local branch to match remote
+                    git branch -f "$remote" "origin/$remote" 2>/dev/null || true
                 done
+            fi
+            
+            # Verify we have local branches before bundling
+            LOCAL_BRANCH_COUNT=$(git branch | wc -l)
+            if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
+                print_warning "  No local branches found - trying to recover..."
+                # Last resort: create local branch from HEAD
+                CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
+                if [ -n "$CURRENT_COMMIT" ]; then
+                    git branch main HEAD 2>/dev/null || git branch master HEAD 2>/dev/null || true
+                fi
             fi
             
             print_info "  Creating bundle..."
