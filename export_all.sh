@@ -4,7 +4,6 @@
 # export_all.sh
 #
 # Author: Nima Shafie
-#
 # 
 # Purpose: Extract and recreate a Git super repository with all its submodules
 #          from git bundles on an air-gapped network. Maintains the original
@@ -146,6 +145,7 @@ LOG_FILE="${EXPORT_FOLDER}/export_log.txt"
     echo "Git Export Log"
     echo "================================================================="
     echo "Generated: $(date)"
+    echo "Ran by: $(whoami)"
     echo "Import Folder: $IMPORT_FOLDER"
     echo "Export Folder: $EXPORT_FOLDER"
     echo "Default Branch: $DEFAULT_BRANCH"
@@ -248,25 +248,25 @@ if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "HEAD" ]; then
     # Already on a branch
     print_success "Checked out branch: $CURRENT_BRANCH"
 else
-    # No local branch yet, create one from remote refs
+    # No local branch yet, create one from remote refs with priority order
     AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
     
-    # Check branches in order of preference
+    # Priority: main -> develop -> master -> first available
     if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
         git checkout -b main origin/main
         print_success "Checked out branch: main"
-    elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
-        git checkout -b master origin/master
-        print_success "Checked out branch: master"
     elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
         git checkout -b develop origin/develop
         print_success "Checked out branch: develop"
+    elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
+        git checkout -b master origin/master
+        print_success "Checked out branch: master"
     else
         # Use the first available branch
         FIRST_BRANCH=$(echo "$AVAILABLE_BRANCHES" | head -n 1)
         if [ -n "$FIRST_BRANCH" ]; then
             git checkout -b "$FIRST_BRANCH" "origin/$FIRST_BRANCH"
-            print_warning "No main/master branch found, checked out: $FIRST_BRANCH"
+            print_warning "Checked out fallback branch: $FIRST_BRANCH"
         else
             print_error "No branches found in bundle"
             exit 1
@@ -384,11 +384,14 @@ else
         CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
         
         if [ -z "$CURRENT_BRANCH" ] || [ "$CURRENT_BRANCH" = "HEAD" ]; then
-            # No local branch yet, create one from remote refs
+            # No local branch yet, create one from remote refs with priority order
             AVAILABLE_BRANCHES=$(git branch -r | grep -v '\->' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||')
             
+            # Priority: main -> develop -> master -> first available
             if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
                 git checkout -b main origin/main &>/dev/null
+            elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
+                git checkout -b develop origin/develop &>/dev/null
             elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
                 git checkout -b master origin/master &>/dev/null
             else

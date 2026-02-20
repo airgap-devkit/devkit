@@ -231,9 +231,11 @@ git log --oneline -3 2>/dev/null || echo "  (no commits)"
 print_info "Fetching from bundle..."
 git fetch "$SUPER_BUNDLE" 'refs/heads/*:refs/remotes/bundle/*' --force 2>/dev/null
 
-# Determine which branch to sync
-if git show-ref --verify --quiet "refs/remotes/bundle/$DEFAULT_BRANCH"; then
-    SYNC_BRANCH="$DEFAULT_BRANCH"
+# Determine which branch to sync (priority: main -> develop -> master -> first available)
+if git show-ref --verify --quiet "refs/remotes/bundle/main"; then
+    SYNC_BRANCH="main"
+elif git show-ref --verify --quiet "refs/remotes/bundle/develop"; then
+    SYNC_BRANCH="develop"
 elif git show-ref --verify --quiet "refs/remotes/bundle/master"; then
     SYNC_BRANCH="master"
 else
@@ -340,9 +342,11 @@ else
             # Fetch from bundle
             git fetch "$BUNDLE_FULL_PATH" 'refs/heads/*:refs/remotes/bundle/*' --force 2>/dev/null
             
-            # Determine branch to sync
-            if git show-ref --verify --quiet "refs/remotes/bundle/$DEFAULT_BRANCH"; then
-                SUB_SYNC_BRANCH="$DEFAULT_BRANCH"
+            # Determine branch to sync (priority: main -> develop -> master -> first available)
+            if git show-ref --verify --quiet "refs/remotes/bundle/main"; then
+                SUB_SYNC_BRANCH="main"
+            elif git show-ref --verify --quiet "refs/remotes/bundle/develop"; then
+                SUB_SYNC_BRANCH="develop"
             elif git show-ref --verify --quiet "refs/remotes/bundle/master"; then
                 SUB_SYNC_BRANCH="master"
             else

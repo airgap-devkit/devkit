@@ -2,9 +2,9 @@
 
 ##############################################################################
 # bundle_all.sh
-# 
-# Author: Nima Shafie
 #
+# Author: Nima Shafie
+# 
 # Purpose: Bundle a Git super repository with all its submodules for transfer
 #          to air-gapped networks. Creates git bundles with full history and
 #          generates verification logs.
@@ -22,12 +22,12 @@ set -u  # Exit on undefined variable
 ##############################################################################
 
 # Local path to the Git super repository you want to bundle
-# Example: REPO_PATH="/path/to/your/super-repository"
-REPO_PATH="$HOME/Desktop/git-bundles/test/full-test-repo"
+#REPO_PATH="$HOME/Desktop/git-bundles/test/full-test-repo"
+REPO_PATH="/path/to/your/super-repository"
 
-# SSH remote Git address
-# Example: git@bitbucket.org:company/super-repo.git
-REMOTE_GIT_ADDRESS="file://$HOME/Desktop/git-bundles/test/full-test-repo"
+# SSH remote Git address (for reference/documentation purposes)
+# REMOTE_GIT_ADDRESS="file://$HOME/Desktop/git-bundles/test/full-test-repo"
+REMOTE_GIT_ADDRESS="git@bitbucket.org:your-org/your-repo.git"
 
 ##############################################################################
 # SCRIPT CONFIGURATION - Generally no need to edit below
@@ -81,6 +81,39 @@ log_message() {
     echo "$1" | tee -a "$LOG_FILE"
 }
 
+# Function to checkout default branch with priority order
+checkout_default_branch() {
+    local REPO_TYPE=$1  # "super" or "submodule"
+    local REPO_NAME=$2  # for logging purposes
+    
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+    
+    # Priority order: main -> develop -> master -> first available
+    if git show-ref --verify --quiet refs/heads/main; then
+        if [ "$CURRENT_BRANCH" != "main" ]; then
+            git checkout main &>/dev/null
+            echo "Checked out 'main' branch for $REPO_TYPE: $REPO_NAME" >> "$LOG_FILE"
+        fi
+    elif git show-ref --verify --quiet refs/heads/develop; then
+        if [ "$CURRENT_BRANCH" != "develop" ]; then
+            git checkout develop &>/dev/null
+            echo "Checked out 'develop' branch for $REPO_TYPE: $REPO_NAME" >> "$LOG_FILE"
+        fi
+    elif git show-ref --verify --quiet refs/heads/master; then
+        if [ "$CURRENT_BRANCH" != "master" ]; then
+            git checkout master &>/dev/null
+            echo "Checked out 'master' branch for $REPO_TYPE: $REPO_NAME" >> "$LOG_FILE"
+        fi
+    else
+        # Fallback: checkout first available branch
+        FIRST_BRANCH=$(git branch | head -n 1 | sed 's/^[* ]*//')
+        if [ -n "$FIRST_BRANCH" ] && [ "$CURRENT_BRANCH" != "$FIRST_BRANCH" ]; then
+            git checkout "$FIRST_BRANCH" &>/dev/null
+            echo "Checked out fallback branch '$FIRST_BRANCH' for $REPO_TYPE: $REPO_NAME" >> "$LOG_FILE"
+        fi
+    fi
+}
+
 ##############################################################################
 # VALIDATION
 ##############################################################################
@@ -121,6 +154,7 @@ mkdir -p "$EXPORT_FOLDER"
     echo "Git Bundle Verification Log"
     echo "================================================================="
     echo "Generated: $(date)"
+    echo "Ran by: $(whoami)"
     echo "Source Repository: $REPO_PATH"
     echo "Remote Address: $REMOTE_GIT_ADDRESS"
     echo "Export Folder: $EXPORT_FOLDER"
@@ -151,10 +185,22 @@ print_info "Bundling to: $BUNDLE_PATH"
 # If we have a remote, always fetch and create local branches from ALL remote refs
 if git config --get remote.origin.url &> /dev/null; then
     print_info "Fetching all branches from remote..."
-    git fetch origin --all --tags >> "$LOG_FILE" 2>&1 || true
+    # Use 'git fetch --all' (not 'git fetch origin --all')
+    git fetch --all --tags >> "$LOG_FILE" 2>&1 || true
     
     # Create local branches from ALL remote branches
+    # Check for worktrees to avoid conflicts
     for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
+        # Check if branch exists and is used by a worktree
+        if git rev-parse --verify "$remote" &>/dev/null; then
+            # Branch exists locally - check if it's in a worktree
+            if git worktree list | grep -q "$remote"; then
+                # Skip branches used by worktrees
+                echo "Skipping branch '$remote' (used by worktree)" >> "$LOG_FILE"
+                continue
+            fi
+        fi
+        # Create or update local branch to match remote
         git branch -f "$remote" "origin/$remote" >> "$LOG_FILE" 2>&1 || true
     done
 fi
@@ -170,6 +216,9 @@ print_info "Creating bundle with $LOCAL_BRANCH_COUNT branches..."
 
 # Create bundle with all references
 git bundle create "$BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
+
+# Checkout default branch (priority: main -> develop -> master -> first available)
+checkout_default_branch "super repository" "$REPO_NAME"
 
 # Verify bundle
 print_info "Verifying bundle..."
@@ -288,11 +337,18 @@ else
             # and NO local branches. git bundle --all only bundles LOCAL refs.
             # We must convert all remote-tracking branches to local branches first.
             if git config --get remote.origin.url &> /dev/null; then
-                # Redirect verbose fetch output to log
-                git -c protocol.file.allow=always fetch origin --all --tags >> "$LOG_FILE" 2>&1 || true
+                # Redirect verbose fetch output to log (use --all without remote name)
+                git -c protocol.file.allow=always fetch --all --tags >> "$LOG_FILE" 2>&1 || true
                 
                 # Create local branches for EVERY remote branch (suppress output)
                 for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
+                    # Check for worktree conflicts
+                    if git rev-parse --verify "$remote" &>/dev/null; then
+                        if git worktree list 2>/dev/null | grep -q "$remote"; then
+                            echo "Skipping branch '$remote' in $(pwd) (used by worktree)" >> "$LOG_FILE"
+                            continue
+                        fi
+                    fi
                     git branch -f "$remote" "origin/$remote" >> "$LOG_FILE" 2>&1 || true
                 done
             fi
@@ -309,6 +365,9 @@ else
             
             # Create bundle (suppress verbose output)
             git bundle create "$SUBMODULE_BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
+            
+            # Checkout default branch (priority: main -> develop -> master -> first available)
+            checkout_default_branch "submodule" "$SUBMODULE_PATH"
             
             # Get Git statistics
             SUB_BRANCH_COUNT=$(git branch | wc -l)
@@ -368,6 +427,7 @@ METADATA_FILE="${EXPORT_FOLDER}/metadata.txt"
     echo "Git Bundle Metadata"
     echo "================================================================="
     echo "Export Timestamp: $TIMESTAMP"
+    echo "Ran by: $(whoami)"
     echo "Source Path: $REPO_PATH"
     echo "Remote Address: $REMOTE_GIT_ADDRESS"
     echo "Super Repository: $REPO_NAME"
