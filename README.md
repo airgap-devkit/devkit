@@ -20,7 +20,41 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 ✅ **Comprehensive verification** - SHA256 checksums and detailed logging  
 ✅ **Preserves complete history** - All branches, tags, and commits included  
 ✅ **Air-gap ready** - No network dependencies after bundling  
-✅ **Safe syncing** - Automatic backups when updating existing repositories
+✅ **Safe syncing** - Automatic backups when updating existing repositories  
+✅ **Optimized performance** - Clean console output with full details in log files  
+✅ **Time tracking** - Shows execution time for all operations  
+✅ **Color-coded output** - Yellow info, green success, red errors for easy reading
+
+## Performance
+
+The scripts are highly optimized for speed and clarity:
+
+**Console Output**:
+- Minimal progress indicators and summaries only
+- Branch/tag counts instead of listing each individually
+- Clean, easy-to-read format with color coding
+- Time tracking shows operation duration
+
+**Log Files**:
+- Complete details of all operations
+- Every branch, tag, and commit recorded
+- SHA256 checksums for verification
+- Full audit trail
+
+**Speed**:
+- Typical execution: 30-60 seconds for most repositories
+- Verbose git output suppressed (redirected to logs)
+- Optimized terminal I/O for faster execution
+
+**Example Console Output**:
+```bash
+ℹ [1/5] Bundling: modules/api-gateway
+✓   ✓ Bundled (12 branches, 8 tags)
+ℹ [2/5] Bundling: modules/database
+✓   ✓ Bundled (6 branches, 4 tags)
+...
+✓ Time taken: 0m 45s
+```
 
 ## Prerequisites
 
@@ -40,8 +74,20 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 - Maintains the exact folder structure of submodules
 - Generates verification logs with SHA256 checksums
 - Creates metadata files for the export process
+- Optimized for speed with minimal console output
+- Shows time taken for bundling operation
 
 **Output**: Creates a timestamped folder `YYYYMMDD_HHmm_import/` containing all bundles
+
+**Console Output**:
+```
+ℹ [1/3] Bundling: modules/api
+✓   ✓ Bundled (4 branches, 3 tags)
+...
+✓ Time taken: 0m 45s
+```
+
+**Log Files**: `bundle_verification.txt` contains complete details of all operations
 
 ### 2. export_all.sh
 
@@ -53,8 +99,20 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 - Recreates all submodules in their original folder structure (including nested ones)
 - Checks out the default branch (tries main → master → current)
 - Generates documentation for future network connectivity
+- Optimized with clean console output
+- Shows time taken for export operation
 
 **Output**: Creates a timestamped folder `YYYYMMDD_HHmm_export/` with the complete repository
+
+**Console Output**:
+```
+ℹ [1/3] Exporting: modules/api
+✓   ✓ Exported (4 branches, 3 tags)
+...
+✓ Time taken: 0m 30s
+```
+
+**Log Files**: `export_log.txt` contains complete details of all operations
 
 **Use when**: Setting up a repository for the first time on a new network
 
@@ -68,8 +126,18 @@ These scripts solve the problem of transferring a Git "super repository" (a repo
 - Updates all submodules (including nested ones) to match the bundle
 - Overwrites any local changes or commits not in the bundle
 - Logs all operations
+- Optimized with minimal console output
+- Shows time taken for sync operation
 
 **Output**: Updates the existing repository in place, creates backup in git-bundles folder
+
+**Console Output**:
+```
+ℹ [1/3] Syncing: modules/api
+✓   ✓ Updated
+...
+✓ Time taken: 0m 25s
+```
 
 **Use when**: Syncing an outdated repository with newer bundles (bundle overwrites local changes)
 
@@ -340,18 +408,185 @@ The script:
 
 **Line endings**: Scripts use Unix line endings (LF) - Git Bash handles this automatically
 
+## Testing the Scripts
+
+Before using these scripts on production repositories, you can test them with a comprehensive test repository that includes all edge cases.
+
+### Included Test Scripts
+
+The repository includes two test scripts:
+
+1. **create_full_test_repo.sh** - Creates a comprehensive test repository with:
+   - Super repository with 4 branches, 4 tags
+   - 2 root-level submodules (each with 4 branches, 3 tags)
+   - 2 nested submodules at level 2 (each with 3 branches, 2 tags)
+   - 1 deeply nested submodule at level 3 (3 branches, 2 tags)
+   - **TOTAL: 21 branches, 16 tags across 6 repositories**
+
+2. **verify_full_test.sh** - Automatically verifies that all branches, tags, and commits were transferred correctly
+
+### Test Repository Structure
+
+The test creates this structure (in `git-bundles/test/`):
+
+```
+full-test-repo/                                    ← Super Repository
+├── 4 branches: main, develop, feature/api-gateway, release/2.0
+├── 4 tags: v1.0.0, v1.5.0, v2.0.0-dev, v2.0.0
+│
+└── services/
+    ├── user-service/                              ← ROOT-LEVEL Submodule
+    │   ├── 4 branches: main, develop, feature/oauth, release/2.0
+    │   ├── 3 tags: v1.0.0, v1.5.0, v2.0.0
+    │   │
+    │   └── lib/
+    │       └── database/                          ← NESTED Level 2
+    │           ├── 3 branches: main, develop, feature/pool
+    │           ├── 2 tags: v1.0, v2.0
+    │           │
+    │           └── utils/
+    │               └── logger/                    ← DEEPLY NESTED Level 3
+    │                   ├── 3 branches: main, develop, feature/json
+    │                   └── 2 tags: v1.0, v2.0
+    │
+    └── payment-service/                           ← ROOT-LEVEL Submodule
+        ├── 4 branches: main, develop, feature/stripe, hotfix/1.0.1
+        ├── 3 tags: v1.0.0, v1.2.0, v1.0.1
+        │
+        └── lib/
+            └── cache/                             ← NESTED Level 2
+                ├── 3 branches: main, develop, feature/redis
+                └── 2 tags: v1.0, v1.5
+```
+
+### Complete Testing Procedure
+
+#### Step 1: Create the Test Repository
+
+```bash
+cd ~/Desktop/git-bundles
+chmod +x create_full_test_repo.sh
+./create_full_test_repo.sh
+```
+
+This creates the test repository at: `~/Desktop/git-bundles/test/full-test-repo/`
+
+#### Step 2: Configure bundle_all.sh
+
+Edit `bundle_all.sh` and set:
+
+```bash
+REPO_PATH="$HOME/Desktop/git-bundles/test/full-test-repo"
+REMOTE_GIT_ADDRESS="git@example.com:test/full-test-repo.git"
+```
+
+Or on Windows Git Bash, the script will show you the exact path to use.
+
+#### Step 3: Run Bundle
+
+```bash
+./bundle_all.sh
+```
+
+**Expected output:**
+```
+ℹ [1/5] Bundling: services/user-service
+✓   ✓ Bundled (4 branches, 3 tags)
+ℹ [2/5] Bundling: services/payment-service
+✓   ✓ Bundled (4 branches, 3 tags)
+ℹ [3/5] Bundling: services/user-service/lib/database
+✓   ✓ Bundled (3 branches, 2 tags)
+ℹ [4/5] Bundling: services/payment-service/lib/cache
+✓   ✓ Bundled (3 branches, 2 tags)
+ℹ [5/5] Bundling: services/user-service/lib/database/utils/logger
+✓   ✓ Bundled (3 branches, 2 tags)
+...
+✓ Time taken: 0m XX s
+```
+
+#### Step 4: Run Export
+
+```bash
+./export_all.sh
+```
+
+**Expected output:**
+```
+ℹ [1/5] Exporting: services/user-service
+✓   ✓ Exported (4 branches, 3 tags)
+ℹ [2/5] Exporting: services/payment-service
+✓   ✓ Exported (4 branches, 3 tags)
+...
+✓ Time taken: 0m XX s
+```
+
+#### Step 5: Run Automated Verification
+
+```bash
+chmod +x verify_full_test.sh
+./verify_full_test.sh
+```
+
+**Expected output if all tests pass:**
+```
+✓ ALL CHECKS PASSED!
+
+✓ All 21 branches transferred correctly
+✓ All 16 tags transferred correctly
+✓ All repositories are air-gapped (no remotes)
+✓ Root-level submodules have all branches (not just main)
+✓ Nested submodules have all branches
+
+✓ Bundle and export scripts are working perfectly!
+```
+
+#### Step 6: Manual Verification (Optional)
+
+If you want to check manually:
+
+```bash
+cd YYYYMMDD_HHmm_export/full-test-repo
+
+# Quick summary
+echo "Super repo: $(git branch | wc -l) branches (expected: 4)"
+echo "user-service: $(cd services/user-service && git branch | wc -l) branches (expected: 4)"
+echo "payment-service: $(cd services/payment-service && git branch | wc -l) branches (expected: 4)"
+echo "database-lib: $(cd services/user-service/lib/database && git branch | wc -l) branches (expected: 3)"
+echo "cache-lib: $(cd services/payment-service/lib/cache && git branch | wc -l) branches (expected: 3)"
+echo "logger-lib: $(cd services/user-service/lib/database/utils/logger && git branch | wc -l) branches (expected: 3)"
+```
+
+### What This Test Validates
+
+This comprehensive test ensures:
+
+- ✅ **Root-level submodules** get ALL branches (not just main)
+- ✅ **Nested submodules** at level 2 get all branches
+- ✅ **Deeply nested** submodules at level 3 get all branches
+- ✅ **Super repository** gets all branches
+- ✅ **All tags** are transferred correctly
+- ✅ **No remote tracking** branches (pure local)
+- ✅ **Air-gapped setup** works correctly
+- ✅ **Recursive discovery** finds all submodules
+- ✅ **Bundle verification** passes for all repositories
+- ✅ **Export process** recreates structure correctly
+
+### Cleaning Up Test Files
+
+After testing, you can remove the test repository:
+
+```bash
+cd ~/Desktop/git-bundles
+rm -rf test/
+rm -rf YYYYMMDD_HHmm_import/
+rm -rf YYYYMMDD_HHmm_export/
+```
+
 ## Advanced Usage
 
 ### Testing with Nested Submodules
 
-Use the included `create_nested_test_repo.sh` script to create a test repository with nested submodules:
-
-```bash
-cd ~/Desktop
-./create_nested_test_repo.sh
-```
-
-Use `create_test_scenario.sh` for a complete test setup with old and new repositories to test all three scripts.
+Use the included `create_full_test_repo.sh` script as described in the **Testing the Scripts** section above.
 
 ### Custom timestamp folders
 The scripts use `YYYYMMDD_HHmm` format. Multiple exports on the same day will have different timestamps (down to the minute).
@@ -385,13 +620,20 @@ For issues or questions:
 ## Additional Documentation
 
 - `SYNC_WORKFLOW.md` - Detailed guide for syncing/updating existing repositories
-- `WINDOWS_QUICK_START.md` - Windows-specific setup guide
-- `BETTER_TEST_REPOS.md` - Recommended repositories for testing
-- `create_test_scenario.sh` - Complete test setup script
+- `create_full_test_repo.sh` - Creates comprehensive test repository with 21 branches, 16 tags
+- `verify_full_test.sh` - Automated verification script for test results
 
 ## Quick Reference
 
 ```bash
+# Test the scripts (recommended before production use)
+cd ~/Desktop/git-bundles
+./create_full_test_repo.sh  # Creates test repo
+# Edit bundle_all.sh to set REPO_PATH to test/full-test-repo
+./bundle_all.sh             # Bundle test repo
+./export_all.sh             # Export test repo
+./verify_full_test.sh       # Verify all branches transferred
+
 # Bundle a repository (source network)
 cd ~/Desktop/git-bundles
 ./bundle_all.sh
@@ -403,11 +645,7 @@ cd ~/Desktop/git-bundles
 ./sync_from_bundle.sh
 ```
 
-## License
-
-These scripts are provided as-is for use in managing Git repositories across air-gapped networks.
-
 ---
 
-**Last Updated**: January 26, 2026  
-**Tested With**: Git 2.x on Windows Git Bash and Linux
+**Last Updated**: January 28, 2026  
+**Tested With**: Git 2.x on Windows Git Bash and Linux  

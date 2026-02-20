@@ -4,6 +4,7 @@
 # export_all.sh
 #
 # Author: Nima Shafie
+#
 # 
 # Purpose: Extract and recreate a Git super repository with all its submodules
 #          from git bundles on an air-gapped network. Maintains the original
@@ -44,6 +45,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Track script start time
+SCRIPT_START_TIME=$(date +%s)
+
 ##############################################################################
 # FUNCTIONS
 ##############################################################################
@@ -67,7 +71,7 @@ print_error() {
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
+    echo -e "${YELLOW}ℹ $1${NC}"
 }
 
 ##############################################################################
@@ -413,6 +417,7 @@ else
         
         print_success "  ✓ Exported ($SUB_BRANCH_COUNT branches, $SUB_TAG_COUNT tags)"
         
+        # Log detailed info to file only (not console)
         log_message ""
         log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
         log_message "-----------------------------------------------------------------"
@@ -500,6 +505,12 @@ print_success "Network connectivity notes created: $NETWORK_NOTES"
 
 print_header "Export Complete!"
 
+# Calculate elapsed time
+SCRIPT_END_TIME=$(date +%s)
+ELAPSED_TIME=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
+MINUTES=$((ELAPSED_TIME / 60))
+SECONDS=$((ELAPSED_TIME % 60))
+
 TOTAL_SIZE=$(du -sh "$EXPORT_FOLDER" | awk '{print $1}')
 
 echo ""
@@ -507,6 +518,7 @@ print_success "Export folder: $EXPORT_FOLDER"
 print_success "Total size: $TOTAL_SIZE"
 print_success "Super repository: $SUPER_REPO_NAME"
 print_success "Submodules: $SUBMODULE_COUNT initialized"
+print_success "Time taken: ${MINUTES}m ${SECONDS}s"
 echo ""
 print_info "Repository location:"
 echo "  $SUPER_REPO_PATH"
@@ -528,6 +540,7 @@ log_message "Total Export Size: $TOTAL_SIZE"
 log_message "Super Repository: $SUPER_REPO_NAME"
 log_message "Submodules Initialized: $SUBMODULE_COUNT"
 log_message "Repository Path: $SUPER_REPO_PATH"
+log_message "Time Taken: ${MINUTES}m ${SECONDS}s"
 log_message "Script Completed: $(date)"
 log_message "================================================================="
 

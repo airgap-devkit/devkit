@@ -2,9 +2,9 @@
 
 ##############################################################################
 # bundle_all.sh
-#
-# Author: Nima Shafie
 # 
+# Author: Nima Shafie
+#
 # Purpose: Bundle a Git super repository with all its submodules for transfer
 #          to air-gapped networks. Creates git bundles with full history and
 #          generates verification logs.
@@ -22,11 +22,12 @@ set -u  # Exit on undefined variable
 ##############################################################################
 
 # Local path to the Git super repository you want to bundle
-REPO_PATH="/path/to/your/super-repository"
+REPO_PATH="$HOME/Desktop/git-bundles/test/full-test-repo"
 
 # SSH remote Git address (for reference/documentation purposes)
 # Example: git@bitbucket.org:company/super-repo.git
-REMOTE_GIT_ADDRESS="git@bitbucket.org:your-org/your-repo.git"
+REMOTE_GIT_ADDRESS="file://$HOME/Desktop/git-bundles/test/full-test-repo"
+#REMOTE_GIT_ADDRESS="file://$HOME/Desktop/git-bundles/test/full-test-repo"
 
 ##############################################################################
 # SCRIPT CONFIGURATION - Generally no need to edit below
@@ -46,6 +47,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Track script start time
+SCRIPT_START_TIME=$(date +%s)
 
 ##############################################################################
 # FUNCTIONS
@@ -70,7 +74,7 @@ print_error() {
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
+    echo -e "${YELLOW}ℹ $1${NC}"
 }
 
 log_message() {
@@ -140,32 +144,32 @@ BUNDLE_PATH="${EXPORT_FOLDER}/${BUNDLE_NAME}"
 print_info "Repository: $REPO_NAME"
 print_info "Bundling to: $BUNDLE_PATH"
 
-# CRITICAL: Ensure we have local branches, not just remote-tracking branches
+# CRITICAL: Ensure ALL remote branches become local branches before bundling
 # git bundle --all only bundles LOCAL refs (branches, tags)
-# If repo only has remotes/origin/*, those won't be included!
+# If repo only has some branches local but others only as remotes/origin/*, those won't be included!
 
-# Check if we have any local branches
-LOCAL_BRANCH_COUNT=$(git branch | wc -l)
-if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
-    print_warning "No local branches found - creating from remote refs..."
+# If we have a remote, always fetch and create local branches from ALL remote refs
+if git config --get remote.origin.url &> /dev/null; then
+    print_info "Fetching all branches from remote..."
+    git fetch origin --all --tags >> "$LOG_FILE" 2>&1 || true
     
-    # If we have a remote, fetch and create local branches
-    if git config --get remote.origin.url &> /dev/null; then
-        git fetch origin --all --tags 2>/dev/null || true
-        
-        # Create local branches from all remote branches
-        for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
-            git branch -f "$remote" "origin/$remote" 2>/dev/null || true
-        done
-    else
-        # No remote, no local branches - this is a problem
-        print_error "Repository has no local branches and no remote to fetch from"
-        exit 1
-    fi
+    # Create local branches from ALL remote branches
+    for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
+        git branch -f "$remote" "origin/$remote" >> "$LOG_FILE" 2>&1 || true
+    done
 fi
 
+# Verify we have local branches
+LOCAL_BRANCH_COUNT=$(git branch | wc -l)
+if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
+    print_error "Repository has no local branches and no remote to fetch from"
+    exit 1
+fi
+
+print_info "Creating bundle with $LOCAL_BRANCH_COUNT branches..."
+
 # Create bundle with all references
-git bundle create "$BUNDLE_PATH" --all
+git bundle create "$BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
 
 # Verify bundle
 print_info "Verifying bundle..."
@@ -402,6 +406,12 @@ print_success "Metadata file created: $METADATA_FILE"
 
 print_header "Bundling Complete!"
 
+# Calculate elapsed time
+SCRIPT_END_TIME=$(date +%s)
+ELAPSED_TIME=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
+MINUTES=$((ELAPSED_TIME / 60))
+SECONDS=$((ELAPSED_TIME % 60))
+
 TOTAL_SIZE=$(du -sh "${EXPORT_FOLDER}" | awk '{print $1}')
 
 echo ""
@@ -409,6 +419,7 @@ print_success "Export folder: $(basename ${EXPORT_FOLDER})"
 print_success "Total size: $TOTAL_SIZE"
 print_success "Super repository: 1 bundle created"
 print_success "Submodules: $SUBMODULE_COUNT bundle(s) created"
+print_success "Time taken: ${MINUTES}m ${SECONDS}s"
 echo ""
 print_info "Files created:"
 echo "  - bundle_verification.txt (detailed verification log)"
@@ -426,6 +437,7 @@ log_message "================================================================="
 log_message "Total Export Size: $TOTAL_SIZE"
 log_message "Super Repository Bundles: 1"
 log_message "Submodule Bundles: $SUBMODULE_COUNT"
+log_message "Time Taken: ${MINUTES}m ${SECONDS}s"
 log_message "Script Completed: $(date)"
 log_message "================================================================="
 

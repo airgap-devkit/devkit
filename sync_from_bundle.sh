@@ -53,6 +53,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Track script start time
+SCRIPT_START_TIME=$(date +%s)
+
 ##############################################################################
 # FUNCTIONS
 ##############################################################################
@@ -76,7 +79,7 @@ print_error() {
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
+    echo -e "${YELLOW}ℹ $1${NC}"
 }
 
 ##############################################################################
@@ -226,7 +229,7 @@ git log --oneline -3 2>/dev/null || echo "  (no commits)"
 
 # Add the bundle as a temporary remote
 print_info "Fetching from bundle..."
-git fetch "$SUPER_BUNDLE" 'refs/heads/*:refs/remotes/bundle/*' --force
+git fetch "$SUPER_BUNDLE" 'refs/heads/*:refs/remotes/bundle/*' --force 2>/dev/null
 
 # Determine which branch to sync
 if git show-ref --verify --quiet "refs/remotes/bundle/$DEFAULT_BRANCH"; then
@@ -316,7 +319,7 @@ else
         
         # Check if submodule directory exists
         if [ ! -d "$SUBMODULE_PATH" ]; then
-            print_info "  Submodule doesn't exist locally, cloning..."
+            print_info "  Cloning new submodule..."
             
             # Create parent directory if needed
             SUBMODULE_PARENT=$(dirname "$SUBMODULE_PATH")
@@ -324,18 +327,18 @@ else
                 mkdir -p "$SUBMODULE_PARENT"
             fi
             
-            git clone "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH"
-            print_success "  Cloned new submodule"
+            git clone --quiet "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1 | grep -v "^Receiving\|^Resolving" || true
+            print_success "  ✓ Cloned"
         elif [ ! -d "$SUBMODULE_PATH/.git" ]; then
             print_warning "  Directory exists but is not a git repository, skipping"
             continue
         else
-            print_info "  Updating existing submodule..."
+            print_info "  Updating..."
             
             cd "$SUBMODULE_PATH"
             
             # Fetch from bundle
-            git fetch "$BUNDLE_FULL_PATH" 'refs/heads/*:refs/remotes/bundle/*' --force
+            git fetch "$BUNDLE_FULL_PATH" 'refs/heads/*:refs/remotes/bundle/*' --force 2>/dev/null
             
             # Determine branch to sync
             if git show-ref --verify --quiet "refs/remotes/bundle/$DEFAULT_BRANCH"; then
@@ -347,19 +350,19 @@ else
             fi
             
             # Discard any local changes and force reset
-            git reset --hard "bundle/$SUB_SYNC_BRANCH"
+            git reset --hard "bundle/$SUB_SYNC_BRANCH" &>/dev/null
             
             # Checkout branch
             if git show-ref --verify --quiet "refs/heads/$SUB_SYNC_BRANCH"; then
-                git checkout "$SUB_SYNC_BRANCH"
+                git checkout "$SUB_SYNC_BRANCH" &>/dev/null
             else
-                git checkout -b "$SUB_SYNC_BRANCH"
+                git checkout -b "$SUB_SYNC_BRANCH" &>/dev/null
             fi
             
             # Clean up bundle remote refs
             git branch -r | grep 'bundle/' | xargs -r git branch -rd 2>/dev/null || true
             
-            print_success "  Submodule updated"
+            print_success "  ✓ Updated"
             
             cd "$EXISTING_REPO_PATH"
         fi
@@ -384,10 +387,17 @@ cd "$SCRIPT_DIR"
 
 print_header "Sync Complete!"
 
+# Calculate elapsed time
+SCRIPT_END_TIME=$(date +%s)
+ELAPSED_TIME=$((SCRIPT_END_TIME - SCRIPT_START_TIME))
+MINUTES=$((ELAPSED_TIME / 60))
+SECONDS=$((ELAPSED_TIME % 60))
+
 echo ""
 print_success "Repository: $EXISTING_REPO_PATH"
 print_success "Super repository: Synced to bundle state"
 print_success "Submodules: $SUBMODULE_COUNT processed"
+print_success "Time taken: ${MINUTES}m ${SECONDS}s"
 echo ""
 
 if [ "$CREATE_BACKUP" = true ]; then
