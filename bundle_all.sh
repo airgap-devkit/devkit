@@ -185,23 +185,26 @@ print_info "Bundling to: $BUNDLE_PATH"
 # If we have a remote, always fetch and create local branches from ALL remote refs
 if git config --get remote.origin.url &> /dev/null; then
     print_info "Fetching all branches from remote..."
-    # Use 'git fetch --all' (not 'git fetch origin --all')
-    git fetch --all --tags >> "$LOG_FILE" 2>&1 || true
+    # Use 'git fetch --all' with quiet flag
+    git fetch --all --tags --quiet >> "$LOG_FILE" 2>&1 || true
     
-    # Create local branches from ALL remote branches
-    # Check for worktrees to avoid conflicts
-    for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
-        # Check if branch exists and is used by a worktree
-        if git rev-parse --verify "$remote" &>/dev/null; then
-            # Branch exists locally - check if it's in a worktree
-            if git worktree list | grep -q "$remote"; then
-                # Skip branches used by worktrees
-                echo "Skipping branch '$remote' (used by worktree)" >> "$LOG_FILE"
-                continue
-            fi
+    # Create local branches from ALL remote branches using batch operation
+    git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | \
+    while read -r remote_branch; do
+        # Skip HEAD
+        if [ "$remote_branch" = "origin/HEAD" ]; then
+            continue
         fi
-        # Create or update local branch to match remote
-        git branch -f "$remote" "origin/$remote" >> "$LOG_FILE" 2>&1 || true
+        
+        # Extract branch name
+        local_branch="${remote_branch#origin/}"
+        
+        # Check for worktrees and create/update branch
+        if git worktree list 2>/dev/null | grep -q "$local_branch"; then
+            echo "Skipping branch '$local_branch' (used by worktree)" >> "$LOG_FILE"
+        else
+            git branch -f "$local_branch" "$remote_branch" 2>&1 | grep -v "already exists" >> "$LOG_FILE" || true
+        fi
     done
 fi
 
@@ -274,20 +277,21 @@ else
     print_info "Initializing submodules recursively..."
     git -c protocol.file.allow=always submodule update --init --recursive >> "$LOG_FILE" 2>&1
     
+    # Disable detached HEAD warnings in all submodules
+    git submodule foreach --recursive 'git config advice.detachedHead false' >> "$LOG_FILE" 2>&1 || true
+    
     # Get list of ALL submodules recursively (not just root level)
-    # This finds submodules at any depth in the tree
     print_info "Discovering all submodules at all levels..."
     
-    # Find all .git files/directories under the repository (submodules)
-    # Exclude the root .git directory
-    SUBMODULE_PATHS=$(find . -name ".git" -type f -o \( -name ".git" -type d -not -path "./.git" \) | sed 's|/\.git$||' | sed 's|^\./||' | sort)
+    # Use git submodule foreach to get accurate list with proper URLs
+    SUBMODULE_LIST=$(git submodule foreach --recursive --quiet 'echo "$sm_path|$toplevel/$sm_path"' 2>/dev/null || true)
     
-    if [ -z "$SUBMODULE_PATHS" ]; then
+    if [ -z "$SUBMODULE_LIST" ]; then
         SUBMODULE_COUNT=0
         print_warning "No submodules found after initialization"
         log_message "No submodules found."
     else
-        SUBMODULE_COUNT=$(echo "$SUBMODULE_PATHS" | wc -l)
+        SUBMODULE_COUNT=$(echo "$SUBMODULE_LIST" | wc -l)
         print_success "Found $SUBMODULE_COUNT submodule(s) at all levels"
         
         log_message "================================================================="
@@ -295,15 +299,12 @@ else
         log_message "================================================================="
         
         SUBMODULE_NUM=0
-        while IFS= read -r SUBMODULE_PATH; do
+        while IFS='|' read -r SUBMODULE_PATH SUBMODULE_FULL_PATH; do
             SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
             
             print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Bundling: $SUBMODULE_PATH"
             
-            # Get absolute path to submodule
-            SUBMODULE_FULL_PATH="$REPO_PATH/$SUBMODULE_PATH"
-            
-            # Check if submodule is initialized (.git can be a directory or a file)
+            # Check if submodule is initialized
             if [ ! -e "$SUBMODULE_FULL_PATH/.git" ]; then
                 print_warning "Submodule not initialized: $SUBMODULE_PATH (skipping)"
                 log_message ""
@@ -329,66 +330,76 @@ else
                 SUBMODULE_BUNDLE_PATH="${EXPORT_FOLDER}/${SUBMODULE_BUNDLE_NAME}"
             fi
             
-            # Navigate to submodule and create bundle
+            # Navigate to submodule
             cd "$SUBMODULE_FULL_PATH"
             
-            # CRITICAL: Fetch all branches and tags from remote before bundling
-            # Submodules often only have remote-tracking branches (remotes/origin/*) 
-            # and NO local branches. git bundle --all only bundles LOCAL refs.
-            # We must convert all remote-tracking branches to local branches first.
-            if git config --get remote.origin.url &> /dev/null; then
-                # Redirect verbose fetch output to log (use --all without remote name)
-                git -c protocol.file.allow=always fetch --all --tags >> "$LOG_FILE" 2>&1 || true
+            # CRITICAL FIX: Get the submodule's ACTUAL remote URL and fetch everything
+            SUBMODULE_REMOTE_URL=$(git config --get remote.origin.url 2>/dev/null || echo "")
+            
+            if [ -n "$SUBMODULE_REMOTE_URL" ]; then
+                # Fetch ALL refs from the submodule's actual origin
+                print_info "  Fetching all branches from origin..."
+                git -c protocol.file.allow=always fetch --all --tags --quiet >> "$LOG_FILE" 2>&1 || true
                 
-                # Create local branches for EVERY remote branch (suppress output)
-                for remote in $(git branch -r | grep 'origin/' | grep -v 'HEAD' | sed 's|^[[:space:]]*origin/||' | sed 's|^[[:space:]]*||'); do
-                    # Check for worktree conflicts
-                    if git rev-parse --verify "$remote" &>/dev/null; then
-                        if git worktree list 2>/dev/null | grep -q "$remote"; then
-                            echo "Skipping branch '$remote' in $(pwd) (used by worktree)" >> "$LOG_FILE"
-                            continue
-                        fi
+                # Get all remote branches and create local branches in one batch operation
+                git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | \
+                while read -r remote_branch; do
+                    # Skip HEAD
+                    if [ "$remote_branch" = "origin/HEAD" ]; then
+                        continue
                     fi
-                    git branch -f "$remote" "origin/$remote" >> "$LOG_FILE" 2>&1 || true
+                    
+                    # Extract branch name without origin/ prefix
+                    local_branch="${remote_branch#origin/}"
+                    
+                    # Create/update local branch (skip if in worktree)
+                    if git worktree list 2>/dev/null | grep -q "$local_branch"; then
+                        echo "Skipping branch '$local_branch' (used by worktree)" >> "$LOG_FILE"
+                    else
+                        git branch -f "$local_branch" "$remote_branch" 2>&1 | grep -v "already exists" >> "$LOG_FILE" || true
+                    fi
                 done
+            else
+                # No remote - might be a local test repo, just ensure we have branches
+                echo "No remote origin for $SUBMODULE_PATH - using existing branches" >> "$LOG_FILE"
             fi
             
-            # Verify we have local branches before bundling
+            # Verify we have local branches
             LOCAL_BRANCH_COUNT=$(git branch | wc -l)
             if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
-                # Last resort: create local branch from HEAD
+                # Last resort: create a branch from current HEAD
                 CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
                 if [ -n "$CURRENT_COMMIT" ]; then
                     git branch main HEAD >> "$LOG_FILE" 2>&1 || git branch master HEAD >> "$LOG_FILE" 2>&1 || true
                 fi
             fi
             
-            # Create bundle (suppress verbose output)
+            # Create bundle (all refs)
             git bundle create "$SUBMODULE_BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
             
-            # Checkout default branch (priority: main -> develop -> master -> first available)
+            # Checkout default branch
             checkout_default_branch "submodule" "$SUBMODULE_PATH"
             
             # Get Git statistics
             SUB_BRANCH_COUNT=$(git branch | wc -l)
             SUB_TAG_COUNT=$(git tag | wc -l)
-            SUB_COMMIT_COUNT=$(git rev-list --all --count)
+            SUB_COMMIT_COUNT=$(git rev-list --all --count 2>/dev/null || echo 0)
             
             # Verify bundle
             if git bundle verify "$SUBMODULE_BUNDLE_PATH" &> /dev/null; then
-                print_success "  ✓ Bundled ($SUB_BRANCH_COUNT branches, $SUB_TAG_COUNT tags)"
+                print_success "  Bundled ($SUB_BRANCH_COUNT branches, $SUB_TAG_COUNT tags)"
                 SUBMODULE_VERIFIED="✓ VERIFIED"
             else
-                print_error "  ✗ Verification failed"
+                print_error "  Verification failed"
                 SUBMODULE_VERIFIED="✗ FAILED"
             fi
             
-            # Calculate SHA256
+            # Calculate SHA256 and size
             SUBMODULE_SHA256=$(sha256sum "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
             SUBMODULE_SIZE=$(du -h "$SUBMODULE_BUNDLE_PATH" | awk '{print $1}')
             
-            # Get remote URL if available
-            SUBMODULE_URL=$(git config --get remote.origin.url || echo "N/A")
+            # Get remote URL
+            SUBMODULE_URL=$(git config --get remote.origin.url 2>/dev/null || echo "N/A")
             
             # Log submodule info
             {
@@ -410,7 +421,7 @@ else
             # Return to super repository
             cd "$REPO_PATH"
             
-        done < <(echo "$SUBMODULE_PATHS")
+        done < <(echo "$SUBMODULE_LIST")
     fi
 fi
 
@@ -498,7 +509,7 @@ log_message "Total Export Size: $TOTAL_SIZE"
 log_message "Super Repository Bundles: 1"
 log_message "Submodule Bundles: $SUBMODULE_COUNT"
 log_message "Time Taken: ${MINUTES}m ${SECONDS}s"
-log_message "Script Completed: $(date)"
+log_message "Script Completed: $(date +%Y%m%d_%H%M)"
 log_message "================================================================="
 
 print_success "All done! ✓"

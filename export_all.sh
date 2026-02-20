@@ -3,8 +3,8 @@
 ##############################################################################
 # export_all.sh
 #
-# Author: Nima Shafie
-# 
+# Author: Nima Shafie 
+#
 # Purpose: Extract and recreate a Git super repository with all its submodules
 #          from git bundles on an air-gapped network. Maintains the original
 #          folder structure and initializes all submodules.
@@ -238,6 +238,9 @@ git clone --quiet "$SUPER_BUNDLE" "$SUPER_REPO_PATH" 2>&1 | grep -v "^Receiving\
 
 cd "$SUPER_REPO_PATH"
 
+# Disable detached HEAD warnings for this repository
+git config advice.detachedHead false
+
 # Determine and checkout the default branch
 print_info "Determining default branch..."
 
@@ -312,8 +315,34 @@ cd "$SCRIPT_DIR"
 print_header "Step 3: Discovering Submodule Bundles"
 
 # Find all bundle files except the super repository bundle  
-# Use mindepth 2 to skip root-level bundles (which is the super repo)
-SUBMODULE_BUNDLES=$(find "$IMPORT_FOLDER" -mindepth 2 -name "*.bundle" -type f | sort || true)
+# CRITICAL: Use mindepth 1 (not 2) to include ROOT-LEVEL submodules
+# The super repo bundle is at the root, but we need to exclude it by name
+cd "$IMPORT_FOLDER"
+
+# Get super repo bundle name to exclude it
+SUPER_BUNDLE_NAME=$(basename "$SUPER_BUNDLE")
+
+# Find ALL bundles (mindepth 1), then filter out the super repo bundle
+ALL_BUNDLES=$(find . -mindepth 1 -name "*.bundle" -type f)
+SUBMODULE_BUNDLES=""
+
+# Filter: exclude super repo bundle, include everything else
+while IFS= read -r bundle; do
+    bundle_path="${bundle#./}"  # Remove leading ./
+    # Skip if this is the super repo bundle at root level
+    if [ "$bundle_path" = "$SUPER_BUNDLE_NAME" ]; then
+        continue
+    fi
+    # Include all other bundles
+    if [ -z "$SUBMODULE_BUNDLES" ]; then
+        SUBMODULE_BUNDLES="$IMPORT_FOLDER/$bundle_path"
+    else
+        SUBMODULE_BUNDLES="$SUBMODULE_BUNDLES
+$IMPORT_FOLDER/$bundle_path"
+    fi
+done < <(echo "$ALL_BUNDLES")
+
+cd "$SCRIPT_DIR"
 
 # Sort by directory depth (shallowest first) to ensure parent directories are created before nested ones
 SUBMODULE_BUNDLES=$(echo "$SUBMODULE_BUNDLES" | awk '{ print length, $0 }' | sort -n | cut -d" " -f2-)
@@ -366,7 +395,7 @@ else
         fi
         
         # Clone the submodule from bundle
-        if git clone --quiet "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1 | grep -v "^Receiving\|^Resolving" || true; then
+        if git clone --quiet "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1 | grep -v "^Receiving\|^Resolving\|detached HEAD" || true; then
             :  # Clone successful, continue
         else
             print_error "  ✗ Clone failed"
@@ -379,6 +408,9 @@ else
         
         # Navigate to submodule
         cd "$SUBMODULE_PATH"
+        
+        # Disable detached HEAD warnings for this repository
+        git config advice.detachedHead false
         
         # Determine and checkout the default branch (suppress output)
         CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
@@ -544,7 +576,7 @@ log_message "Super Repository: $SUPER_REPO_NAME"
 log_message "Submodules Initialized: $SUBMODULE_COUNT"
 log_message "Repository Path: $SUPER_REPO_PATH"
 log_message "Time Taken: ${MINUTES}m ${SECONDS}s"
-log_message "Script Completed: $(date)"
+log_message "Script Completed: $(date +%Y%m%d_%H%M)"
 log_message "================================================================="
 
 print_success "All done! ✓"
