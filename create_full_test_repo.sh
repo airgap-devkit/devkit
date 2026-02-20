@@ -3,6 +3,8 @@
 ##############################################################################
 # create_full_test_repo.sh
 #
+# Author: Nima Shafie
+#
 # Creates a comprehensive test repository with:
 # - Multiple branches and tags at ALL levels
 # - Root-level submodules

@@ -3,6 +3,8 @@
 ##############################################################################
 # verify_full_test.sh
 #
+# Author: Nima Shafie
+#
 # Verifies that all branches, tags, and commits were transferred correctly
 # from the full-test-repo to the exported version
 ##############################################################################

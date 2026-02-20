@@ -22,12 +22,12 @@ set -u  # Exit on undefined variable
 ##############################################################################
 
 # Local path to the Git super repository you want to bundle
+# Example: REPO_PATH="/path/to/your/super-repository"
 REPO_PATH="$HOME/Desktop/git-bundles/test/full-test-repo"
 
-# SSH remote Git address (for reference/documentation purposes)
+# SSH remote Git address
 # Example: git@bitbucket.org:company/super-repo.git
 REMOTE_GIT_ADDRESS="file://$HOME/Desktop/git-bundles/test/full-test-repo"
-#REMOTE_GIT_ADDRESS="file://$HOME/Desktop/git-bundles/test/full-test-repo"
 
 ##############################################################################
 # SCRIPT CONFIGURATION - Generally no need to edit below

@@ -41,7 +41,7 @@ You want to:
 3. **Place the import folder:**
    ```bash
    # Copy the import folder to your working directory
-   cp -r /media/usb/20260126_2145_import ~/Desktop/git-bundles/
+   cp -r /media/cd/20260126_2145_import ~/Desktop/git-bundles/
    cd ~/Desktop/git-bundles
    ```
 
@@ -149,12 +149,12 @@ cd ~/Desktop/git-bundles
 # Output: 20260126_1430_import/
 ```
 
-**Transfer via USB drive to Production Network**
+**Transfer via physical media to Production Network**
 
 **Production Network (Out of Date):**
 ```bash
 # Copy import folder from CD/DVD
-cp -r /media/usb/20260126_1430_import ~/Desktop/git-bundles/
+cp -r /media/cd/20260126_1430_import ~/Desktop/git-bundles/
 cd ~/Desktop/git-bundles
 
 # Configure sync_from_bundle.sh
