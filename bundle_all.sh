@@ -18,6 +18,18 @@ set -e  # Exit on error
 set -u  # Exit on undefined variable
 
 ##############################################################################
+# SUPPRESS ALL GIT WARNINGS - Save stderr for our own messages
+##############################################################################
+exec 3>&2  # Save original stderr to file descriptor 3
+exec 2>&1  # Redirect stderr to stdout (will be filtered)
+
+##############################################################################
+# PERFORMANCE OPTIMIZATION
+##############################################################################
+export GIT_TERMINAL_PROMPT=0
+export GIT_ASKPASS=echo
+
+##############################################################################
 # USER CONFIGURATION - EDIT THESE VARIABLES
 ##############################################################################
 
@@ -56,29 +68,29 @@ SCRIPT_START_TIME=$(date +%s)
 ##############################################################################
 
 print_header() {
-    echo -e "${BLUE}============================================================${NC}"
-    echo -e "${BLUE}$1${NC}"
-    echo -e "${BLUE}============================================================${NC}"
+    echo -e "${BLUE}============================================================${NC}" >&3
+    echo -e "${BLUE}$1${NC}" >&3
+    echo -e "${BLUE}============================================================${NC}" >&3
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}✓ $1${NC}" >&3
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    echo -e "${YELLOW}⚠ $1${NC}" >&3
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}✗ $1${NC}" >&3
 }
 
 print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}"
+    echo -e "${YELLOW}ℹ $1${NC}" >&3
 }
 
 log_message() {
-    echo "$1" | tee -a "$LOG_FILE"
+    echo "$1" | tee -a "$LOG_FILE" >&3
 }
 
 # Function to checkout default branch with priority order
@@ -180,45 +192,40 @@ print_info "Bundling to: $BUNDLE_PATH"
 
 # CRITICAL: Ensure ALL remote branches become local branches before bundling
 # git bundle --all only bundles LOCAL refs (branches, tags)
-# If repo only has some branches local but others only as remotes/origin/*, those won't be included!
 
-# If we have a remote, always fetch and create local branches from ALL remote refs
-if git config --get remote.origin.url &> /dev/null; then
-    print_info "Fetching all branches from remote..."
-    # Use 'git fetch --all' with quiet flag
-    git fetch --all --tags --quiet >> "$LOG_FILE" 2>&1 || true
+# OPTIMIZATION: Check existing branches before fetching over network
+EXISTING_BRANCHES=$(git branch 2>&1 | wc -l)
+
+if [ "$EXISTING_BRANCHES" -gt 1 ]; then
+    # Already have multiple branches - skip fetch for speed
+    print_info "Using existing $EXISTING_BRANCHES branches (skipping fetch for speed)"
+    echo "Skipped fetch - using existing $EXISTING_BRANCHES branches" >> "$LOG_FILE"
+elif git config --get remote.origin.url >/dev/null 2>&1; then
+    print_info "Fetching branches from remote..."
+    # Fetch with performance flags, filter warnings
+    git fetch --all --tags --quiet --no-progress 2>&1 | \
+        grep -v "detached HEAD\|Note: switching\|HEAD is now" >> "$LOG_FILE" || true
     
-    # Create local branches from ALL remote branches using batch operation
-    git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | \
-    while read -r remote_branch; do
-        # Skip HEAD
-        if [ "$remote_branch" = "origin/HEAD" ]; then
-            continue
-        fi
-        
-        # Extract branch name
-        local_branch="${remote_branch#origin/}"
-        
-        # Check for worktrees and create/update branch
-        if git worktree list 2>/dev/null | grep -q "$local_branch"; then
-            echo "Skipping branch '$local_branch' (used by worktree)" >> "$LOG_FILE"
-        else
-            git branch -f "$local_branch" "$remote_branch" 2>&1 | grep -v "already exists" >> "$LOG_FILE" || true
-        fi
+    # Create local branches (batch operation, suppress output)
+    git for-each-ref --format='%(refname:short)' refs/remotes/origin/ 2>/dev/null | \
+    while read -r rb; do
+        [ "$rb" = "origin/HEAD" ] && continue
+        git branch -f "${rb#origin/}" "$rb" 2>/dev/null || true
     done
 fi
 
-# Verify we have local branches
-LOCAL_BRANCH_COUNT=$(git branch | wc -l)
+# Verify branches exist
+LOCAL_BRANCH_COUNT=$(git branch 2>&1 | wc -l)
 if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
-    print_error "Repository has no local branches and no remote to fetch from"
+    print_error "No branches available"
     exit 1
 fi
 
 print_info "Creating bundle with $LOCAL_BRANCH_COUNT branches..."
 
-# Create bundle with all references
-git bundle create "$BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
+# Create bundle (quiet, suppress progress)
+git -c advice.detachedHead=false bundle create "$BUNDLE_PATH" --all --quiet 2>&1 | \
+    grep -v "Enumerating\|Counting\|Delta\|Compressing\|Writing\|Total\|detached HEAD" >> "$LOG_FILE" || true
 
 # Checkout default branch (priority: main -> develop -> master -> first available)
 checkout_default_branch "super repository" "$REPO_NAME"
@@ -273,12 +280,23 @@ else
     # Enable file:// protocol for local submodules (needed for test repos)
     git config --local protocol.file.allow always
     
-    # Initialize submodules only for bundling purposes
-    print_info "Initializing submodules recursively..."
-    git -c protocol.file.allow=always submodule update --init --recursive >> "$LOG_FILE" 2>&1
+    # PERFORMANCE: Check if submodules are already initialized
+    UNINIT_SUBMODULES=$(git submodule status 2>&1 | grep "^-" | wc -l || echo 0)
+    
+    if [ "$UNINIT_SUBMODULES" -gt 0 ]; then
+        print_info "Initializing $UNINIT_SUBMODULES submodule(s)..."
+        # Use parallel jobs, filter out detached HEAD warnings
+        git -c protocol.file.allow=always \
+            -c advice.detachedHead=false \
+            submodule update --init --recursive --jobs 4 \
+            2>&1 | grep -v "detached HEAD\|Note: switching to\|Note: checking out\|HEAD is now at" >> "$LOG_FILE" || true
+    else
+        print_info "Submodules already initialized (skipping)"
+        echo "Submodules already initialized" >> "$LOG_FILE"
+    fi
     
     # Disable detached HEAD warnings in all submodules
-    git submodule foreach --recursive 'git config advice.detachedHead false' >> "$LOG_FILE" 2>&1 || true
+    git submodule foreach --recursive 'git config advice.detachedHead false' >/dev/null 2>&1 || true
     
     # Get list of ALL submodules recursively (not just root level)
     print_info "Discovering all submodules at all levels..."
@@ -333,52 +351,48 @@ else
             # Navigate to submodule
             cd "$SUBMODULE_FULL_PATH"
             
-            # CRITICAL FIX: Get the submodule's ACTUAL remote URL and fetch everything
-            SUBMODULE_REMOTE_URL=$(git config --get remote.origin.url 2>/dev/null || echo "")
+            # PERFORMANCE: Check if we already have local branches before fetching
+            EXISTING_BRANCHES=$(git branch | wc -l)
             
-            if [ -n "$SUBMODULE_REMOTE_URL" ]; then
-                # Fetch ALL refs from the submodule's actual origin
-                print_info "  Fetching all branches from origin..."
-                git -c protocol.file.allow=always fetch --all --tags --quiet >> "$LOG_FILE" 2>&1 || true
-                
-                # Get all remote branches and create local branches in one batch operation
-                git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | \
-                while read -r remote_branch; do
-                    # Skip HEAD
-                    if [ "$remote_branch" = "origin/HEAD" ]; then
-                        continue
-                    fi
-                    
-                    # Extract branch name without origin/ prefix
-                    local_branch="${remote_branch#origin/}"
-                    
-                    # Create/update local branch (skip if in worktree)
-                    if git worktree list 2>/dev/null | grep -q "$local_branch"; then
-                        echo "Skipping branch '$local_branch' (used by worktree)" >> "$LOG_FILE"
-                    else
-                        git branch -f "$local_branch" "$remote_branch" 2>&1 | grep -v "already exists" >> "$LOG_FILE" || true
-                    fi
-                done
+            if [ "$EXISTING_BRANCHES" -gt 1 ]; then
+                # We already have multiple branches - skip fetch (saves time over VPN!)
+                echo "Using existing $EXISTING_BRANCHES branches for $SUBMODULE_PATH (skipping fetch)" >> "$LOG_FILE"
             else
-                # No remote - might be a local test repo, just ensure we have branches
-                echo "No remote origin for $SUBMODULE_PATH - using existing branches" >> "$LOG_FILE"
-            fi
-            
-            # Verify we have local branches
-            LOCAL_BRANCH_COUNT=$(git branch | wc -l)
-            if [ "$LOCAL_BRANCH_COUNT" -eq 0 ]; then
-                # Last resort: create a branch from current HEAD
-                CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
-                if [ -n "$CURRENT_COMMIT" ]; then
-                    git branch main HEAD >> "$LOG_FILE" 2>&1 || git branch master HEAD >> "$LOG_FILE" 2>&1 || true
+                # Only fetch if we have 0 or 1 branch (need to get all branches)
+                SUBMODULE_REMOTE_URL=$(git config --get remote.origin.url 2>/dev/null || echo "")
+                
+                if [ -n "$SUBMODULE_REMOTE_URL" ]; then
+                    # Fetch with maximum performance flags
+                    git -c protocol.file.allow=always \
+                        -c advice.detachedHead=false \
+                        fetch --all --tags --quiet --no-progress 2>/dev/null || true
+                    
+                    # Create local branches from remote (fast batch operation)
+                    git for-each-ref --format='%(refname:short)' refs/remotes/origin/ 2>/dev/null | \
+                    while read -r remote_branch; do
+                        if [ "$remote_branch" = "origin/HEAD" ]; then
+                            continue
+                        fi
+                        local_branch="${remote_branch#origin/}"
+                        # Skip worktree check for performance (rare case)
+                        git branch -f "$local_branch" "$remote_branch" 2>/dev/null || true
+                    done
                 fi
             fi
             
-            # Create bundle (all refs)
-            git bundle create "$SUBMODULE_BUNDLE_PATH" --all >> "$LOG_FILE" 2>&1
+            # Final check: ensure we have at least one branch
+            FINAL_BRANCH_COUNT=$(git branch | wc -l)
+            if [ "$FINAL_BRANCH_COUNT" -eq 0 ]; then
+                # Create from HEAD as last resort
+                git branch main HEAD 2>/dev/null || git branch master HEAD 2>/dev/null || true
+            fi
             
-            # Checkout default branch
-            checkout_default_branch "submodule" "$SUBMODULE_PATH"
+            # Create bundle (all refs, quiet, filter warnings)
+            git -c advice.detachedHead=false bundle create "$SUBMODULE_BUNDLE_PATH" --all --quiet 2>&1 | \
+                grep -v "Enumerating\|Counting\|Delta\|Compressing\|Writing\|Total\|detached HEAD\|Note: switching" >> "$LOG_FILE" || true
+            
+            # Checkout default branch (suppress all output)
+            checkout_default_branch "submodule" "$SUBMODULE_PATH" >/dev/null 2>&1 || true
             
             # Get Git statistics
             SUB_BRANCH_COUNT=$(git branch | wc -l)

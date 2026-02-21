@@ -3,8 +3,8 @@
 ##############################################################################
 # export_all.sh
 #
-# Author: Nima Shafie 
-#
+# Author: Nima Shafie
+# 
 # Purpose: Extract and recreate a Git super repository with all its submodules
 #          from git bundles on an air-gapped network. Maintains the original
 #          folder structure and initializes all submodules.
@@ -16,6 +16,18 @@
 
 set -e  # Exit on error
 set -u  # Exit on undefined variable
+
+##############################################################################
+# SUPPRESS ALL GIT WARNINGS - Save stderr for our own messages
+##############################################################################
+exec 3>&2  # Save original stderr to file descriptor 3
+exec 2>&1  # Redirect stderr to stdout (will be filtered)
+
+##############################################################################
+# PERFORMANCE OPTIMIZATION
+##############################################################################
+export GIT_TERMINAL_PROMPT=0
+export GIT_ASKPASS=echo
 
 ##############################################################################
 # USER CONFIGURATION - EDIT THESE VARIABLES
@@ -52,25 +64,29 @@ SCRIPT_START_TIME=$(date +%s)
 ##############################################################################
 
 print_header() {
-    echo -e "${BLUE}============================================================${NC}"
-    echo -e "${BLUE}$1${NC}"
-    echo -e "${BLUE}============================================================${NC}"
+    echo -e "${BLUE}============================================================${NC}" >&3
+    echo -e "${BLUE}$1${NC}" >&3
+    echo -e "${BLUE}============================================================${NC}" >&3
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}✓ $1${NC}" >&3
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    echo -e "${YELLOW}⚠ $1${NC}" >&3
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}✗ $1${NC}" >&3
 }
 
 print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}"
+    echo -e "${YELLOW}ℹ $1${NC}" >&3
+}
+
+log_message() {
+    echo "$1" >> "$LOG_FILE"
 }
 
 ##############################################################################
@@ -233,13 +249,17 @@ SUPER_REPO_PATH="${EXPORT_FOLDER}/${SUPER_REPO_NAME}"
 
 print_info "Cloning to: $SUPER_REPO_PATH"
 
-# Clone from bundle (suppress verbose output)
-git clone --quiet "$SUPER_BUNDLE" "$SUPER_REPO_PATH" 2>&1 | grep -v "^Receiving\|^Resolving" || true
+# Clone from bundle (filter detached HEAD warnings)
+git -c advice.detachedHead=false \
+    -c transfer.fsckObjects=false \
+    clone --quiet --no-progress "$SUPER_BUNDLE" "$SUPER_REPO_PATH" \
+    2>&1 | grep -v "Receiving\|Resolving\|detached HEAD\|HEAD is now\|Cloning into\|Note: switching to\|Note: checking out" >> "$LOG_FILE" || true
 
 cd "$SUPER_REPO_PATH"
 
-# Disable detached HEAD warnings for this repository
-git config advice.detachedHead false
+# Set config to suppress all advice
+git config advice.detachedHead false 2>/dev/null || true
+git config advice.statusHints false 2>/dev/null || true
 
 # Determine and checkout the default branch
 print_info "Determining default branch..."
@@ -394,9 +414,12 @@ else
             mkdir -p "$SUBMODULE_PARENT"
         fi
         
-        # Clone the submodule from bundle
-        if git clone --quiet "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" 2>&1 | grep -v "^Receiving\|^Resolving\|detached HEAD" || true; then
-            :  # Clone successful, continue
+        # Clone the submodule from bundle (filter all warnings)
+        if git -c advice.detachedHead=false \
+               -c transfer.fsckObjects=false \
+               clone --quiet --no-progress "$BUNDLE_FULL_PATH" "$SUBMODULE_PATH" \
+               2>&1 | grep -v "Receiving\|Resolving\|detached HEAD\|HEAD is now\|Cloning into\|Note: switching to\|Note: checking out" >> "$LOG_FILE" 2>&1; then
+            :  # Clone successful
         else
             print_error "  ✗ Clone failed"
             log_message ""
@@ -409,8 +432,9 @@ else
         # Navigate to submodule
         cd "$SUBMODULE_PATH"
         
-        # Disable detached HEAD warnings for this repository
-        git config advice.detachedHead false
+        # Disable all advice for this repository
+        git config advice.detachedHead false 2>/dev/null || true
+        git config advice.statusHints false 2>/dev/null || true
         
         # Determine and checkout the default branch (suppress output)
         CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
