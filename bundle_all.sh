@@ -74,19 +74,19 @@ print_header() {
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}" >&3
+    echo -e "${GREEN}[OK]${NC} $1" >&3
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}" >&3
+    echo -e "${YELLOW}[WARN]${NC} $1" >&3
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}" >&3
+    echo -e "${RED}[ERR]${NC} $1" >&3
 }
 
 print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}" >&3
+    echo -e "${YELLOW}[INFO]${NC} $1" >&3
 }
 
 log_message() {

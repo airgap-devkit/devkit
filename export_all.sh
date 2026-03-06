@@ -70,19 +70,19 @@ print_header() {
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}" >&3
+    echo -e "${GREEN}[OK]${NC} $1" >&3
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}" >&3
+    echo -e "${YELLOW}[WARN]${NC} $1" >&3
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}" >&3
+    echo -e "${RED}[ERR]${NC} $1" >&3
 }
 
 print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}" >&3
+    echo -e "${YELLOW}[INFO]${NC} $1" >&3
 }
 
 log_message() {
@@ -429,6 +429,10 @@ else
     log_message "================================================================="
     
     SUBMODULE_NUM=0
+    SUBMODULE_SUCCESS=0
+    SUBMODULE_SKIPPED=0
+    SUBMODULE_FAILED=0
+    
     while IFS= read -r BUNDLE_FULL_PATH; do
         SUBMODULE_NUM=$((SUBMODULE_NUM + 1))
         
@@ -439,20 +443,89 @@ else
         
         # The submodule path is the bundle path without .bundle extension
         if [ "$BUNDLE_REL_DIR" = "." ]; then
-            SUBMODULE_PATH="$BUNDLE_NAME"
+            SUBMODULE_PATH="$SUPER_REPO_PATH/$BUNDLE_NAME"
         else
-            SUBMODULE_PATH="${BUNDLE_REL_DIR}/${BUNDLE_NAME}"
+            SUBMODULE_PATH="$SUPER_REPO_PATH/${BUNDLE_REL_DIR}/${BUNDLE_NAME}"
         fi
         
-        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Exporting: $SUBMODULE_PATH"
+        # Calculate relative path from super repo
+        SUBMODULE_REL_PATH="${SUBMODULE_PATH#$SUPER_REPO_PATH/}"
+        
+        print_info "[$SUBMODULE_NUM/$SUBMODULE_COUNT] Processing: $SUBMODULE_REL_PATH"
+        
+        # CRITICAL: Check if this submodule exists in the current branch's .gitmodules
+        cd "$SUPER_REPO_PATH"
+        
+        # Get the commit SHA that this submodule should be at (from super repo's index)
+        EXPECTED_COMMIT=$(git ls-tree HEAD "$SUBMODULE_REL_PATH" 2>/dev/null | awk '{print $3}')
+        
+        if [ -z "$EXPECTED_COMMIT" ]; then
+            # Submodule not in current branch - SKIP it entirely
+            print_warning "  Submodule not in current branch - skipping"
+            log_message ""
+            log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_REL_PATH"
+            log_message "Status: SKIPPED (not in current branch)"
+            log_message "This submodule exists in bundle but not in current super repo HEAD"
+            log_message "It may belong to a different branch or was removed"
+            log_message ""
+            
+            SUBMODULE_SKIPPED=$((SUBMODULE_SKIPPED + 1))
+            
+            # Clean up any existing empty directory
+            if [ -d "$SUBMODULE_PATH" ] && [ -z "$(ls -A "$SUBMODULE_PATH" 2>/dev/null)" ]; then
+                rmdir "$SUBMODULE_PATH" 2>/dev/null || true
+            fi
+            
+            continue
+        fi
+        
+        # Submodule IS in current branch - process it
+        log_message ""
+        log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_REL_PATH"
+        log_message "Expected commit: $EXPECTED_COMMIT"
         
         # Create parent directory structure if needed
         SUBMODULE_PARENT=$(dirname "$SUBMODULE_PATH")
-        if [ "$SUBMODULE_PARENT" != "." ] && [ ! -d "$SUBMODULE_PARENT" ]; then
+        if [ ! -d "$SUBMODULE_PARENT" ]; then
             mkdir -p "$SUBMODULE_PARENT"
         fi
         
-        # Clone the submodule from bundle with VERBOSE error output
+        # Check if submodule directory already exists and is populated
+        if [ -d "$SUBMODULE_PATH" ]; then
+            if [ -e "$SUBMODULE_PATH/.git" ]; then
+                print_warning "  Submodule already exists - checking commit"
+                cd "$SUBMODULE_PATH"
+                CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
+                
+                if [ "$CURRENT_COMMIT" = "$EXPECTED_COMMIT" ]; then
+                    print_success "  Already at correct commit ${EXPECTED_COMMIT:0:8}"
+                    log_message "Status: ALREADY CORRECT"
+                    SUBMODULE_SUCCESS=$((SUBMODULE_SUCCESS + 1))
+                    cd "$SUPER_REPO_PATH"
+                    continue
+                else
+                    print_info "  Updating from ${CURRENT_COMMIT:0:8} to ${EXPECTED_COMMIT:0:8}"
+                    # Try to checkout the expected commit
+                    if git checkout "$EXPECTED_COMMIT" 2>&1 | grep -v "detached HEAD\|Note: switching\|HEAD is now" >&3; then
+                        print_success "  Updated to commit ${EXPECTED_COMMIT:0:8}"
+                        log_message "Status: UPDATED"
+                        SUBMODULE_SUCCESS=$((SUBMODULE_SUCCESS + 1))
+                    else
+                        print_error "  Failed to update commit"
+                        log_message "Status: UPDATE FAILED"
+                        SUBMODULE_FAILED=$((SUBMODULE_FAILED + 1))
+                    fi
+                    cd "$SUPER_REPO_PATH"
+                    continue
+                fi
+            else
+                # Directory exists but is empty (corrupted state)
+                print_warning "  Removing corrupted empty directory"
+                rm -rf "$SUBMODULE_PATH"
+            fi
+        fi
+        
+        # Clone the submodule from bundle
         print_info "  Cloning from bundle..."
         
         CLONE_OUTPUT=$(git -c advice.detachedHead=false \
@@ -462,128 +535,107 @@ else
         CLONE_EXIT_CODE=$?
         
         if [ $CLONE_EXIT_CODE -ne 0 ]; then
-            print_error "  ✗ Clone failed (exit code: $CLONE_EXIT_CODE)"
-            echo "----------------------------------------" >&3
+            print_error "  Clone failed (exit code: $CLONE_EXIT_CODE)"
+            echo "========================================" >&3
             echo "CLONE ERROR DETAILS:" >&3
             echo "$CLONE_OUTPUT" >&3
-            echo "----------------------------------------" >&3
+            echo "========================================" >&3
             
-            log_message ""
-            log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
-            log_message "Status: ✗ CLONE FAILED"
+            log_message "Status: CLONE FAILED"
             log_message "Exit Code: $CLONE_EXIT_CODE"
             log_message "Error Output:"
             log_message "$CLONE_OUTPUT"
             log_message ""
             
-            # Continue to next submodule instead of exiting
+            # Clean up failed clone
+            if [ -d "$SUBMODULE_PATH" ]; then
+                rm -rf "$SUBMODULE_PATH"
+            fi
+            
+            SUBMODULE_FAILED=$((SUBMODULE_FAILED + 1))
             continue
         fi
         
         print_success "  Cloned successfully"
         
-        # Navigate to submodule
+        # Navigate to submodule and checkout the EXACT commit
         cd "$SUBMODULE_PATH"
         
         # Disable all advice for this repository
         git config advice.detachedHead false 2>/dev/null || true
         git config advice.statusHints false 2>/dev/null || true
         
-        # Checkout the specific commit that the super repo points to
+        # Checkout the EXACT commit that super repo points to
+        print_info "  Checking out commit ${EXPECTED_COMMIT:0:8}..."
         
-        # Get the commit that the super repo expects for this submodule
-        cd "$SUPER_REPO_PATH"
+        CHECKOUT_OUTPUT=$(git checkout "$EXPECTED_COMMIT" 2>&1)
+        CHECKOUT_EXIT_CODE=$?
         
-        # Get submodule path relative to super repo
-        SUBMODULE_REL_PATH="${SUBMODULE_PATH#$SUPER_REPO_PATH/}"
-        
-        # Get the commit SHA that this submodule should be at (from super repo's index)
-        EXPECTED_COMMIT=$(git ls-tree HEAD "$SUBMODULE_REL_PATH" 2>/dev/null | awk '{print $3}')
-        
-        if [ -z "$EXPECTED_COMMIT" ]; then
-            # Submodule not in current branch - this might be a nested submodule or removed submodule
-            print_warning "  ⚠ Submodule not found in super repo's current branch"
-            log_message "Warning: $SUBMODULE_REL_PATH not referenced in super repo HEAD"
-            log_message "This may be a nested submodule or was removed in this branch"
-            
-            cd "$SUBMODULE_PATH"
-            
-            # Fallback: checkout a default branch
-            AVAILABLE_BRANCHES=$(git branch -r 2>/dev/null | sed 's|  origin/||' | grep -v "HEAD" || true)
-            if [ -n "$AVAILABLE_BRANCHES" ]; then
-                if echo "$AVAILABLE_BRANCHES" | grep -q "^main$"; then
-                    git checkout -b main origin/main 2>&1 | grep -v "detached HEAD" >&3 || true
-                    print_info "  Checked out fallback: main"
-                elif echo "$AVAILABLE_BRANCHES" | grep -q "^develop$"; then
-                    git checkout -b develop origin/develop 2>&1 | grep -v "detached HEAD" >&3 || true
-                    print_info "  Checked out fallback: develop"
-                elif echo "$AVAILABLE_BRANCHES" | grep -q "^master$"; then
-                    git checkout -b master origin/master 2>&1 | grep -v "detached HEAD" >&3 || true
-                    print_info "  Checked out fallback: master"
-                fi
-            fi
+        if [ $CHECKOUT_EXIT_CODE -eq 0 ]; then
+            print_success "  Commit ${EXPECTED_COMMIT:0:8} checked out"
+            log_message "Status: SUCCESS"
+            log_message "Commit: $EXPECTED_COMMIT"
+            SUBMODULE_SUCCESS=$((SUBMODULE_SUCCESS + 1))
         else
-            # Checkout the EXACT commit that super repo points to
-            cd "$SUBMODULE_PATH"
+            print_error "  Failed to checkout commit ${EXPECTED_COMMIT:0:8}"
+            echo "========================================" >&3
+            echo "CHECKOUT ERROR:" >&3  
+            echo "$CHECKOUT_OUTPUT" >&3
+            echo "========================================" >&3
             
-            log_message "Submodule: $SUBMODULE_REL_PATH"
-            log_message "Expected commit: $EXPECTED_COMMIT"
+            log_message "Status: CHECKOUT FAILED"
+            log_message "Error details: $CHECKOUT_OUTPUT"
+            log_message "This commit may not exist in the bundle - bundle may be out of sync"
             
-            CHECKOUT_OUTPUT=$(git checkout "$EXPECTED_COMMIT" 2>&1)
-            CHECKOUT_EXIT_CODE=$?
+            # Clean up failed checkout
+            cd "$SUPER_REPO_PATH"
+            rm -rf "$SUBMODULE_PATH"
             
-            if [ $CHECKOUT_EXIT_CODE -eq 0 ]; then
-                print_success "  → Commit ${EXPECTED_COMMIT:0:8} (as per super repo)"
-                log_message "Successfully checked out $EXPECTED_COMMIT"
-            else
-                print_error "  ✗ Failed to checkout ${EXPECTED_COMMIT:0:8}"
-                echo "----------------------------------------" >&3
-                echo "CHECKOUT ERROR:" >&3  
-                echo "$CHECKOUT_OUTPUT" >&3
-                echo "----------------------------------------" >&3
-                
-                log_message "ERROR: Could not checkout commit $EXPECTED_COMMIT"
-                log_message "Error details: $CHECKOUT_OUTPUT"
-                log_message "This commit may not exist in the bundle - bundle may be out of sync"
-                
-                # Try to continue with whatever commit we have
-                print_warning "  Continuing with current state"
-            fi
+            SUBMODULE_FAILED=$((SUBMODULE_FAILED + 1))
+            continue
         fi
         
         # Create local tracking branches for all remote branches
-        for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:space:]]*||'); do
+        cd "$SUBMODULE_PATH"
+        for remote in $(git branch -r | grep -v '\->' | grep 'origin/' | sed 's|^[[:space:]]*||' 2>/dev/null); do
             branch_name=$(echo "$remote" | sed 's|origin/||' | sed 's|^[[:space:]]*||')
-            if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name"; then
+            if [ -n "$branch_name" ] && ! git show-ref --verify --quiet "refs/heads/$branch_name" 2>/dev/null; then
                 git branch "$branch_name" "$remote" 2>/dev/null || true
             fi
-        done &> /dev/null
+        done
         
-        # Remove remote origin (air-gapped) - do this AFTER creating local branches
+        # Remove remote origin (air-gapped)
         git remote remove origin 2>/dev/null || true
         
-        # Get statistics (after removing remote so we only count local branches)
-        SUB_BRANCH_COUNT=$(git branch | wc -l)
-        SUB_TAG_COUNT=$(git tag | wc -l)
-        SUB_COMMIT_COUNT=$(git rev-list --all --count)
+        # Get statistics
+        SUB_BRANCH_COUNT=$(git branch 2>/dev/null | wc -l)
+        SUB_TAG_COUNT=$(git tag 2>/dev/null | wc -l)
         
-        print_success "  ✓ Exported ($SUB_BRANCH_COUNT branches, $SUB_TAG_COUNT tags)"
-        
-        # Log detailed info to file only (not console)
-        log_message ""
-        log_message "Submodule #$SUBMODULE_NUM: $SUBMODULE_PATH"
-        log_message "-----------------------------------------------------------------"
-        log_message "Status: ✓ CLONED"
         log_message "Branches: $SUB_BRANCH_COUNT"
         log_message "Tags: $SUB_TAG_COUNT"
-        log_message "Total Commits: $SUB_COMMIT_COUNT"
         log_message ""
         
         # Return to super repository root
         cd "$SUPER_REPO_PATH"
     done < <(echo "$SUBMODULE_BUNDLES")
     
-    print_success "All submodules processed"
+    # Print summary
+    echo "" >&3
+    print_success "Submodule processing complete"
+    print_info "  Successful: $SUBMODULE_SUCCESS"
+    if [ $SUBMODULE_SKIPPED -gt 0 ]; then
+        print_warning "  Skipped: $SUBMODULE_SKIPPED (not in current branch)"
+    fi
+    if [ $SUBMODULE_FAILED -gt 0 ]; then
+        print_error "  Failed: $SUBMODULE_FAILED"
+    fi
+    
+    log_message "================================================================="
+    log_message "Submodule Summary:"
+    log_message "  Successful: $SUBMODULE_SUCCESS"
+    log_message "  Skipped: $SUBMODULE_SKIPPED"
+    log_message "  Failed: $SUBMODULE_FAILED"
+    log_message "================================================================="
 fi
 
 cd "$SCRIPT_DIR"
