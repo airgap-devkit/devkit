@@ -86,7 +86,8 @@ print_info() {
 }
 
 log_message() {
-    echo "$1" >> "$LOG_FILE"
+    # Log to file AND to the terminal (FD 3) without polluting stdout/stderr
+    echo "$1" | tee -a "$LOG_FILE" >&3
 }
 
 ##############################################################################
@@ -330,6 +331,48 @@ fi
 # Remove the remote - all branches are now local
 git remote remove origin 2>/dev/null || true
 print_success "Local branches created for all remote refs"
+
+git config alias.scheckout '!f(){ \
+  b="$1"; \
+  if [ -z "$b" ]; then echo "Usage: git scheckout <branch>" >&2; return 2; fi; \
+  gitdir="$(git rev-parse --git-dir 2>/dev/null)"; \
+  ts="$(date +%Y%m%d_%H%M%S)"; \
+  log="$gitdir/scheckout_${ts}.txt"; \
+  echo "=================================================================" >"$log"; \
+  echo "git scheckout $b" >>"$log"; \
+  echo "Started: $(date)" >>"$log"; \
+  echo "From: $(git rev-parse --abbrev-ref HEAD 2>/dev/null)" >>"$log"; \
+  echo "=================================================================" >>"$log"; \
+  echo "" >>"$log"; \
+  echo "[1/6] git submodule deinit -f --all" >>"$log"; \
+  git submodule deinit -f --all >>"$log" 2>&1 || true; \
+  echo "" >>"$log"; \
+  echo "[2/6] rm -rf submodule worktrees from current .gitmodules" >>"$log"; \
+  if [ -f .gitmodules ]; then \
+    git config -f .gitmodules --get-regexp "^submodule\\..*\\.path$" 2>/dev/null | awk "{print \\$2}" | while read -r p; do \
+      [ -z "$p" ] && continue; \
+      rm -rf "$p" >>"$log" 2>&1 || true; \
+    done; \
+  fi; \
+  echo "" >>"$log"; \
+  echo "[3/6] git clean -ffdx" >>"$log"; \
+  git clean -ffdx >>"$log" 2>&1 || true; \
+  echo "" >>"$log"; \
+  echo "[4/6] git checkout $b" >>"$log"; \
+  git checkout "$b" >>"$log" 2>&1 || return $?; \
+  echo "" >>"$log"; \
+  echo "[5/6] git clean -ffdx (post-checkout)" >>"$log"; \
+  git clean -ffdx >>"$log" 2>&1 || true; \
+  echo "" >>"$log"; \
+  echo "[6/6] git submodule update --init --recursive" >>"$log"; \
+  git -c protocol.file.allow=always submodule sync --recursive >>"$log" 2>&1 || true; \
+  git -c protocol.file.allow=always submodule update --init --recursive --jobs 4 >>"$log" 2>&1 || true; \
+  echo "" >>"$log"; \
+  echo "Done: $(date)" >>"$log"; \
+  echo "Log written to: $log"; \
+}; f'
+
+print_success "Installed: git scheckout <branch> (clean switch + recursive submodules)"
 
 # Get statistics (after removing remote so we only count local branches)
 BRANCH_COUNT=$(git branch | wc -l)
@@ -680,6 +723,19 @@ NETWORK_NOTES="${EXPORT_FOLDER}/NETWORK_CONNECTIVITY_NOTES.txt"
     echo "  git submodule sync"
     echo "  git submodule update --init --recursive --remote"
     echo ""
+    echo "BRANCH SWITCHING (RECOMMENDED):"
+    echo "-----------------------------------------------------------------"
+    echo "If branches have different submodules, use the installed alias:"
+    echo ""
+    echo "  cd $SUPER_REPO_PATH"
+    echo "  git scheckout <branch>"
+    echo ""
+    echo "This will:"
+    echo "  - Remove stale submodule folders"
+    echo "  - Clean files that do not belong to the target branch"
+    echo "  - Run: git submodule update --init --recursive"
+    echo "  - Log details to: .git/scheckout_<timestamp>.txt"
+    echo ""
     echo "VERIFYING INTEGRITY:"
     echo "-----------------------------------------------------------------"
     echo "To verify the repository was cloned correctly:"
@@ -748,7 +804,7 @@ log_message "Time Taken: ${MINUTES}m ${SECONDS}s"
 log_message "Script Completed: $(date +%Y%m%d_%H%M)"
 log_message "================================================================="
 
-print_success "All done! ✓"
+print_success "All done!"
 echo ""
 print_info "You can now work with your repository at:"
 echo "  cd $SUPER_REPO_PATH"
