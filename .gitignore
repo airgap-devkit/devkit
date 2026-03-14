@@ -45,6 +45,3 @@ reports/
 # Temporary files
 *.tmp
 *.bak
-
-# ignore older/backup versions of the project
-_old-version/
