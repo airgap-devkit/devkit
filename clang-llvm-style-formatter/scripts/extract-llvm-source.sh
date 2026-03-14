@@ -174,13 +174,11 @@ echo "[Step 1/3] Extracting tarball…"
 echo ""
 
 if [[ "${OS}" == "windows" ]]; then
-    # Filter symlink errors — they are all in test/ dirs we strip anyway
-    tar -xf "${TARBALL}" -C "${SRC_DIR}" \
-        --warning=no-failed-read 2>&1 \
-        | grep -v "Cannot create symlink" \
-        | grep -v "^tar: Exiting with failure" \
-        | grep -v "^tar: Error" \
-        || true
+    # On Windows, tar fails with exit code 1 when it encounters Linux symlinks
+    # inside test/ directories (which NTFS cannot create). We suppress the
+    # symlink errors and force a zero exit — the test/ dirs are stripped next.
+    # The grep filters are wrapped in || true so they never cause set -e to fire.
+    tar -xf "${TARBALL}" -C "${SRC_DIR}"         --warning=no-failed-read 2>&1         | { grep -v "Cannot create symlink"               | grep -v "^tar: Exiting with failure"               | grep -v "^tar: Error"               || true; } || true
 else
     tar -xf "${TARBALL}" -C "${SRC_DIR}"
 fi

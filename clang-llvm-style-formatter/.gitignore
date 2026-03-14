@@ -19,3 +19,6 @@ desktop.ini
 
 # Test harness scratch directories
 tmp-test/
+
+# ignore build output
+llvm-src/.reassembled.tar.xz
