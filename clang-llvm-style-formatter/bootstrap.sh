@@ -174,10 +174,17 @@ else
 
     # Verify the vendored tarballs are present before asking
     LLVM_TARBALL=""
+    # Check for single-file tarball first, then split parts
     for f in "${SCRIPT_DIR}/llvm-src"/llvm-project-*.src.tar.xz \
               "${SCRIPT_DIR}/llvm-src"/llvm-project-*.src.tar.gz; do
         [[ -f "${f}" ]] && { LLVM_TARBALL="${f}"; break; }
     done
+    # Check for split parts (.part-aa is always the first chunk)
+    if [[ -z "${LLVM_TARBALL}" ]]; then
+        for f in "${SCRIPT_DIR}/llvm-src"/llvm-project-*.src.tar.xz.part-aa; do
+            [[ -f "${f}" ]] && { LLVM_TARBALL="${f}"; break; }
+        done
+    fi
 
     NINJA_TARBALL=""
     for f in "${SCRIPT_DIR}/ninja-src"/ninja-*.tar.gz \
