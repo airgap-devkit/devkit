@@ -1,0 +1,16 @@
+# Built binaries — generated, never committed
+bin/windows/clang-format.exe
+bin/linux/clang-format
+bin/linux/ninja
+bin/windows/ninja.exe
+
+# Build artifacts
+llvm-src/build/
+llvm-src/install/
+llvm-src/llvm/
+llvm-src/cmake/
+llvm-src/third-party/
+llvm-src/.reassembled.tar.xz
+llvm-src/SOURCE_INFO.txt
+.llvm-extract-stage/
+ninja-src/build/
