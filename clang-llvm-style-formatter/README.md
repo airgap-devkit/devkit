@@ -7,9 +7,13 @@
 
 ## Overview
 
-`clang-llvm-style-formatter` is a self-contained tool that enforces LLVM C++
-style via a Git pre-commit hook. It ships everything needed to build
-`clang-format` from source with no network access required on developer machines.
+Installs `clang-format` from a vendored Python wheel and wires a pre-commit
+hook that rejects commits violating LLVM C++ style.
+
+**Fast path: ~5 seconds. No compiler. No Visual Studio. No CMake.**
+
+If Python is unavailable, see [`../clang-llvm-source-build/`](../clang-llvm-source-build/README.md)
+for the LLVM source build option.
 
 ---
 
@@ -19,28 +23,28 @@ style via a Git pre-commit hook. It ships everything needed to build
 bash clang-llvm-style-formatter/bootstrap.sh
 ```
 
-Bootstrap handles everything:
-
 | Step | What happens |
 |------|-------------|
 | 1 | Git submodules initialised |
-| 2 | Scans for `clang-format` and `ninja` on PATH and in `bin/` |
-| 3 | If missing: shows what will be built, asks **"Install from vendored source? [y/N]"** |
-| → Yes | Builds from committed tarballs — no network needed |
-| → No | Exits with error; hook is NOT installed |
+| 2 | Checks for `clang-format` in venv, source-build bin/, or PATH |
+| 3 | If not found: installs from vendored `.whl` file via pip/venv (~5 sec) |
 | 4 | Pre-commit hook installed into `.git/hooks/pre-commit` |
-| 5 | Smoke test runs to verify everything works |
 
-**No network access is required at any point on developer machines.**
+**No network access required. No admin rights required.**
+
+### Prerequisites
+
+| Platform | Requirements |
+|----------|-------------|
+| Windows 11 | Python 3.8+, Git Bash |
+| RHEL 8 | Python 3.8+, Bash 4.x |
 
 ---
 
 ## Adding to a New Repository (maintainer, done once)
 
-When deploying this formatter to a separate production repository on Bitbucket:
-
 ```bash
-# From inside your target C++ project:
+cd your-cpp-project/
 git submodule add https://bitbucket.your-org.com/your-team/clang-llvm-style-formatter.git clang-llvm-style-formatter
 git submodule update --init --recursive
 git add .gitmodules clang-llvm-style-formatter
@@ -53,29 +57,6 @@ Developers then run:
 git submodule update --init --recursive
 bash clang-llvm-style-formatter/bootstrap.sh
 ```
-
----
-
-## Build Prerequisites
-
-### Windows 11 (Git Bash / MINGW64)
-
-| Tool | Minimum | Notes |
-|------|---------|-------|
-| Visual Studio | 2017 / 2019 / 2022 | With "Desktop development with C++" workload |
-| CMake | 3.14+ | Bundled with VS 2019+ |
-| Python 3 | 3.6+ | Bundled with VS 2019+ |
-
-### RHEL 8
-
-| Package | Command |
-|---------|---------|
-| GCC/G++ 8+ | `sudo dnf install gcc-c++` |
-| CMake 3.14+ | `sudo dnf install cmake` |
-| Python 3.6+ | Pre-installed on RHEL 8 |
-
-See **[docs/llvm-install-guide.md](docs/llvm-install-guide.md)** for detailed
-prerequisites, troubleshooting, and known issues per platform.
 
 ---
 
@@ -118,80 +99,64 @@ git commit --no-verify -m "emergency: skip formatting check"
 
 ## Smoke Test
 
-Verify the full pipeline is working at any time:
-
 ```bash
 bash clang-llvm-style-formatter/scripts/smoke-test.sh
 ```
 
-Expected output:
+Expected:
 ```
-  [PASS]  Found: .../bin/windows/clang-format.exe
-  [PASS]  Version: clang-format version 22.1.1
-  [PASS]  Config: .../config/.clang-format
-  [PASS]  Hook installed
-  [PASS]  Badly formatted code correctly flagged
-  [PASS]  Well-formatted code accepted with no changes
-  [PASS]  In-place formatting produced correct output
   Results: 8 passed | 0 failed | 0 skipped
+  All tests passed. The formatter is working correctly.
 ```
 
 ---
 
 ## Configuration
 
-### Per-developer overrides
-
-`bootstrap.sh` creates `clang-llvm-style-formatter/.llvm-hooks-local/hooks.conf`:
+`bootstrap.sh` creates `.llvm-hooks-local/hooks.conf` inside this directory:
 
 ```bash
 # Enable clang-tidy (requires compile_commands.json from CMake)
 ENABLE_TIDY="true"
 
-# Use a system-installed clang-format instead of the vendored build
+# Override clang-format binary path
 CLANG_FORMAT_BIN="/usr/bin/clang-format-17"
 
 # Show per-file diffs when a commit is rejected
 VERBOSE="true"
 ```
 
-### Style rules
-
-Edit `config/.clang-format` and `config/.clang-tidy` in this directory.
-Host repos pick up changes on the next `git submodule update --remote`.
+Style rules live in `config/.clang-format` and `config/.clang-tidy`.
+Consuming repos pick up changes on the next `git submodule update --remote`.
 
 ---
 
-## Keeping the Formatter Up to Date
+## Updating Wheels (Maintainers Only)
+
+On a machine with internet access:
 
 ```bash
-# In the consuming project — pull latest formatter
-git submodule update --remote clang-llvm-style-formatter
-git add clang-llvm-style-formatter
-git commit -m "chore: update clang-llvm-style-formatter"
+bash clang-llvm-style-formatter/scripts/fetch-wheels.sh --version 23.x.x
+git add python-packages/
+git commit -m "vendor: update clang-format wheels to 23.x.x"
 git push
 ```
+
+Developers get the update on next `git pull` — `bootstrap.sh` reinstalls
+automatically on next run.
 
 ---
 
-## Updating the Vendored LLVM Version (Maintainers Only)
+## clang-format Not Available via pip?
+
+If Python is unavailable on developer machines, build from LLVM source:
 
 ```bash
-# On a machine with internet access:
-bash clang-llvm-style-formatter/scripts/fetch-llvm-source.sh --version 23.x.x
-
-# Split if needed for git hosting file size limits:
-bash clang-llvm-style-formatter/scripts/split-llvm-tarball.sh
-
-git add clang-llvm-style-formatter/llvm-src/
-git commit -m "vendor: update LLVM to 23.x.x"
-git push
+bash clang-llvm-source-build/bootstrap.sh
 ```
 
-Developers get the update on next `git pull` and rebuild via:
-```bash
-bash clang-llvm-style-formatter/scripts/build-clang-format.sh --rebuild
-```
+See [`../clang-llvm-source-build/README.md`](../clang-llvm-source-build/README.md).
+After the build completes, run `bootstrap.sh` here — it detects the binary automatically.
 
 ---
 
@@ -199,25 +164,18 @@ bash clang-llvm-style-formatter/scripts/build-clang-format.sh --rebuild
 
 | Path | Purpose |
 |------|---------|
-| `bootstrap.sh` | **Start here** — one-command developer setup |
+| `bootstrap.sh` | **Start here** — pip/venv install + hook setup |
+| `python-packages/` | Vendored `.whl` files for offline install |
 | `hooks/pre-commit` | Pre-commit gate logic |
 | `config/.clang-format` | LLVM style rules |
 | `config/.clang-tidy` | Static analysis rules |
 | `config/hooks.conf` | Runtime configuration defaults |
-| `bin/windows/clang-format.exe` | Built binary — generated, not committed |
-| `bin/linux/clang-format` | Built binary — generated, not committed |
-| `llvm-src/*.part-*` | Vendored LLVM 22.1.1 source (split, committed) |
-| `ninja-src/ninja-1.13.2.tar.gz` | Vendored Ninja source (committed) |
-| `scripts/build-clang-format.sh` | Compile clang-format from vendored source |
-| `scripts/extract-llvm-source.sh` | Extract and restructure the LLVM tarball |
-| `scripts/build-ninja.sh` | Compile Ninja from vendored source |
-| `scripts/smoke-test.sh` | Verify the full pipeline end-to-end |
+| `scripts/install-venv.sh` | Creates venv, installs from wheel |
+| `scripts/fetch-wheels.sh` | **[Maintainer]** Download wheels for new version |
+| `scripts/smoke-test.sh` | Verify full pipeline end-to-end |
 | `scripts/fix-format.sh` | Auto-format and re-stage failing files |
-| `scripts/install-hooks.sh` | Wire the hook into a host repo |
+| `scripts/install-hooks.sh` | Wire hook into a host repo |
 | `scripts/verify-tools.sh` | Diagnostic: show tool locations and versions |
-| `scripts/split-llvm-tarball.sh` | **[Maintainer]** Split tarball for git hosting limits |
-| `scripts/fetch-llvm-source.sh` | **[Maintainer]** Update vendored LLVM tarball |
-| [`docs/llvm-install-guide.md`](docs/llvm-install-guide.md) | Build prerequisites and troubleshooting per platform |
 
 ---
 
@@ -227,5 +185,5 @@ bash clang-llvm-style-formatter/scripts/build-clang-format.sh --rebuild
 |-------------|--------|
 | Windows 11 + Git Bash (MINGW64) | Supported |
 | RHEL 8 + Bash 4.x | Supported |
-| Visual Studio 2017 / 2019 / 2022 / Insider | Supported |
+| Visual Studio 2017 / 2019 / 2022 / Insider | Supported (hook runs via Git) |
 | VxWorks Workbench | Hook runs on host OS shell; target unaffected |
