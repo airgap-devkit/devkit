@@ -69,9 +69,11 @@ _find_tool() {
         fi
     done
     # Vendored bin/
-    for candidate in \
-        "${SCRIPT_DIR}/bin/windows/${tool}.exe" \
-        "${SCRIPT_DIR}/bin/linux/${tool}"; do
+    for candidate in         "${SCRIPT_DIR}/bin/windows/${tool}.exe"         "${SCRIPT_DIR}/bin/linux/${tool}"; do
+        [[ -x "${candidate}" ]] && { echo "${candidate}"; return 0; }
+    done
+    # pip venv
+    for candidate in         "${SCRIPT_DIR}/.venv/Scripts/${tool}.exe"         "${SCRIPT_DIR}/.venv/bin/${tool}"; do
         [[ -x "${candidate}" ]] && { echo "${candidate}"; return 0; }
     done
     return 1
@@ -222,50 +224,88 @@ else
         echo "  │  The hook has NOT been installed.                       │"
         echo "  │                                                         │"
         echo "  │  To install later, rerun:                               │"
-        echo "  │    bash .llvm-hooks/bootstrap.sh                        │"
+        echo "  │    bash clang-llvm-style-formatter/bootstrap.sh         │"
         echo "  └─────────────────────────────────────────────────────────┘"
         echo ""
         exit 1
     fi
 
-    # ── User said yes — build what's missing ─────────────────────────────
     echo ""
 
-    # Build ninja first if missing (clang-format build needs it)
-    if [[ "${NINJA_OK}" == "false" && -n "${NINJA_TARBALL}" ]]; then
-        echo "  Building Ninja from vendored source…"
+    # ── Method 1: pip + venv from vendored wheels (~5 seconds) ───────────
+    # Preferred: installs clang-format as a Python wheel into a local venv.
+    # No compiler, no VS, no CMake, no 60-minute wait.
+    # Requires: Python 3.8+ (already available on target platforms).
+    VENV_INSTALL_SCRIPT="${SCRIPT_DIR}/scripts/install-venv.sh"
+    WHEELS_PRESENT=false
+    for f in "${SCRIPT_DIR}/python-packages"/clang_format-*.whl; do
+        [[ -f "${f}" ]] && { WHEELS_PRESENT=true; break; }
+    done
+
+    if [[ "${WHEELS_PRESENT}" == "true" ]]; then
+        echo "  ── Method 1: pip + venv (fast, ~5 seconds) ───────────────────"
         echo ""
-        bash "${SCRIPT_DIR}/scripts/build-ninja.sh"
+        if bash "${VENV_INSTALL_SCRIPT}"; then
+            # Pick up the venv binary
+            case "$(uname -s)" in
+                MINGW*|MSYS*|CYGWIN*) _VENV_CF="${SCRIPT_DIR}/.venv/Scripts/clang-format.exe" ;;
+                *)                    _VENV_CF="${SCRIPT_DIR}/.venv/bin/clang-format" ;;
+            esac
+            if [[ -x "${_VENV_CF}" ]]; then
+                CF_PATH="${_VENV_CF}"
+                CF_OK=true
+                CF_VER="$(_tool_version "${CF_PATH}" "clang-format")"
+                echo ""
+                echo "  ✓  clang-format installed via pip venv: ${CF_VER}"
+            fi
+        else
+            echo "  WARNING: pip/venv install failed — falling back to LLVM source build." >&2
+        fi
+    else
+        echo "  NOTE: No Python wheels found in python-packages/ — skipping pip method."
+        echo "        To add wheels: bash ${SCRIPT_DIR}/scripts/fetch-wheels.sh"
         echo ""
-        # Pick up newly built binary
-        NINJA_PATH="$(_find_tool "ninja" 2>/dev/null || true)"
-        [[ -n "${NINJA_PATH}" ]] && NINJA_OK=true
     fi
 
-    # Build clang-format
-    echo "  Building clang-format from vendored source…"
-    echo ""
-    # Capture non-zero exit from tar symlink warnings on Windows
-    bash "${SCRIPT_DIR}/scripts/build-clang-format.sh" || {
-        # Only treat as a real failure if clang-format wasn't actually produced
-        if ! _find_tool "clang-format" &>/dev/null; then
-            echo "  ERROR: build-clang-format.sh failed." >&2
+    # ── Method 2: Build from LLVM source (~30-60 minutes) ────────────────
+    # Fallback: compiles clang-format from the vendored LLVM source tarball.
+    # Used when: no wheels available, or pip install failed.
+    if [[ "${CF_OK}" == "false" ]]; then
+        echo ""
+        echo "  ── Method 2: Build from LLVM source (slow, ~30-60 min) ───────"
+        echo ""
+
+        # Build ninja first if missing
+        if [[ "${NINJA_OK}" == "false" && -n "${NINJA_TARBALL}" ]]; then
+            echo "  Building Ninja from vendored source..."
+            echo ""
+            bash "${SCRIPT_DIR}/scripts/build-ninja.sh"
+            echo ""
+            NINJA_PATH="$(_find_tool "ninja" 2>/dev/null || true)"
+            [[ -n "${NINJA_PATH}" ]] && NINJA_OK=true
+        fi
+
+        echo "  Building clang-format from vendored LLVM source..."
+        echo ""
+        bash "${SCRIPT_DIR}/scripts/build-clang-format.sh" || {
+            if ! _find_tool "clang-format" &>/dev/null; then
+                echo "  ERROR: build-clang-format.sh failed." >&2
+                exit 1
+            fi
+            echo "  (Build completed with non-fatal warnings)"
+        }
+        echo ""
+
+        if CF_PATH="$(_find_tool "clang-format" 2>/dev/null)"; then
+            CF_OK=true
+            CF_VER="$(_tool_version "${CF_PATH}" "clang-format")"
+            echo "  ✓  clang-format built from source: ${CF_VER}"
+            echo "     Location: ${CF_PATH}"
+        else
+            echo "  ERROR: Both installation methods failed." >&2
+            echo "         Run: bash ${SCRIPT_DIR}/scripts/verify-tools.sh" >&2
             exit 1
         fi
-        echo "  (Build completed with non-fatal warnings)"
-    }
-    echo ""
-
-    # Verify the result
-    if CF_PATH="$(_find_tool "clang-format" 2>/dev/null)"; then
-        CF_OK=true
-        CF_VER="$(_tool_version "${CF_PATH}" "clang-format")"
-        echo "  ✓  clang-format built: ${CF_VER}"
-        echo "     Location: ${CF_PATH}"
-    else
-        echo "  ERROR: Build completed but clang-format still not found." >&2
-        echo "         Run: bash ${SCRIPT_DIR}/scripts/verify-tools.sh" >&2
-        exit 1
     fi
 fi
 
