@@ -2,17 +2,15 @@
 # =============================================================================
 # install-hooks.sh — Wire the pre-commit hook into a host repository
 #
-# Run this script once from the ROOT of any repository that has
-# clang-llvm-style-formatter checked out as a submodule at .llvm-hooks/.
+# Called automatically by bootstrap.sh. Can also be run directly.
 #
 # What it does:
 #   1. Verifies the submodule is present and initialised.
-#   2. Copies (or symlinks on Linux/macOS) the pre-commit hook into
-#      the host repo's .git/hooks/.
-#   3. Symlinks (or copies) the .clang-format and .clang-tidy config
-#      files to the host repo root if they are not already present.
-#   4. Checks that clang-format is reachable; offers to run setup-user-path.sh
-#      if it is not.
+#   2. Installs hooks/pre-commit into the host repo's .git/hooks/.
+#   3. Creates a per-repo hooks.conf inside the submodule for local overrides.
+#      Config files (.clang-format, .clang-tidy) stay inside the submodule —
+#      nothing is copied to the host repo root.
+#   4. Verifies clang-format is available at bin/<platform>/ or on PATH.
 #
 # Usage (from host repo root):
 #   bash .llvm-hooks/scripts/install-hooks.sh [--force] [--no-tidy]

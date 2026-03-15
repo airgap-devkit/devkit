@@ -74,7 +74,8 @@ bash clang-llvm-style-formatter/bootstrap.sh
 | CMake 3.14+ | `sudo dnf install cmake` |
 | Python 3.6+ | Pre-installed on RHEL 8 |
 
-See `docs/llvm-install-guide.md` for detailed troubleshooting.
+See **[docs/llvm-install-guide.md](docs/llvm-install-guide.md)** for detailed
+prerequisites, troubleshooting, and known issues per platform.
 
 ---
 
@@ -216,7 +217,7 @@ bash clang-llvm-style-formatter/scripts/build-clang-format.sh --rebuild
 | `scripts/verify-tools.sh` | Diagnostic: show tool locations and versions |
 | `scripts/split-llvm-tarball.sh` | **[Maintainer]** Split tarball for git hosting limits |
 | `scripts/fetch-llvm-source.sh` | **[Maintainer]** Update vendored LLVM tarball |
-| `docs/llvm-install-guide.md` | Build prerequisites and troubleshooting |
+| [`docs/llvm-install-guide.md`](docs/llvm-install-guide.md) | Build prerequisites and troubleshooting per platform |
 
 ---
 

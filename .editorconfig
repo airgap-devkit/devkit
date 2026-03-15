@@ -1,0 +1,73 @@
+# =============================================================================
+# .editorconfig — Consistent editor settings across all platforms and editors
+#
+# Applies to: VS Code, CLion, Vim, Emacs, Notepad++, and any editor with
+# EditorConfig support (https://editorconfig.org).
+#
+# No plugins required in VS Code or CLion — support is built in.
+# For Vim: install the editorconfig-vim plugin.
+# =============================================================================
+
+root = true
+
+# ---------------------------------------------------------------------------
+# Defaults — apply to all files unless overridden below
+# ---------------------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# ---------------------------------------------------------------------------
+# Shell scripts
+# ---------------------------------------------------------------------------
+[*.sh]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+
+# ---------------------------------------------------------------------------
+# C / C++ source files — LLVM style uses 2-space indentation
+# ---------------------------------------------------------------------------
+[*.{c,cc,cpp,cxx,h,hpp,hxx,hh}]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+[*.py]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+
+# ---------------------------------------------------------------------------
+# Markdown — trailing whitespace is significant (line breaks), so don't trim
+# ---------------------------------------------------------------------------
+[*.md]
+trim_trailing_whitespace = false
+indent_style = space
+indent_size = 2
+
+# ---------------------------------------------------------------------------
+# YAML / config files
+# ---------------------------------------------------------------------------
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# ---------------------------------------------------------------------------
+# Windows batch files must use CRLF
+# ---------------------------------------------------------------------------
+[*.{bat,cmd}]
+end_of_line = crlf
+
+# ---------------------------------------------------------------------------
+# Git config files
+# ---------------------------------------------------------------------------
+[.gitmodules]
+indent_style = tab
