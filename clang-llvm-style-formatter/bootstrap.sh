@@ -245,7 +245,15 @@ else
     # Build clang-format
     echo "  Building clang-format from vendored source…"
     echo ""
-    bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+    # Capture non-zero exit from tar symlink warnings on Windows
+    bash "${SCRIPT_DIR}/scripts/build-clang-format.sh" || {
+        # Only treat as a real failure if clang-format wasn't actually produced
+        if ! _find_tool "clang-format" &>/dev/null; then
+            echo "  ERROR: build-clang-format.sh failed." >&2
+            exit 1
+        fi
+        echo "  (Build completed with non-fatal warnings)"
+    }
     echo ""
 
     # Verify the result
