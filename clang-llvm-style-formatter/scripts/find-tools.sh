@@ -37,6 +37,11 @@ _find_clang_tool() {
     _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
     local _submodule_root
     _submodule_root="$(cd "${_self_dir}/.." && pwd 2>/dev/null || true)"
+    # pip venv (preferred)
+    for _bundled in         "${_submodule_root}/.venv/Scripts/${tool}.exe"         "${_submodule_root}/.venv/bin/${tool}"; do
+        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
+    done
+    # built binary fallback
     for _bundled in         "${_submodule_root}/bin/windows/${tool}.exe"         "${_submodule_root}/bin/linux/${tool}"         "${_submodule_root}/bin/macos/${tool}"; do
         [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
     done
