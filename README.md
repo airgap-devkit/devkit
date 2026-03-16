@@ -2,7 +2,7 @@
 
 Air-gapped C++ developer toolkit for network-restricted environments.
 
-Tools that work without internet access, without admin rights, and without
+All tools work without internet access, without admin rights, and without
 pre-installed binaries. All dependencies are vendored and installed locally.
 
 ---
@@ -17,9 +17,110 @@ pre-installed binaries. All dependencies are vendored and installed locally.
 
 ---
 
-## Quick Start — New Developer Setup
+## Who Reads What
 
-Run this once after cloning:
+This project serves two different audiences. Go to the section that applies to you.
+
+### I am a developer on a production C++ repository
+
+Your repo already has the formatter set up. You just need to run one command
+after cloning:
+
+```bash
+bash setup.sh
+```
+
+That is all. See your repo's `setup.sh` for details, or see
+[clang-llvm-style-formatter/README.md](clang-llvm-style-formatter/README.md)
+for the full developer reference.
+
+### I am a maintainer adding the formatter to a new production repo
+
+See the [Deploying to Production Repositories](#deploying-to-production-repositories)
+section below.
+
+### I am working on the devkit itself
+
+See [Development Setup](#development-setup) below.
+
+---
+
+## Deploying to Production Repositories
+
+The formatter is designed to live as a submodule under `tools/` in each
+production repo. Developers only ever run `bash setup.sh` — they never
+interact with the submodule directly.
+
+**What lands in each production repo:**
+```
+your-cpp-project/
+├── setup.sh                              ← ~50 lines, the only new root file
+├── .gitmodules                           ← 3-line auto-generated pointer
+└── tools/
+    └── clang-llvm-style-formatter/       ← submodule (a commit pointer, not a copy)
+```
+
+### Step 1 — Add the submodule (once per repo)
+
+```bash
+cd your-cpp-project/
+
+git submodule add \
+    https://bitbucket.your-org.com/your-team/clang-llvm-style-formatter.git \
+    tools/clang-llvm-style-formatter
+
+git submodule update --init --recursive
+```
+
+### Step 2 — Copy setup.sh into the repo root
+
+```bash
+cp tools/clang-llvm-style-formatter/docs/production-repo-template/setup.sh ./setup.sh
+```
+
+### Step 3 — Append .gitignore entries
+
+```bash
+cat tools/clang-llvm-style-formatter/docs/gitignore-snippet.txt >> .gitignore
+```
+
+### Step 4 — Commit and push
+
+```bash
+git add .gitmodules tools/clang-llvm-style-formatter setup.sh .gitignore
+git commit -m "chore: add LLVM C++ style enforcement"
+git push
+```
+
+### What developers do after this (once per machine)
+
+```bash
+git clone <your-cpp-project-url>
+cd your-cpp-project
+bash setup.sh
+```
+
+Done. The hook is installed. Every subsequent `git commit` enforces LLVM style.
+
+### Keeping the formatter up to date across all repos
+
+When style rules or tooling are updated in the formatter repo, update each
+production repo's submodule pointer:
+
+```bash
+git submodule update --remote tools/clang-llvm-style-formatter
+git add tools/clang-llvm-style-formatter
+git commit -m "chore: update clang-llvm-style-formatter"
+git push
+```
+
+Developers get the update on their next `git pull`.
+
+---
+
+## Development Setup
+
+If you are working on the devkit itself (not deploying to a production repo):
 
 ```bash
 git clone <this-repo-url>
@@ -27,85 +128,31 @@ cd airgap-cpp-devkit
 bash clang-llvm-style-formatter/bootstrap.sh
 ```
 
-Bootstrap will:
-- Check if `clang-format` is already available
-- If not: install it from vendored Python wheels in `python-packages/` (~5 seconds)
-- Install the pre-commit hook into `.git/hooks/pre-commit`
-
-From that point on, every `git commit` automatically enforces LLVM C++ style.
-
 ### Prerequisites
 
 | Platform | Requirements |
 |----------|-------------|
-| Windows 11 | Python 3.8+, Git Bash |
+| Windows 11 | Python 3.8+, Git Bash (MINGW64) |
 | RHEL 8 | Python 3.8+, Bash 4.x |
 
 No compiler, no Visual Studio, no CMake required for the standard install.
 
----
+### Install methods
 
-## Install Methods
-
-### Method 1 — pip/venv (recommended, ~5 seconds)
-
+**Method 1 — pip/venv (recommended, ~5 seconds)**
 ```bash
 bash clang-llvm-style-formatter/bootstrap.sh
 ```
-
 Installs `clang-format` from a vendored `.whl` file into a local Python venv.
 No network access. No compiler. No admin rights.
 
-### Method 2 — Build from LLVM source (optional, ~30-60 minutes)
-
+**Method 2 — Build from LLVM source (optional, ~30-60 minutes)**
 ```bash
 bash clang-llvm-source-build/bootstrap.sh
 ```
-
 Compiles `clang-format` from the vendored LLVM 22.1.1 source tarball.
-Use this only if Python is unavailable or policy requires source builds.
+Use only if Python is unavailable or policy requires source builds.
 Requires: Visual Studio (Windows) or GCC (Linux), CMake 3.14+.
-
-After the source build completes, run `clang-llvm-style-formatter/bootstrap.sh`
-to install the pre-commit hook — it detects the compiled binary automatically.
-
----
-
-## Using the Formatter in Your Own Project
-
-When deploying to a separate production repository on Bitbucket:
-
-### Step 1 — Add as a submodule (maintainer, done once)
-
-```bash
-cd your-cpp-project/
-git submodule add https://bitbucket.your-org.com/your-team/clang-llvm-style-formatter.git clang-llvm-style-formatter
-git submodule update --init --recursive
-git add .gitmodules clang-llvm-style-formatter
-git commit -m "chore: add LLVM style enforcement submodule"
-git push
-```
-
-### Step 2 — Each developer runs once after cloning
-
-```bash
-git clone <your-cpp-project-url>
-cd your-cpp-project
-git submodule update --init --recursive
-bash clang-llvm-style-formatter/bootstrap.sh
-```
-
-The consuming project needs nothing else — no `.clang-format` at the root,
-no extra config. The hook references all rules inside the submodule directly.
-
-### Keeping the submodule up to date
-
-```bash
-git submodule update --remote clang-llvm-style-formatter
-git add clang-llvm-style-formatter
-git commit -m "chore: update clang-llvm-style-formatter"
-git push
-```
 
 ---
 
@@ -114,10 +161,11 @@ git push
 | Principle | How it is met |
 |-----------|--------------|
 | Air-gapped | All dependencies vendored in-repo (wheels + source tarballs) |
-| No pre-built binaries committed | pip wheel installs at bootstrap time; source build is optional |
+| Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | No admin rights | Installs to per-user/per-repo paths only |
+| No pre-built binaries committed | pip wheel installs at bootstrap time |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Sysadmin friendly | Single bootstrap command, clear progress output |
+| Single entry point for developers | `bash setup.sh` — nothing else required |
 
 ---
 
@@ -127,24 +175,20 @@ git push
 airgap-cpp-devkit/
 ├── README.md                              ← you are here
 │
-├── clang-llvm-style-formatter/            ← LLVM style enforcement (pip method)
-│   ├── bootstrap.sh                       ← start here — installs via pip/venv
+├── clang-llvm-style-formatter/            ← LLVM style enforcement tool
+│   ├── bootstrap.sh                       ← core install (called by setup.sh)
 │   ├── python-packages/                   ← vendored .whl files (committed)
-│   │   ├── clang_format-22.1.1-*-win_amd64.whl
-│   │   ├── clang_format-22.1.1-*-manylinux*.whl
-│   │   └── pip-*.whl
-│   ├── .venv/                             ← created by bootstrap, not committed
 │   ├── config/
 │   │   ├── .clang-format                  ← LLVM style rules
 │   │   ├── .clang-tidy                    ← static analysis rules
-│   │   └── hooks.conf                     ← runtime toggles
+│   │   └── hooks.conf                     ← runtime defaults
 │   ├── hooks/pre-commit                   ← the enforcement hook
-│   └── scripts/
-│       ├── install-venv.sh                ← creates venv, installs wheel
-│       ├── fetch-wheels.sh                ← [Maintainer] update wheels
-│       ├── smoke-test.sh                  ← verify full pipeline
-│       ├── fix-format.sh                  ← auto-format staged files
-│       └── install-hooks.sh              ← wire hook into host repo
+│   ├── scripts/                           ← install, verify, fix helpers
+│   └── docs/
+│       ├── gitignore-snippet.txt          ← append to production repo .gitignore
+│       └── production-repo-template/
+│           ├── setup.sh                   ← copy to production repo root
+│           └── README.md                  ← maintainer checklist
 │
 ├── clang-llvm-source-build/               ← optional LLVM source build
 │   ├── bootstrap.sh                       ← builds clang-format from source
@@ -153,16 +197,10 @@ airgap-cpp-devkit/
 │   ├── bin/
 │   │   ├── windows/clang-format.exe       ← built output, not committed
 │   │   └── linux/clang-format             ← built output, not committed
-│   ├── docs/llvm-install-guide.md
 │   └── scripts/
-│       ├── build-clang-format.sh
-│       ├── build-ninja.sh
-│       ├── extract-llvm-source.sh
-│       ├── fetch-llvm-source.sh           ← [Maintainer] update LLVM tarball
-│       └── split-llvm-tarball.sh          ← [Maintainer] split for git hosting
 │
-└── git-bundle/                            ← air-gap transfer tool
-    ├── bundle.py                          ← export side
-    ├── export.py                          ← import side
-    └── tests/                             ← test harness
+└── git-bundle/                            ← air-gap git transfer tool
+    ├── bundle.py
+    ├── export.py
+    └── tests/
 ```

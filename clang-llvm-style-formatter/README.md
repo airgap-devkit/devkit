@@ -5,70 +5,51 @@
 
 ---
 
-## Overview
+## What This Is
 
-Installs `clang-format` from a vendored Python wheel and wires a pre-commit
-hook that rejects commits violating LLVM C++ style.
+A self-contained submodule that installs `clang-format` from a vendored Python
+wheel and wires a pre-commit hook into any host repository. Every `git commit`
+is automatically checked against LLVM C++ style — no network access, no admin
+rights, no pre-installed tools required beyond Python 3.8+.
 
-**Fast path: ~5 seconds. No compiler. No Visual Studio. No CMake.**
-
-If Python is unavailable, see [`../clang-llvm-source-build/`](../clang-llvm-source-build/README.md)
-for the LLVM source build option.
+**Install time: ~5 seconds. No compiler. No Visual Studio. No CMake.**
 
 ---
 
-## Developer Onboarding (run once after cloning)
+## For Developers — Run Once After Cloning
+
+If your repository already has this submodule, you will see a `setup.sh` at
+the repo root. Run it once and you are done:
 
 ```bash
-bash clang-llvm-style-formatter/bootstrap.sh
+bash setup.sh
 ```
+
+That is the only command you ever need. It initialises the submodule and
+installs the pre-commit hook. After that, every `git commit` enforces LLVM
+style automatically.
+
+### What setup.sh does
 
 | Step | What happens |
 |------|-------------|
-| 1 | Git submodules initialised |
-| 2 | Checks for `clang-format` in venv, source-build bin/, or PATH |
-| 3 | If not found: installs from vendored `.whl` file via pip/venv (~5 sec) |
-| 4 | Pre-commit hook installed into `.git/hooks/pre-commit` |
-
-**No network access required. No admin rights required.**
+| 1 | Initialises and pulls the formatter submodule |
+| 2 | Checks if `clang-format` is already available |
+| 3 | If not: installs from vendored `.whl` file via pip/venv (~5 sec) |
+| 4 | Installs pre-commit hook into `.git/hooks/pre-commit` |
 
 ### Prerequisites
 
 | Platform | Requirements |
 |----------|-------------|
-| Windows 11 | Python 3.8+, Git Bash |
+| Windows 11 | Python 3.8+, Git Bash (MINGW64) |
 | RHEL 8 | Python 3.8+, Bash 4.x |
 
----
-
-## Adding to a New Repository (maintainer, done once)
-
-```bash
-cd your-cpp-project/
-git submodule add https://bitbucket.your-org.com/your-team/clang-llvm-style-formatter.git clang-llvm-style-formatter
-git submodule update --init --recursive
-git add .gitmodules clang-llvm-style-formatter
-git commit -m "chore: add LLVM style enforcement"
-git push
-```
-
-Developers then run:
-```bash
-git submodule update --init --recursive
-bash clang-llvm-style-formatter/bootstrap.sh
-```
+No compiler, no Visual Studio, no CMake, no internet access required.
 
 ---
 
-## How the Pre-Commit Hook Works
-
-On every `git commit`, the hook:
-
-1. Collects all staged C/C++ files (`.cpp`, `.cxx`, `.cc`, `.c`, `.h`, `.hpp`, `.hxx`, `.hh`)
-2. Runs `clang-format --style=file` against the staged content
-3. **Rejects** the commit if any file would be reformatted
-
-When a commit is rejected:
+## When a Commit Is Rejected
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
@@ -77,19 +58,24 @@ When a commit is rejected:
     ✗  src/bad_indent.cpp
 
   Fix options:
-    Auto-fix staged files:  bash clang-llvm-style-formatter/scripts/fix-format.sh
+    Auto-fix staged files:  bash tools/clang-llvm-style-formatter/scripts/fix-format.sh
     Manual:                 clang-format --style=file -i <file>
 ```
 
-### Auto-fixing violations
+### Auto-fix and re-commit
 
 ```bash
-bash clang-llvm-style-formatter/scripts/fix-format.sh        # fix and re-stage
-bash clang-llvm-style-formatter/scripts/fix-format.sh --dry-run  # preview only
+bash tools/clang-llvm-style-formatter/scripts/fix-format.sh
 git commit -m "your message"
 ```
 
-### Emergency bypass
+### Preview only (no changes written)
+
+```bash
+bash tools/clang-llvm-style-formatter/scripts/fix-format.sh --dry-run
+```
+
+### Emergency bypass (use sparingly)
 
 ```bash
 git commit --no-verify -m "emergency: skip formatting check"
@@ -97,13 +83,95 @@ git commit --no-verify -m "emergency: skip formatting check"
 
 ---
 
-## Smoke Test
+## For Maintainers — Adding to a New Production Repository
+
+Do this once per production repo. Developers only ever run `setup.sh`.
+
+### Step 1 — Add the submodule under a `tools/` folder
 
 ```bash
-bash clang-llvm-style-formatter/scripts/smoke-test.sh
+cd your-cpp-project/
+
+# Add the formatter as a submodule at tools/clang-llvm-style-formatter
+git submodule add \
+    https://bitbucket.your-org.com/your-team/clang-llvm-style-formatter.git \
+    tools/clang-llvm-style-formatter
+
+git submodule update --init --recursive
 ```
 
-Expected:
+### Step 2 — Add setup.sh to the repo root
+
+Copy `setup.sh` from this project's `docs/production-repo-template/` into
+the root of your production repo. It is a thin wrapper (~20 lines) that
+calls into the submodule — it does not duplicate any logic.
+
+```bash
+cp /path/to/airgap-cpp-devkit/docs/production-repo-template/setup.sh .
+```
+
+### Step 3 — Add .gitignore entries
+
+Append the contents of `docs/gitignore-snippet.txt` to your repo's
+`.gitignore`. This keeps generated files (venv, local config) out of git.
+
+```bash
+cat tools/clang-llvm-style-formatter/docs/gitignore-snippet.txt >> .gitignore
+```
+
+### Step 4 — Commit and push
+
+```bash
+git add .gitmodules tools/clang-llvm-style-formatter setup.sh .gitignore
+git commit -m "chore: add LLVM C++ style enforcement"
+git push
+```
+
+### What lands in your production repo
+
+```
+your-cpp-project/
+├── setup.sh                          ← one file, ~20 lines, run once per developer
+├── .gitmodules                       ← auto-generated submodule pointer
+├── tools/
+│   └── clang-llvm-style-formatter/  ← submodule ref (zero bytes until init)
+│       ├── bootstrap.sh
+│       ├── python-packages/          ← vendored wheels (no network needed)
+│       ├── config/                   ← style rules (.clang-format, .clang-tidy)
+│       └── scripts/
+└── ... (your project files)
+```
+
+The submodule pointer in git is a single commit SHA — it adds one line to
+`.gitmodules` and one entry in the git tree. Developers who have never run
+`setup.sh` see an empty `tools/clang-llvm-style-formatter/` folder.
+
+### Keeping the submodule up to date
+
+When style rules or tooling are updated in the formatter repo:
+
+```bash
+git submodule update --remote tools/clang-llvm-style-formatter
+git add tools/clang-llvm-style-formatter
+git commit -m "chore: update clang-llvm-style-formatter"
+git push
+```
+
+Developers get the update automatically on their next `git pull` + `git submodule update`.
+
+---
+
+## Verifying the Installation
+
+```bash
+# Full end-to-end smoke test (8 checks)
+bash tools/clang-llvm-style-formatter/scripts/smoke-test.sh
+
+# Tool discovery diagnostic
+bash tools/clang-llvm-style-formatter/scripts/verify-tools.sh
+```
+
+Expected smoke test output:
 ```
   Results: 8 passed | 0 failed | 0 skipped
   All tests passed. The formatter is working correctly.
@@ -111,52 +179,40 @@ Expected:
 
 ---
 
-## Configuration
+## Local Configuration Overrides (Per-Developer)
 
-`bootstrap.sh` creates `.llvm-hooks-local/hooks.conf` inside this directory:
+After running `setup.sh`, a file is created at:
+```
+tools/clang-llvm-style-formatter/.llvm-hooks-local/hooks.conf
+```
+
+This file is gitignored — changes are local to your machine only. Edit it
+to customise behaviour without affecting other developers:
 
 ```bash
-# Enable clang-tidy (requires compile_commands.json from CMake)
-ENABLE_TIDY="true"
-
-# Override clang-format binary path
-CLANG_FORMAT_BIN="/usr/bin/clang-format-17"
-
 # Show per-file diffs when a commit is rejected
 VERBOSE="true"
-```
 
-Style rules live in `config/.clang-format` and `config/.clang-tidy`.
-Consuming repos pick up changes on the next `git submodule update --remote`.
+# Override clang-format binary path (if you have a system install you prefer)
+CLANG_FORMAT_BIN="/usr/bin/clang-format-17"
+
+# Enable clang-tidy (requires compile_commands.json from CMake)
+ENABLE_TIDY="true"
+```
 
 ---
 
-## Updating Wheels (Maintainers Only)
+## Style Rules
 
-On a machine with internet access:
+Style rules live in `config/.clang-format` and `config/.clang-tidy` inside
+the submodule. All production repos share the same rules — updating the
+formatter submodule updates all repos at once.
 
-```bash
-bash clang-llvm-style-formatter/scripts/fetch-wheels.sh --version 23.x.x
-git add python-packages/
-git commit -m "vendor: update clang-format wheels to 23.x.x"
-git push
-```
-
-Developers get the update on next `git pull` — `bootstrap.sh` reinstalls
-automatically on next run.
-
----
-
-## clang-format Not Available via pip?
-
-If Python is unavailable on developer machines, build from LLVM source:
+To view the active style rules:
 
 ```bash
-bash clang-llvm-source-build/bootstrap.sh
+cat tools/clang-llvm-style-formatter/config/.clang-format
 ```
-
-See [`../clang-llvm-source-build/README.md`](../clang-llvm-source-build/README.md).
-After the build completes, run `bootstrap.sh` here — it detects the binary automatically.
 
 ---
 
@@ -164,18 +220,20 @@ After the build completes, run `bootstrap.sh` here — it detects the binary aut
 
 | Path | Purpose |
 |------|---------|
-| `bootstrap.sh` | **Start here** — pip/venv install + hook setup |
-| `python-packages/` | Vendored `.whl` files for offline install |
-| `hooks/pre-commit` | Pre-commit gate logic |
+| `bootstrap.sh` | Core install — called by `setup.sh` in production repos |
+| `python-packages/` | Vendored `.whl` files — clang-format installs from here |
+| `hooks/pre-commit` | The enforcement hook wired into `.git/hooks/` |
 | `config/.clang-format` | LLVM style rules |
 | `config/.clang-tidy` | Static analysis rules |
-| `config/hooks.conf` | Runtime configuration defaults |
-| `scripts/install-venv.sh` | Creates venv, installs from wheel |
-| `scripts/fetch-wheels.sh` | **[Maintainer]** Download wheels for new version |
-| `scripts/smoke-test.sh` | Verify full pipeline end-to-end |
+| `config/hooks.conf` | Default runtime configuration |
 | `scripts/fix-format.sh` | Auto-format and re-stage failing files |
-| `scripts/install-hooks.sh` | Wire hook into a host repo |
-| `scripts/verify-tools.sh` | Diagnostic: show tool locations and versions |
+| `scripts/smoke-test.sh` | End-to-end verification |
+| `scripts/verify-tools.sh` | Diagnostic: tool locations and versions |
+| `scripts/install-hooks.sh` | Wires hook into host repo (called by bootstrap) |
+| `scripts/install-venv.sh` | Creates venv, installs from wheel (called by bootstrap) |
+| `scripts/fetch-wheels.sh` | **[Maintainer]** Download wheels for a new version |
+| `docs/gitignore-snippet.txt` | Entries to add to consuming repo's `.gitignore` |
+| `docs/production-repo-template/setup.sh` | Template `setup.sh` for production repos |
 
 ---
 
