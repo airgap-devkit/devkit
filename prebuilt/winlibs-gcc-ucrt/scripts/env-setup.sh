@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # prebuilt/winlibs-gcc-ucrt/scripts/env-setup.sh
 #

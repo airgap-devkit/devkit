@@ -1,5 +1,7 @@
 # prebuilt/winlibs-gcc-ucrt
 
+### Author: Nima Shafie
+
 Pre-built GCC toolchain package for air-gapped Windows environments.
 Part of the `airgap-cpp-devkit` suite.
 
