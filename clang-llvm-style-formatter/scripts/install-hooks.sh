@@ -39,10 +39,13 @@ done
 # ---------------------------------------------------------------------------
 # 0.  Locate important paths
 # ---------------------------------------------------------------------------
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-    echo "[install-hooks] ERROR: Not inside a git repository." >&2
-    exit 1
-}
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "${REPO_ROOT}" ]]; then
+    echo "[install-hooks] NOTE: Not inside a git repository — hook installation skipped."
+    echo "                Run this script again from inside a git repository to install"
+    echo "                the pre-commit hook."
+    exit 0
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUBMODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"

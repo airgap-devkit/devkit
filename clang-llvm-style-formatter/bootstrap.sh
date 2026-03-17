@@ -9,6 +9,10 @@
 # This is the FAST path (~5 seconds). No compiler, no Visual Studio,
 # no CMake required. Python 3.8+ must be available on PATH.
 #
+# Can be run from inside or outside a git repository:
+#   • Inside a git repo  — installs clang-format AND the pre-commit hook.
+#   • Outside a git repo — installs clang-format only (no hook to install).
+#
 # If you need to build clang-format from LLVM source instead, see:
 #   ../clang-llvm-source-build/bootstrap.sh
 #
@@ -34,12 +38,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-    echo "[bootstrap] ERROR: Not inside a git repository." >&2
-    exit 1
-}
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ---------------------------------------------------------------------------
+# Detect whether we are inside a git repository (optional — not required)
+# ---------------------------------------------------------------------------
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+IN_GIT_REPO=false
+[[ -n "${REPO_ROOT}" ]] && IN_GIT_REPO=true
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -91,11 +97,16 @@ echo "=================================================================="
 echo ""
 
 # ---------------------------------------------------------------------------
-# Step 1 — Initialise submodules
+# Step 1 — Initialise submodules (only if inside a git repo)
 # ---------------------------------------------------------------------------
-echo "[bootstrap] Step 1/4: Initialising git submodules..."
-git -C "${REPO_ROOT}" submodule update --init --recursive
-echo "            Done."
+if [[ "${IN_GIT_REPO}" == "true" ]]; then
+    echo "[bootstrap] Step 1/4: Initialising git submodules..."
+    git -C "${REPO_ROOT}" submodule update --init --recursive
+    echo "            Done."
+else
+    echo "[bootstrap] Step 1/4: Not inside a git repository — skipping submodule init."
+    echo "            clang-format will still be installed for standalone use."
+fi
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -182,10 +193,16 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
-# Step 4 — Install the pre-commit hook
+# Step 4 — Install the pre-commit hook (only if inside a git repo)
 # ---------------------------------------------------------------------------
-echo "[bootstrap] Step 4/4: Installing pre-commit hook..."
-bash "${SCRIPT_DIR}/scripts/install-hooks.sh" ${FORCE} 2>&1 | sed 's/^/            /'
+if [[ "${IN_GIT_REPO}" == "true" ]]; then
+    echo "[bootstrap] Step 4/4: Installing pre-commit hook..."
+    bash "${SCRIPT_DIR}/scripts/install-hooks.sh" ${FORCE} 2>&1 | sed 's/^/            /'
+else
+    echo "[bootstrap] Step 4/4: Not inside a git repository — skipping hook install."
+    echo "            To install the hook later, run from inside your project:"
+    echo "            bash ${SCRIPT_DIR}/scripts/install-hooks.sh"
+fi
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -196,11 +213,20 @@ echo "  Bootstrap complete ✓"
 echo "=================================================================="
 echo ""
 echo "  clang-format : ${CF_PATH:-not found}"
-echo "  pre-commit   : $(
-    [[ -f "${REPO_ROOT}/.git/hooks/pre-commit" ]] && echo "installed" || echo "MISSING"
-)"
-echo ""
-echo "  Every 'git commit' will now enforce LLVM C++ style."
-echo "  To fix violations:  bash ${SCRIPT_DIR}/scripts/fix-format.sh"
-echo "  To run smoke test:  bash ${SCRIPT_DIR}/scripts/smoke-test.sh"
+
+if [[ "${IN_GIT_REPO}" == "true" ]]; then
+    echo "  pre-commit   : $(
+        [[ -f "${REPO_ROOT}/.git/hooks/pre-commit" ]] && echo "installed" || echo "MISSING"
+    )"
+    echo ""
+    echo "  Every 'git commit' will now enforce LLVM C++ style."
+    echo "  To fix violations:  bash ${SCRIPT_DIR}/scripts/fix-format.sh"
+    echo "  To run smoke test:  bash ${SCRIPT_DIR}/scripts/smoke-test.sh"
+else
+    echo "  pre-commit   : not installed (no git repository detected)"
+    echo ""
+    echo "  clang-format is ready for standalone use."
+    echo "  To install the pre-commit hook, run from inside a git repository:"
+    echo "    bash ${SCRIPT_DIR}/scripts/install-hooks.sh"
+fi
 echo ""
