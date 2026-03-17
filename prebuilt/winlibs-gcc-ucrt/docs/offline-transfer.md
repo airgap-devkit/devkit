@@ -1,5 +1,7 @@
 # Offline Transfer Guide — winlibs-gcc-ucrt
 
+### Author: Nima Shafie
+
 This document describes how to move the WinLibs GCC UCRT toolchain across an
 air-gap using physical media (USB drive, etc.).
 

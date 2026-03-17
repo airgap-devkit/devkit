@@ -19,7 +19,7 @@
       "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-source-build/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "NOASSERTION"
+        "checksumValue": "c71a06217bc8be5b563c61e8dc7720cb166af8f6"
       }
     },
     {
@@ -27,7 +27,7 @@
       "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm-style-formatter/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "NOASSERTION"
+        "checksumValue": "8fc5f78713f618112cbe8c0c58b39d6068e082d5"
       }
     },
     {
@@ -35,7 +35,7 @@
       "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/git-bundle/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "NOASSERTION"
+        "checksumValue": "03fdab7e3a5c5bbcbc6aa68bd5380bdb52e0b460"
       }
     },
     {
@@ -43,7 +43,7 @@
       "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "NOASSERTION"
+        "checksumValue": "be38d69cee6f0903f2e358e3153e61c4ecb77d76"
       }
     }
   ],

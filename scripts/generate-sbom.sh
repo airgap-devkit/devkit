@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Author: Nima Shafie
 # =============================================================================
 # scripts/generate-sbom.sh
 #
@@ -65,6 +64,51 @@ update_timestamp "${REPO_ROOT}/clang-llvm-source-build/sbom.spdx.json"
 update_timestamp "${REPO_ROOT}/clang-llvm-style-formatter/sbom.spdx.json"
 update_timestamp "${REPO_ROOT}/git-bundle/sbom.spdx.json"
 update_timestamp "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json"
+
+echo ""
+
+# ---------------------------------------------------------------------------
+# Recompute SHA1 hashes for externalDocumentRefs in root SBOM
+# The root sbom.spdx.json references subproject SBOMs by SHA1 checksum.
+# These must be updated whenever a subproject SBOM changes.
+# ---------------------------------------------------------------------------
+echo "Updating externalDocumentRefs SHA1 checksums in root SBOM..."
+ROOT_SBOM="${REPO_ROOT}/sbom.spdx.json"
+
+update_sha1() {
+  local file="$1"
+  local sha1
+  sha1=$(sha1sum "${file}" | awk '{print $1}')
+  echo "  ${file#${REPO_ROOT}/} -> ${sha1}"
+  echo "${sha1}"
+}
+
+SHA1_SOURCE_BUILD=$(update_sha1 "${REPO_ROOT}/clang-llvm-source-build/sbom.spdx.json")
+SHA1_FORMATTER=$(update_sha1 "${REPO_ROOT}/clang-llvm-style-formatter/sbom.spdx.json")
+SHA1_GIT_BUNDLE=$(update_sha1 "${REPO_ROOT}/git-bundle/sbom.spdx.json")
+SHA1_WINLIBS=$(update_sha1 "${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json")
+
+# Replace SHA1 values in root SBOM using Python for reliable JSON surgery
+python3 - "${ROOT_SBOM}" "${SHA1_SOURCE_BUILD}" "${SHA1_FORMATTER}" "${SHA1_GIT_BUNDLE}" "${SHA1_WINLIBS}" << 'PYEOF'
+import json, sys
+path, sha_sb, sha_fmt, sha_gb, sha_wl = sys.argv[1:]
+hashes = {
+    "DocumentRef-clang-llvm-source-build": sha_sb,
+    "DocumentRef-clang-llvm-style-formatter": sha_fmt,
+    "DocumentRef-git-bundle": sha_gb,
+    "DocumentRef-winlibs-gcc-ucrt": sha_wl,
+}
+with open(path) as f:
+    doc = json.load(f)
+for ref in doc.get("externalDocumentRefs", []):
+    doc_id = ref.get("externalDocumentId")
+    if doc_id in hashes:
+        ref["checksum"]["checksumValue"] = hashes[doc_id]
+with open(path, "w") as f:
+    json.dump(doc, f, indent=2)
+    f.write("\n")
+print("[OK] SHA1 checksums updated in root SBOM.")
+PYEOF
 
 echo ""
 
