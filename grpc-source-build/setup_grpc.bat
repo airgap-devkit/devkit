@@ -1,62 +1,120 @@
 @echo off
 setlocal EnableDelayedExpansion
+
 REM ====================================================
-REM Setup Script for gRPC Installation and C++ HelloWorld Demo Build
-REM ====================================================
-REM Assumptions:
-REM   - The gRPC distribution folder is available at:
-REM         C:\Users\Public\FTE_Software\grpc-1.76.0
-REM   - The folder grpc_unbuilt_v1.76.0 exists in the current directory.
-REM   - gRPC build outputs (binaries and libraries) are under:
-REM         %DEST_GRPC%\outputs
-REM   - The original HelloWorld example is at:
-REM         %DEST_GRPC%\examples\cpp\helloworld
-REM   - Sample proto files are at:
-REM         %DEST_GRPC%\examples\protos
-REM   - The demo project will be created on your Desktop under:
-REM         %USERPROFILE%\Desktop\grpc_demo
-REM     with the following structure:
-REM         grpc_demo\
-REM             cmake\        (copied from %DEST_GRPC%\examples\cpp\cmake)
-REM             protos\       (copied from %DEST_GRPC%\examples\protos)
-REM             helloworld\   (copied from %DEST_GRPC%\examples\cpp\helloworld)
-REM                 generated\  (for generated protobuf sources)
-REM   - The original HelloWorld CMakeLists.txt uses:
-REM         include(../cmake/common.cmake)
-REM         get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
-REM     This script updates the proto file reference so it becomes:
-REM         get_filename_component(hw_proto "../protos/helloworld.proto" ABSOLUTE)
-REM     (The include line remains unchanged.)
+REM setup_grpc.bat
+REM Single entry point for gRPC v1.76.0 air-gap build.
+REM
+REM WHAT THIS DOES:
+REM   1. Verifies vendored source parts via SHA256 (bash)
+REM   2. Reassembles .tar.gz from parts (bash)
+REM   3. Extracts source tree to src\ (bash)
+REM   4. Initializes VS 2022 Insiders developer environment
+REM   5. Copies source to C:\Users\Public\FTE_Software\grpc-1.76.0
+REM   6. Builds gRPC with CMake
+REM   7. Builds and launches the HelloWorld demo
+REM
+REM REQUIREMENTS:
+REM   - Git Bash (bash.exe) on PATH
+REM   - Visual Studio 2022 Insiders with Desktop C++ workload
+REM   - Run from: grpc-source-build\ directory
 REM ====================================================
 
 REM -----------------------------
 REM Step 0: Define paths
 REM -----------------------------
 set "GRPC_FOLDER=grpc-1.76.0"
-set "SOURCE_GRPC_FOLDER=grpc_unbuilt_v1.76.0\"
+set "SOURCE_GRPC_FOLDER=src\grpc_unbuilt_v1.76.0\"
 set "DEST_ROOT=C:\Users\Public\FTE_Software"
 set "DEST_GRPC=%DEST_ROOT%\%GRPC_FOLDER%"
 set "OUTPUT_DIR=%DEST_GRPC%\outputs"
-REM Original HelloWorld source folder
 set "GRPC_EXAMPLES=%DEST_GRPC%\examples\cpp\helloworld"
-REM Protos source folder from the gRPC distribution
 set "GRPC_PROTOS=%DEST_GRPC%\examples\protos"
-REM Working cmake folder (from examples\cpp\cmake)
 set "TARGET_CMAKE=%DEST_GRPC%\examples\cpp\cmake"
-REM Demo folder on Desktop
 set "DEMO_DIR=%USERPROFILE%\Desktop\grpc_demo"
-REM Destination for HelloWorld demo project files
 set "DEMO_HELLO=%DEMO_DIR%\helloworld"
-REM Folder for generated protobuf sources (inside HelloWorld demo)
 set "GEN_DIR=%DEMO_HELLO%\generated"
-REM Folder for demo protos (we copy helloworld.proto here)
 set "DEMO_PROTOS=%DEMO_DIR%\protos"
-REM We want to copy the working cmake folder into the demo root so that from the HelloWorld build
-REM the relative include "../cmake/common.cmake" is valid.
 set "LINK_CMAKE=%DEMO_DIR%\cmake"
+set "VSDEVCMD=C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\Tools\VsDevCmd.bat"
 
 REM -----------------------------
-REM Step 1: Create required demo directories
+REM Step 1: Locate bash.exe
+REM -----------------------------
+echo.
+echo *** Locating Git Bash ***
+where bash.exe >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] bash.exe not found on PATH.
+    echo         Install Git for Windows and ensure Git Bash is on PATH.
+    pause
+    exit /b 1
+)
+echo [OK] bash.exe found.
+
+REM -----------------------------
+REM Step 2: Verify vendor parts via SHA256
+REM -----------------------------
+echo.
+echo *** Verifying vendored source parts ***
+bash scripts/verify.sh
+if errorlevel 1 (
+    echo [ERROR] Source verification failed. Do not proceed.
+    pause
+    exit /b 1
+)
+
+REM -----------------------------
+REM Step 3: Reassemble .tar.gz from parts
+REM -----------------------------
+echo.
+echo *** Reassembling source archive ***
+bash scripts/reassemble.sh
+if errorlevel 1 (
+    echo [ERROR] Reassembly failed.
+    pause
+    exit /b 1
+)
+
+REM -----------------------------
+REM Step 4: Extract source tree to src\
+REM -----------------------------
+echo.
+echo *** Extracting source tree ***
+if exist "src\grpc_unbuilt_v1.76.0\" (
+    echo [INFO] src\grpc_unbuilt_v1.76.0\ already exists -- skipping extraction.
+) else (
+    bash -c "mkdir -p src && tar -xzf vendor/grpc_unbuilt_v1.76.0.tar.gz -C src/"
+    if errorlevel 1 (
+        echo [ERROR] Extraction failed.
+        pause
+        exit /b 1
+    )
+    echo [OK] Source tree extracted to src\grpc_unbuilt_v1.76.0\
+)
+
+REM -----------------------------
+REM Step 5: Initialize VS Developer environment
+REM -----------------------------
+echo.
+echo *** Initializing Visual Studio Developer Environment ***
+if not exist "%VSDEVCMD%" (
+    echo [ERROR] VsDevCmd.bat not found at:
+    echo         %VSDEVCMD%
+    echo         Adjust the VSDEVCMD path in this script if VS is installed elsewhere.
+    pause
+    exit /b 1
+)
+call "%VSDEVCMD%"
+if errorlevel 1 (
+    echo [ERROR] Failed to initialize VS developer environment.
+    pause
+    exit /b 1
+)
+echo [OK] VS developer environment initialized.
+
+REM -----------------------------
+REM Step 6: Create required demo directories
 REM -----------------------------
 for %%D in ("%DEMO_DIR%" "%DEMO_HELLO%" "%DEMO_PROTOS%") do (
     if not exist %%D (
@@ -70,17 +128,16 @@ for %%D in ("%DEMO_DIR%" "%DEMO_HELLO%" "%DEMO_PROTOS%") do (
 )
 
 REM -----------------------------
-REM Step 2: Ensure the gRPC folder exists by copying it.
+REM Step 7: Ensure the gRPC folder exists by copying it.
 REM -----------------------------
 if not exist "%DEST_GRPC%\" (
     echo [INFO] Copying gRPC folder from the current location...
-    
+
     set "SOURCE_GRPC_FOLDER=%CD%\%SOURCE_GRPC_FOLDER%"
 
-    REM Debugging: Print paths
     echo [DEBUG] Source folder path: "%SOURCE_GRPC_FOLDER%"
     echo [DEBUG] Destination folder path: "%DEST_GRPC%"
-    
+
     if exist "%SOURCE_GRPC_FOLDER%\" (
         echo [DEBUG] Source folder exists, proceeding to copy...
         xcopy /E /I /Y "%SOURCE_GRPC_FOLDER%\*" "%DEST_GRPC%"
@@ -92,6 +149,7 @@ if not exist "%DEST_GRPC%\" (
         echo [OK] gRPC folder copied successfully.
     ) else (
         echo [ERROR] Source gRPC folder "%SOURCE_GRPC_FOLDER%" not found.
+        echo         Extraction may have failed -- check src\ directory.
         pause
         exit /b 1
     )
@@ -100,7 +158,7 @@ if not exist "%DEST_GRPC%\" (
 )
 
 REM -----------------------------
-REM Step 3: Verify that the gRPC folder exists.
+REM Step 8: Verify that the gRPC folder exists.
 REM -----------------------------
 if not exist "%DEST_GRPC%\" (
     echo [ERROR] Folder "%DEST_GRPC%" not found.
@@ -109,8 +167,7 @@ if not exist "%DEST_GRPC%\" (
 )
 
 REM -----------------------------
-REM Step 4: Verify required binaries are present.
-REM         Check for grpc_cpp_plugin.exe in %OUTPUT_DIR%\bin.
+REM Step 9: Verify required binaries are present.
 REM -----------------------------
 echo.
 echo *** Verifying necessary binaries in outputs folder ***
@@ -122,7 +179,6 @@ if not exist "%OUTPUT_DIR%\bin\grpc_cpp_plugin.exe" (
     echo [INFO] Found grpc_cpp_plugin.exe in "%OUTPUT_DIR%\bin".
 )
 
-REM Automatically proceed with building if required binaries are missing
 if "!NEEDS_BUILD!"=="1" (
     echo [INFO] Required binaries are missing. Proceeding with gRPC build...
     goto BuildGRPC
@@ -138,7 +194,7 @@ if "!NEEDS_BUILD!"=="1" (
 
 :BuildGRPC
 REM -----------------------------
-REM Step 5: Build gRPC (if needed)
+REM Step 10: Build gRPC
 REM -----------------------------
 echo.
 echo *** Setting up gRPC build environment ***
@@ -180,9 +236,7 @@ if errorlevel 1 (
 
 :CopyFiles
 REM -----------------------------
-REM Step 6: Copy demo files and working cmake folder.
-REM         Copy HelloWorld demo files from %GRPC_EXAMPLES% to %DEMO_HELLO%.
-REM         Copy the working "cmake" folder from %TARGET_CMAKE% into the demo root (%LINK_CMAKE%).
+REM Step 11: Copy demo files
 REM -----------------------------
 echo.
 echo *** Copying built binaries to outputs folder ***
@@ -209,14 +263,13 @@ if not exist "%LINK_CMAKE%\common.cmake" (
 ) else (
     echo [INFO] Folder "%LINK_CMAKE%" already exists.
 )
-echo [OK] Demo files copied and cmake folder is available at "%LINK_CMAKE%".
+echo [OK] Demo files copied.
 
 REM -----------------------------
-REM Step 7: Update HelloWorld CMakeLists.txt for correct proto reference.
-REM         Replace "../../protos/helloworld.proto" with "../protos/helloworld.proto"
+REM Step 12: Update HelloWorld CMakeLists.txt
 REM -----------------------------
 echo.
-echo *** Updating HelloWorld CMakeLists.txt for correct proto reference...
+echo *** Updating HelloWorld CMakeLists.txt for correct proto reference ***
 powershell -Command "(Get-Content '%DEMO_HELLO%\CMakeLists.txt') -replace '../../protos/helloworld\.proto', '../protos/helloworld\.proto' | Set-Content '%DEMO_HELLO%\CMakeLists.txt'"
 if errorlevel 1 (
     echo [ERROR] Failed to update CMakeLists.txt.
@@ -226,10 +279,7 @@ if errorlevel 1 (
 echo [OK] CMakeLists.txt updated.
 
 REM -----------------------------
-REM Step 8: Generate Protobuf Sources
-REM         Copy helloworld.proto from %GRPC_PROTOS% into the demo protos folder.
-REM         Then run protoc (using absolute path) with -I set to %DEMO_PROTOS%
-REM         to generate sources into "generated" folder (inside %DEMO_HELLO%).
+REM Step 13: Generate Protobuf Sources
 REM -----------------------------
 echo.
 echo *** Generating protobuf sources for HelloWorld demo ***
@@ -240,16 +290,16 @@ if not exist "%GRPC_PROTOS%\helloworld.proto" (
 )
 copy /Y "%GRPC_PROTOS%\helloworld.proto" "%DEMO_PROTOS%\helloworld.proto" >nul
 if errorlevel 1 (
-    echo [ERROR] Failed to copy helloworld.proto to demo protos folder.
+    echo [ERROR] Failed to copy helloworld.proto.
     pause
     exit /b 1
 )
-echo [INFO] helloworld.proto copied to demo protos at "%DEMO_PROTOS%".
+echo [INFO] helloworld.proto copied to "%DEMO_PROTOS%".
 cd "%DEMO_PROTOS%"
 if not exist "%GEN_DIR%" (
     mkdir "%GEN_DIR%"
 )
-echo Running protoc to generate C++ sources into "generated" folder...
+echo Running protoc...
 "%OUTPUT_DIR%\bin\protoc.exe" -I "%DEMO_PROTOS%" --cpp_out="%GEN_DIR%" --grpc_out="%GEN_DIR%" --plugin=protoc-gen-grpc="%OUTPUT_DIR%\bin\grpc_cpp_plugin.exe" helloworld.proto
 if errorlevel 1 (
     echo [ERROR] Protoc generation failed.
@@ -257,21 +307,19 @@ if errorlevel 1 (
     exit /b 1
 )
 if not exist "%GEN_DIR%\helloworld.pb.h" (
-    echo [ERROR] helloworld.pb.h not found in "generated". Protobuf generation may have failed.
+    echo [ERROR] helloworld.pb.h not found. Protobuf generation may have failed.
     pause
     exit /b 1
 )
 if not exist "%GEN_DIR%\helloworld.grpc.pb.h" (
-    echo [ERROR] helloworld.grpc.pb.h not found in "generated". Protobuf generation may have failed.
+    echo [ERROR] helloworld.grpc.pb.h not found. Protobuf generation may have failed.
     pause
     exit /b 1
 )
-echo [OK] Protobuf sources successfully generated in "generated".
+echo [OK] Protobuf sources generated in "generated".
 
 REM -----------------------------
-REM Step 9: Build the HelloWorld Demo Example Using CMake
-REM         Remove any existing ".build" folder in %DEMO_HELLO%, then configure and build.
-REM         Use Visual Studio 2022 (x64) with -DCMAKE_PREFIX_PATH set to %DEST_GRPC%.
+REM Step 14: Build the HelloWorld Demo
 REM -----------------------------
 echo.
 echo *** Building the HelloWorld demo example ***
@@ -288,7 +336,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-echo [INFO] Building demo using CMake...
+echo [INFO] Building demo...
 cmake --build . --config Release -j 4
 if errorlevel 1 (
     echo [ERROR] Building demo failed.
@@ -298,20 +346,18 @@ if errorlevel 1 (
 echo [OK] Demo built successfully.
 
 REM -----------------------------
-REM Step 10: Run the HelloWorld Demo
-REM         Launch greeter_server.exe and greeter_client.exe from the Release folder.
-REM         Open each in a new PowerShell window.
+REM Step 15: Launch HelloWorld Demo
 REM -----------------------------
 echo.
 echo *********************
 echo All tasks completed successfully!
 echo gRPC is installed at: %DEST_GRPC%
 echo Build outputs are in: %OUTPUT_DIR%
-echo The HelloWorld demo has been built in: %DEMO_HELLO%\.build\Release
+echo Demo built in: %DEMO_HELLO%\.build\Release
 echo.
-echo Launching greeter_server.exe in a new window...
+echo Launching greeter_server.exe...
 start powershell.exe -NoExit -Command "cd '%DEMO_HELLO%\.build\Release'; .\greeter_server.exe"
-echo Launching greeter_client.exe in a new window...
+echo Launching greeter_client.exe...
 start powershell.exe -NoExit -Command "cd '%DEMO_HELLO%\.build\Release'; .\greeter_client.exe"
 echo.
 echo Please verify that both the server and client are running as expected.
