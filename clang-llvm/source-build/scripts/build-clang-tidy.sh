@@ -423,7 +423,6 @@ if [[ -n "${CL_EXE:-}" ]]; then
         -DCMAKE_CXX_COMPILER="${CL_EXE}"
     )
 fi
-
 if [[ -d "${SRC_DIR}/cmake" && -d "${SRC_DIR}/third-party" ]]; then
     CMAKE_ARGS+=(
         -DLLVM_COMMON_CMAKE_UTILS="${SRC_DIR}/cmake"

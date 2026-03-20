@@ -68,7 +68,7 @@
     "compiler": "MSVC 14.50.35717 (VS Insiders 18)",
     "build_type": "Release",
     "binary_filename": "bin/windows/clang-tidy.exe",
-    "sha256_binary": "PENDING — fill in after first successful build",
+    "sha256_binary": "4e4dc42c11e407038b5b15c5bf91980e9c7a4a3ed17486b37963de8c5a5e15e4",
     "_note": "Built from LLVM source on Windows 11 x86_64 via build-clang-tidy.sh. Not vendored as a committed binary — each developer builds from the vendored LLVM source. Run: sha256sum bin/windows/clang-tidy.exe and update this field after building."
   }
 }

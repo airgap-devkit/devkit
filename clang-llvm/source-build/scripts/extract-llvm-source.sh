@@ -60,7 +60,7 @@ trap _cleanup EXIT
 # Already extracted?
 # ---------------------------------------------------------------------------
 if [[ -f "${SRC_DIR}/llvm/CMakeLists.txt" && \
-      -f "${SRC_DIR}/llvm/tools/clang/CMakeLists.txt" && \
+      -f "${SRC_DIR}/clang/CMakeLists.txt" && \
       "${FORCE}" == "false" ]]; then
     echo "[extract-llvm] Source already extracted -- skipping. (--force to redo)"
     exit 0
@@ -146,8 +146,10 @@ DOT_COUNT=0
 
 # Write dots to a temp file; a subshell reads and renders the bar.
 echo "  Extracting (this may take several minutes)..."
-tar -xf "${TARBALL}" -C "${STAGE_DIR}" || {
-    echo "ERROR: tar extraction failed." >&2
+tar -xf "${TARBALL}" -C "${STAGE_DIR}" 2>&1 | grep -v "Cannot create symlink" || true
+# Verify extraction actually produced output regardless of tar exit code
+[[ -n "$(ls -A "${STAGE_DIR}" 2>/dev/null)" ]] || {
+    echo "ERROR: tar extraction failed — stage directory is empty." >&2
     exit 1
 }
 echo "  [##################################################] ${TARBALL_MB} / ${TARBALL_MB} MB  done"
@@ -196,7 +198,7 @@ for component in llvm clang clang-tools-extra cmake third-party; do
 done
 
 # Remove any stale destination dirs from a previous partial run
-for stale in "${SRC_DIR}/llvm" "${SRC_DIR}/clang-tools-extra" "${SRC_DIR}/cmake" "${SRC_DIR}/third-party"; do
+for stale in "${SRC_DIR}/llvm" "${SRC_DIR}/clang" "${SRC_DIR}/clang-tools-extra" "${SRC_DIR}/cmake" "${SRC_DIR}/third-party"; do
     if [[ -d "${stale}" ]]; then
         printf "  %-36s removing stale copy...\n" "$(basename "${stale}")/"
         rm -rf "${stale}" || {
@@ -222,8 +224,7 @@ _move() {
 _move "${EXTRACTED}/llvm"        "${SRC_DIR}/llvm"             "llvm/"
 
 # NOW create tools/ inside the moved llvm/, then move clang into it
-mkdir -p "${SRC_DIR}/llvm/tools"
-_move "${EXTRACTED}/clang"       "${SRC_DIR}/llvm/tools/clang" "llvm/tools/clang/"
+_move "${EXTRACTED}/clang"       "${SRC_DIR}/clang"            "clang/"
 _move "${EXTRACTED}/clang-tools-extra" "${SRC_DIR}/clang-tools-extra" "clang-tools-extra/"
 _move "${EXTRACTED}/cmake"       "${SRC_DIR}/cmake"            "cmake/"
 _move "${EXTRACTED}/third-party" "${SRC_DIR}/third-party"      "third-party/"
@@ -288,7 +289,7 @@ _strip() {
 
 before_mb="$(du -sm "${SRC_DIR}/llvm" 2>/dev/null | cut -f1)"
 _strip "${SRC_DIR}/llvm"             "llvm/"
-_strip "${SRC_DIR}/llvm/tools/clang" "llvm/tools/clang/"
+_strip "${SRC_DIR}/clang"             "clang/"
 after_mb="$(du -sm "${SRC_DIR}/llvm" 2>/dev/null | cut -f1)"
 
 echo ""
@@ -302,7 +303,7 @@ echo "  Verifying layout..."
 VERIFY_OK=true
 for check in \
     "${SRC_DIR}/llvm/CMakeLists.txt" \
-    "${SRC_DIR}/llvm/tools/clang/CMakeLists.txt" \
+    "${SRC_DIR}/clang/CMakeLists.txt" \
     "${SRC_DIR}/clang-tools-extra/CMakeLists.txt" \
     "${SRC_DIR}/cmake" \
     "${SRC_DIR}/third-party"; do
