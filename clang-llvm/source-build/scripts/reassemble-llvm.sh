@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # clang-llvm-source-build/scripts/reassemble-llvm.sh
 #

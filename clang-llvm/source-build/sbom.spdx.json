@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-03-17T00:00:00Z",
+    "created": "2026-03-20T00:00:00Z",
     "creators": [
       "Organization: NimaShafie",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -25,7 +25,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Top-level subproject. Builds clang-format from LLVM source in air-gapped environments."
+      "comment": "Top-level subproject. Builds clang-format from LLVM source and installs a pre-built clang-tidy binary in air-gapped environments."
     },
     {
       "SPDXID": "SPDXRef-llvm-project",
@@ -118,6 +118,70 @@
       "comment": "Vendored as ninja-1.13.2.tar.gz in ninja-src/. Built as a dependency for the LLVM CMake build. No official upstream SHA256 published; hash is self-computed from vendored tarball."
     },
     {
+      "SPDXID": "SPDXRef-clang-tidy-binary",
+      "name": "clang-tidy",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6f73d9b61f03c2c06ed0832ec9fd5ba8625a2482bdb7f915d90e6911614f31fd"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "Pre-built clang-tidy binary for linux-x86_64. Built from llvmorg-22.1.1 on RHEL 8 / Rocky Linux 8 using GCC 8.5.0. Strip applied post-build. Assembled from split parts at bootstrap time; bin/linux/clang-tidy is not committed directly."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-part-aa",
+      "name": "clang-tidy.part-aa",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8bd83458c3df4ab4420973ff0d7280b8cfce058437a15a16bb0fcdf589eb94b3"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 1 of 2 of the pre-built clang-tidy binary (~52 MB). Committed to git in bin/linux/."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-tidy-part-ab",
+      "name": "clang-tidy.part-ab",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "700c2177368d3dd979b41d361ef0c2210d37f60759f1738ea4a65bb306a8a4d3"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Split part 2 of 2 of the pre-built clang-tidy binary (~31 MB). Committed to git in bin/linux/."
+    },
+    {
       "SPDXID": "SPDXRef-cmake-build-dep",
       "name": "cmake",
       "versionInfo": "3.14+",
@@ -161,6 +225,11 @@
       "relatedSpdxElement": "SPDXRef-ninja-source"
     },
     {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-binary"
+    },
+    {
       "spdxElementId": "SPDXRef-llvm-project",
       "relationshipType": "GENERATED_FROM",
       "relatedSpdxElement": "SPDXRef-llvm-part-aa"
@@ -169,6 +238,16 @@
       "spdxElementId": "SPDXRef-llvm-project",
       "relationshipType": "GENERATED_FROM",
       "relatedSpdxElement": "SPDXRef-llvm-part-ab"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-tidy-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-part-aa"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-tidy-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-clang-tidy-part-ab"
     },
     {
       "spdxElementId": "SPDXRef-clang-llvm-source-build",
