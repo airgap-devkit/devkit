@@ -18,3 +18,5 @@ llvm-src/*.tar.xz
 llvm-src/*.tar.xz.part*
 bin/linux/clang-tidy
 bin/windows/clang-tidy.exe
+llvm-src/clang/
+llvm-src/clang-tools-extra/
