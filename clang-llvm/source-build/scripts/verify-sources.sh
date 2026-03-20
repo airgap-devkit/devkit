@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Author: Nima Shafie
 # =============================================================================
 # clang-llvm-source-build/scripts/verify-sources.sh
 #
@@ -261,6 +260,34 @@ case "$(uname -s)" in
         echo ""
         ;;
     MINGW*|MSYS*|CYGWIN*)
+        echo "[clang-format] Checking pre-built Windows binary..."
+        FMT_BINARY="${MODULE_ROOT}/bin/windows/clang-format.exe"
+        FMT_HASH=$(awk '
+            /"clang_format_windows"/{found=1}
+            found && /"sha256_binary"/{
+                match($0, /"sha256_binary": *"([^"]+)"/, a); print a[1]; exit
+            }
+        ' "${MANIFEST}" || true)
+
+        if [[ ! -f "${FMT_BINARY}" ]]; then
+            echo "  [FAIL] Missing: ${FMT_BINARY}" >&2
+            ALL_OK=false
+        elif [[ -z "${FMT_HASH}" ]]; then
+            echo "  [FAIL] Could not parse clang_format_windows sha256_binary from manifest.json" >&2
+            ALL_OK=false
+        else
+            ACTUAL=$(sha256sum "${FMT_BINARY}" | awk '{print $1}')
+            echo "  Expected (manifest): ${FMT_HASH}"
+            echo "  Actual             : ${ACTUAL}"
+            if [[ "${ACTUAL}" == "${FMT_HASH}" ]]; then
+                echo "  [PASS] clang-format.exe integrity confirmed."
+            else
+                echo "  [FAIL] clang-format.exe hash mismatch." >&2
+                ALL_OK=false
+            fi
+        fi
+        echo ""
+
         echo "[clang-tidy] Checking pre-built Windows binary..."
         WIN_BINARY="${MODULE_ROOT}/bin/windows/clang-tidy.exe"
         WIN_HASH=$(awk '
