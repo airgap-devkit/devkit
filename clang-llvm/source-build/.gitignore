@@ -8,6 +8,8 @@ bin/windows/ninja.exe
 llvm-src/build/
 llvm-src/install/
 llvm-src/llvm/
+llvm-src/clang/
+llvm-src/clang-tools-extra/
 llvm-src/cmake/
 llvm-src/third-party/
 llvm-src/.reassembled.tar.xz
@@ -17,6 +19,3 @@ ninja-src/build/
 llvm-src/*.tar.xz
 llvm-src/*.tar.xz.part*
 bin/linux/clang-tidy
-bin/windows/clang-tidy.exe
-llvm-src/clang/
-llvm-src/clang-tools-extra/

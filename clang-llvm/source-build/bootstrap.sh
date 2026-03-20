@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# bootstrap.sh — Build clang-format and clang-tidy from LLVM source
+# bootstrap.sh — Build clang-format and install clang-tidy from LLVM source
 #
 # ┌─────────────────────────────────────────────────────────────────────────┐
-# │  This is the SLOW path (~30-120 minutes depending on platform/target).  │
+# │  This is the SLOW path (~30-60 minutes) for clang-format.               │
 # │                                                                         │
 # │  Most developers should use the fast pip/venv method for clang-format:  │
 # │    bash clang-llvm-style-formatter/bootstrap.sh   # ~5 seconds          │
@@ -21,12 +21,11 @@
 #                   (~30-60 min compile time on first build)
 #
 #   clang-tidy    — Linux  : reassembled from vendored pre-built split parts
-#                            (verify SHA256 + reassemble, no compile required)
-#                   Windows: built from the vendored LLVM 22.1.1 source
-#                            (incremental on top of clang-format build dir,
-#                            ~60-120 min on first combined build)
+#                            (verify SHA256 + reassemble, seconds)
+#                   Windows: vendored pre-built binary (46 MB, verify SHA256)
+#                            Pass --build-from-source to compile instead.
 #
-# Build prerequisites:
+# Build prerequisites (clang-format source build, both platforms):
 #   Windows : Visual Studio 2017/2019/2022/Insiders with C++ workload
 #             Tested: VS Insiders 18 | MSVC toolchain 14.50.35717 | CMake 4.1.2
 #             Minimum: CMake 3.14, any VS edition with VC++ tools
@@ -37,10 +36,15 @@
 #   bin/linux/clang-format
 #   bin/linux/clang-tidy       (reassembled from vendored parts)
 #   bin/windows/clang-format.exe
-#   bin/windows/clang-tidy.exe (built from source)
+#   bin/windows/clang-tidy.exe (vendored pre-built, or --build-from-source)
 #
 # Usage:
-#   bash clang-llvm-source-build/bootstrap.sh [--rebuild]
+#   bash clang-llvm-source-build/bootstrap.sh [--rebuild] [--build-from-source]
+#
+# Options:
+#   --rebuild            Force rebuild/re-verify of all binaries
+#   --build-from-source  Windows only: build clang-tidy from LLVM source
+#                        instead of using the vendored pre-built binary
 #
 # See docs/llvm-install-guide.md for full prerequisites and troubleshooting.
 # =============================================================================
@@ -48,9 +52,11 @@
 set -euo pipefail
 
 REBUILD=false
+BUILD_FROM_SOURCE=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --rebuild) REBUILD=true; shift ;;
+        --rebuild)           REBUILD=true; shift ;;
+        --build-from-source) BUILD_FROM_SOURCE=true; shift ;;
         -h|--help)
             grep '^#' "$0" | grep -v '^#!/' | sed 's/^# \?//'
             exit 0 ;;
@@ -119,8 +125,8 @@ echo ""
 
 # ==========================================================================
 # PART 2 — clang-tidy
-#   Linux  : reassemble pre-built vendored binary (fast)
-#   Windows: build from source (incremental on top of clang-format build dir)
+#   Linux  : reassemble pre-built vendored binary from split parts
+#   Windows: verify vendored pre-built binary (or build from source)
 # ==========================================================================
 echo "------------------------------------------------------------------"
 echo "  [2/2] clang-tidy"
@@ -128,9 +134,9 @@ echo "------------------------------------------------------------------"
 echo ""
 
 if [[ -x "${OUTPUT_TIDY}" && "${REBUILD}" == "false" ]]; then
-    VER="$("${OUTPUT_TIDY}" --version 2>/dev/null | head -1)"
+    VER="$("${OUTPUT_TIDY}" --version 2>/dev/null | grep "LLVM version" | head -1)"
     echo "  Already present: ${VER}"
-    echo "  Use --rebuild to force re-build/re-verification."
+    echo "  Use --rebuild to force re-verification."
 else
     case "${OS}" in
         linux)
@@ -144,25 +150,26 @@ else
             }
             ;;
         windows)
-            echo "  Windows: building from source (incremental on clang-format build dir)."
-            echo "  Expected time: ~60-120 min (first build), less if build dir exists."
-            echo ""
-            echo "  Prerequisites:"
-            echo "    • Visual Studio 2017/2019/2022/Insiders — C++ workload required"
-            echo "      Tested: VS Insiders 18 | MSVC 14.50.35717 | CMake 4.1.2"
-            echo "    • Run from Git Bash (VS environment set up automatically)"
-            echo ""
-            bash "${SCRIPT_DIR}/scripts/build-clang-tidy.sh" \
-                $([[ "${REBUILD}" == "true" ]] && echo "--rebuild" || true)
+            if [[ "${BUILD_FROM_SOURCE}" == "true" ]]; then
+                echo "  Windows: building from source (--build-from-source)."
+                echo "  Expected time: ~60-120 min first build."
+                echo ""
+                bash "${SCRIPT_DIR}/scripts/build-clang-tidy.sh" \
+                    $([[ "${REBUILD}" == "true" ]] && echo "--rebuild" || true)
+            else
+                echo "  Windows: verifying vendored pre-built binary..."
+                echo ""
+                bash "${SCRIPT_DIR}/scripts/verify-clang-tidy-windows.sh"
+            fi
 
             [[ -x "${OUTPUT_TIDY}" ]] || {
-                echo "ERROR: clang-tidy not found at ${OUTPUT_TIDY} after build." >&2
+                echo "ERROR: clang-tidy not found at ${OUTPUT_TIDY}." >&2
                 exit 1
             }
             ;;
     esac
 
-    VER="$("${OUTPUT_TIDY}" --version 2>/dev/null | head -1)"
+    VER="$("${OUTPUT_TIDY}" --version 2>/dev/null | grep "LLVM version" | head -1)"
     echo ""
     echo "  Ready: ${VER}"
 fi
