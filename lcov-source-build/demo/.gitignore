@@ -1,0 +1,6 @@
+test_math
+*.gcda
+*.gcno
+coverage.info
+coverage_filtered.info
+coverage-report/
