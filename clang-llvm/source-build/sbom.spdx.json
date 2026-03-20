@@ -188,6 +188,12 @@
       "supplier": "Organization: NimaShafie",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4e4dc42c11e407038b5b15c5bf91980e9c7a4a3ed17486b37963de8c5a5e15e4"
+        }
+      ],
       "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
       "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
       "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
@@ -199,7 +205,7 @@
           "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
         }
       ],
-      "comment": "clang-tidy built from source on Windows x86_64 via scripts/build-clang-tidy.sh. Compiler: MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Not committed to git — each developer builds locally from the vendored LLVM source. No SHA256 checksum here; see manifest.json clang_tidy_windows block."
+      "comment": "Pre-built clang-tidy.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Fits in a single file (46 MB) — committed directly to git in bin/windows/. Verified by scripts/verify-clang-tidy-windows.sh at bootstrap time."
     },
     {
       "SPDXID": "SPDXRef-cmake-build-dep",

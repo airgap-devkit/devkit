@@ -38,8 +38,13 @@ bash clang-llvm-source-build/bootstrap.sh
 **On Windows**, this does two things:
 
 1. Builds `clang-format` from the vendored LLVM 22.1.1 source (~30-60 min)
-2. Builds `clang-tidy` from the same source tree incrementally (~60-120 min
-   first run; subsequent runs skip already-compiled objects)
+2. Verifies the vendored pre-built `clang-tidy.exe` (46 MB, SHA256 check, seconds)
+
+To build `clang-tidy.exe` from source instead of using the vendored binary:
+
+```bash
+bash clang-llvm-source-build/bootstrap.sh --build-from-source
+```
 
 The binaries are placed at:
 
@@ -119,21 +124,16 @@ instructions, troubleshooting, and known platform issues.
    - Sets executable bit
 3. Binary placed in `bin/linux/clang-tidy`
 
-### clang-tidy on Windows (source build)
+### clang-tidy on Windows (vendored pre-built binary)
 
 1. Checks for an existing binary — skips if found (use `--rebuild` to override)
-2. Runs `scripts/build-clang-tidy.sh`:
-   - Locates `cl.exe` via `vswhere.exe` or filesystem scan
-   - Sets up MSVC + Windows SDK environment (`LIB`, `INCLUDE`, `PATH`)
-   - Runs CMake configure with `-DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra"`
-     (incremental reconfigure if `build/` already exists from clang-format)
-   - Builds the `clang-tidy` target via Ninja (~60-120 min first run)
-3. Binary placed in `bin/windows/clang-tidy.exe`
+2. Runs `scripts/verify-clang-tidy-windows.sh`:
+   - Verifies `bin/windows/clang-tidy.exe` SHA256 against `manifest.json`
+   - Sets executable bit
+3. Binary ready at `bin/windows/clang-tidy.exe`
 
-The Windows clang-tidy binary is **not committed to the repository** — it
-is too large to vendor and is built locally from the same vendored LLVM source
-that clang-format uses. The build directory is shared, so if clang-format was
-already compiled the clang-tidy build is incremental.
+The Windows binary (46 MB) is committed directly to git — no splitting required.
+Pass `--build-from-source` to compile from the vendored LLVM source instead.
 
 ---
 
@@ -217,7 +217,8 @@ git push
 | `bin/linux/clang-tidy.part-ab` | Pre-built binary split part 2 (committed, ~31 MB) |
 | `bin/linux/ninja` | Built output — generated, not committed |
 | `bin/windows/clang-format.exe` | Built output — generated, not committed |
-| `bin/windows/clang-tidy.exe` | Built output — generated, not committed |
+| `bin/windows/clang-tidy.exe` | Vendored pre-built binary (committed, 46 MB) |
+| `scripts/verify-clang-tidy-windows.sh` | Verify Windows clang-tidy.exe SHA256 |
 | `demo/` | clang-tidy demonstration — sample C++ file and runner |
 | `docs/llvm-install-guide.md` | Prerequisites and troubleshooting |
 | `scripts/build-clang-format.sh` | Compile clang-format from vendored source |
