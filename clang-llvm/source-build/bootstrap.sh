@@ -1,50 +1,42 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# bootstrap.sh — Build clang-format and install clang-tidy from LLVM source
+# bootstrap.sh — Install clang-format and clang-tidy from vendored binaries
 #
 # ┌─────────────────────────────────────────────────────────────────────────┐
-# │  This is the SLOW path (~30-60 minutes) for clang-format.               │
+# │  Windows: uses vendored pre-built binaries — no compiler required.      │
+# │  Linux:   builds clang-format from source; installs pre-built clang-tidy│
 # │                                                                         │
-# │  Most developers should use the fast pip/venv method for clang-format:  │
+# │  For the fast pip/venv method (clang-format only, both platforms):      │
 # │    bash clang-llvm-style-formatter/bootstrap.sh   # ~5 seconds          │
-# │                                                                         │
-# │  Use this script if:                                                    │
-# │    • Python is not available on developer machines                      │
-# │    • Policy requires building all tools from source                     │
-# │    • You need clang-tidy (this is the only way to get it)               │
 # └─────────────────────────────────────────────────────────────────────────┘
 #
-# This script handles two binaries:
+# Windows vendored binaries (committed to git, SHA256 verified at install):
+#   bin/windows/clang-format.exe   3.1 MB — instant
+#   bin/windows/clang-tidy.exe      46 MB — instant
 #
-#   clang-format  — built from the vendored LLVM 22.1.1 source tarball
-#                   (~30-60 min compile time on first build)
+# Linux:
+#   clang-format  — built from the vendored LLVM 22.1.1 source (~30-60 min)
+#   clang-tidy    — reassembled from vendored pre-built split parts (seconds)
 #
-#   clang-tidy    — Linux  : reassembled from vendored pre-built split parts
-#                            (verify SHA256 + reassemble, seconds)
-#                   Windows: vendored pre-built binary (46 MB, verify SHA256)
-#                            Pass --build-from-source to compile instead.
-#
-# Build prerequisites (clang-format source build, both platforms):
+# Pass --build-from-source to compile from LLVM source on Windows instead.
+# Build prerequisites (source build only):
 #   Windows : Visual Studio 2017/2019/2022/Insiders with C++ workload
 #             Tested: VS Insiders 18 | MSVC toolchain 14.50.35717 | CMake 4.1.2
-#             Minimum: CMake 3.14, any VS edition with VC++ tools
-#             Run from Git Bash — VS environment is set up automatically.
 #   RHEL 8  : GCC 8+ (gcc-c++), CMake 3.14+, Python 3.6+
 #
 # Output binaries:
 #   bin/linux/clang-format
 #   bin/linux/clang-tidy       (reassembled from vendored parts)
-#   bin/windows/clang-format.exe
-#   bin/windows/clang-tidy.exe (vendored pre-built, or --build-from-source)
+#   bin/windows/clang-format.exe (vendored pre-built)
+#   bin/windows/clang-tidy.exe   (vendored pre-built)
 #
 # Usage:
 #   bash clang-llvm-source-build/bootstrap.sh [--rebuild] [--build-from-source]
 #
 # Options:
-#   --rebuild            Force rebuild/re-verify of all binaries
-#   --build-from-source  Windows only: build clang-tidy from LLVM source
-#                        instead of using the vendored pre-built binary
+#   --rebuild            Force re-verify/rebuild of all binaries
+#   --build-from-source  Windows only: build both tools from LLVM source
 #
 # See docs/llvm-install-guide.md for full prerequisites and troubleshooting.
 # =============================================================================
@@ -93,7 +85,9 @@ echo "=================================================================="
 echo ""
 
 # ==========================================================================
-# PART 1 — clang-format (source build, both platforms)
+# PART 1 — clang-format
+#   Windows: verify vendored pre-built binary (instant)
+#   Linux:   build from source (~30-60 min)
 # ==========================================================================
 echo "------------------------------------------------------------------"
 echo "  [1/2] clang-format"
@@ -102,23 +96,40 @@ echo ""
 
 if [[ -x "${OUTPUT_FMT}" && "${REBUILD}" == "false" ]]; then
     VER="$("${OUTPUT_FMT}" --version 2>/dev/null | head -1)"
-    echo "  Already built: ${VER}"
-    echo "  Use --rebuild to force a rebuild."
+    echo "  Already present: ${VER}"
+    echo "  Use --rebuild to force re-verification."
 else
-    echo "  This build takes 30-60 minutes."
-    echo "  For a 5-second install, use the pip method instead:"
-    echo "    bash ${FORMATTER_DIR}/bootstrap.sh"
-    echo ""
-    export REBUILD
-    bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+    case "${OS}" in
+        windows)
+            if [[ "${BUILD_FROM_SOURCE}" == "true" ]]; then
+                echo "  Windows: building from source (--build-from-source)."
+                echo "  This build takes 30-60 minutes."
+                echo ""
+                export REBUILD
+                bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+            else
+                echo "  Windows: verifying vendored pre-built binary..."
+                echo ""
+                bash "${SCRIPT_DIR}/scripts/verify-clang-format-windows.sh"
+            fi
+            ;;
+        linux)
+            echo "  Linux: building from source (~30-60 minutes)."
+            echo "  For a 5-second install, use the pip method instead:"
+            echo "    bash ${FORMATTER_DIR}/bootstrap.sh"
+            echo ""
+            export REBUILD
+            bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+            ;;
+    esac
 
     [[ -x "${OUTPUT_FMT}" ]] || {
-        echo "ERROR: Build completed but clang-format not found at ${OUTPUT_FMT}" >&2
+        echo "ERROR: clang-format not found at ${OUTPUT_FMT}" >&2
         exit 1
     }
     VER="$("${OUTPUT_FMT}" --version 2>/dev/null | head -1)"
     echo ""
-    echo "  Built: ${VER}"
+    echo "  Ready: ${VER}"
 fi
 
 echo ""

@@ -118,6 +118,32 @@
       "comment": "Vendored as ninja-1.13.2.tar.gz in ninja-src/. Built as a dependency for the LLVM CMake build. No official upstream SHA256 published; hash is self-computed from vendored tarball."
     },
     {
+      "SPDXID": "SPDXRef-clang-format-windows",
+      "name": "clang-format.exe",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "85c83cba356a79057e0715448f6164ce760a9b43b289291796520df65a047d61"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "Pre-built clang-format.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Fits in a single file (3.1 MB) — committed directly to git in bin/windows/. Verified by scripts/verify-clang-format-windows.sh at bootstrap time."
+    },
+    {
       "SPDXID": "SPDXRef-clang-tidy-linux",
       "name": "clang-tidy",
       "versionInfo": "22.1.1",
@@ -249,6 +275,16 @@
       "spdxElementId": "SPDXRef-clang-llvm-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-ninja-source"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-format-windows"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-format-windows",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
     },
     {
       "spdxElementId": "SPDXRef-clang-llvm-source-build",

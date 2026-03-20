@@ -16,10 +16,11 @@
 
 | Scenario | Recommended method |
 |----------|-------------------|
-| Python 3.8+ available, clang-format only | `clang-llvm-style-formatter/bootstrap.sh` (pip) |
-| Python unavailable | `clang-llvm-source-build/bootstrap.sh` (this) |
-| Policy requires source builds | `clang-llvm-source-build/bootstrap.sh` (this) |
-| Need clang-tidy (either platform) | `clang-llvm-source-build/bootstrap.sh` (this) |
+| Windows — need clang-format + clang-tidy | `clang-llvm-source-build/bootstrap.sh` (this) — instant |
+| Linux — Python 3.8+ available, clang-format only | `clang-llvm-style-formatter/bootstrap.sh` (pip) |
+| Linux — Python unavailable | `clang-llvm-source-build/bootstrap.sh` (this) |
+| Policy requires source builds | `clang-llvm-source-build/bootstrap.sh --build-from-source` |
+| Need clang-tidy on Linux | `clang-llvm-source-build/bootstrap.sh` (this) |
 
 ---
 
@@ -35,16 +36,18 @@ bash clang-llvm-source-build/bootstrap.sh
 2. Installs `clang-tidy` from the vendored pre-built binary — reassembles
    the split parts and verifies SHA256 against `manifest.json` (seconds)
 
-**On Windows**, this does two things:
+**On Windows**, this does two things — both are instant (seconds, no compiler required):
 
-1. Builds `clang-format` from the vendored LLVM 22.1.1 source (~30-60 min)
-2. Verifies the vendored pre-built `clang-tidy.exe` (46 MB, SHA256 check, seconds)
+1. Verifies the vendored pre-built `clang-format.exe` (3.1 MB, SHA256 check)
+2. Verifies the vendored pre-built `clang-tidy.exe` (46 MB, SHA256 check)
 
-To build `clang-tidy.exe` from source instead of using the vendored binary:
+To build both tools from LLVM source instead of using the vendored binaries:
 
 ```bash
 bash clang-llvm-source-build/bootstrap.sh --build-from-source
 ```
+
+**Build prerequisites are only required for `--build-from-source`:**
 
 The binaries are placed at:
 
@@ -70,7 +73,11 @@ bash clang-llvm-source-build/bootstrap.sh --rebuild
 
 ## Build Prerequisites
 
-### Windows 11
+> **Windows developers using the default path do not need Visual Studio or CMake.**
+> The vendored pre-built binaries are verified and ready after `git clone`.
+> Prerequisites below only apply when using `--build-from-source`.
+
+### Windows 11 (`--build-from-source` only)
 
 | Tool | Minimum | Tested | Notes |
 |------|---------|--------|-------|
@@ -78,14 +85,6 @@ bash clang-llvm-source-build/bootstrap.sh --rebuild
 | MSVC toolchain | any | 14.50.35717 | Installed automatically with VS C++ workload |
 | CMake | 3.14 | 4.1.2 | Bundled with VS 2019+; or install separately |
 | Git Bash | any | MINGW64 | Run `bootstrap.sh` from Git Bash — not cmd.exe or PowerShell |
-
-**VS environment is set up automatically** — you do not need to launch from
-a "Developer Command Prompt". `build-clang-format.sh` and `build-clang-tidy.sh`
-locate `cl.exe`, `link.exe`, and the Windows SDK automatically via `vswhere.exe`
-and filesystem scan, then set `LIB`, `INCLUDE`, and `PATH` themselves.
-
-Supported VS editions: Community, Professional, Enterprise, Build Tools,
-Preview, Insiders — any edition that includes the VC++ tools workload.
 
 ### RHEL 8
 
@@ -106,13 +105,23 @@ instructions, troubleshooting, and known platform issues.
 
 ## How It Works
 
-### clang-format (source build, both platforms)
+### clang-format on Windows (vendored pre-built binary)
+
+1. Checks for an existing binary — skips if found (use `--rebuild` to override)
+2. Runs `scripts/verify-clang-format-windows.sh`:
+   - Verifies `bin/windows/clang-format.exe` SHA256 against `manifest.json`
+   - Sets executable bit
+3. Binary ready at `bin/windows/clang-format.exe`
+
+### clang-format on Linux (source build)
+
+### clang-format on Linux (source build)
 
 1. Checks for an existing binary — skips rebuild if found (use `--rebuild` to override)
 2. Runs `scripts/build-ninja.sh` — builds Ninja from `ninja-src/` (~30 sec)
 3. Runs `scripts/extract-llvm-source.sh` — reassembles the split tarball and extracts (~5-15 min)
 4. Runs `scripts/build-clang-format.sh` — compiles with CMake + Ninja (~30-60 min)
-5. Binary placed in `bin/<platform>/clang-format[.exe]`
+5. Binary placed in `bin/linux/clang-format`
 
 ### clang-tidy on Linux (pre-built vendored binary)
 
@@ -216,8 +225,9 @@ git push
 | `bin/linux/clang-tidy.part-aa` | Pre-built binary split part 1 (committed, ~52 MB) |
 | `bin/linux/clang-tidy.part-ab` | Pre-built binary split part 2 (committed, ~31 MB) |
 | `bin/linux/ninja` | Built output — generated, not committed |
-| `bin/windows/clang-format.exe` | Built output — generated, not committed |
+| `bin/windows/clang-format.exe` | Vendored pre-built binary (committed, 3.1 MB) |
 | `bin/windows/clang-tidy.exe` | Vendored pre-built binary (committed, 46 MB) |
+| `scripts/verify-clang-format-windows.sh` | Verify Windows clang-format.exe SHA256 |
 | `scripts/verify-clang-tidy-windows.sh` | Verify Windows clang-tidy.exe SHA256 |
 | `demo/` | clang-tidy demonstration — sample C++ file and runner |
 | `docs/llvm-install-guide.md` | Prerequisites and troubleshooting |

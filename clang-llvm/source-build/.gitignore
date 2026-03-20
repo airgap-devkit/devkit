@@ -1,5 +1,4 @@
 # Built binaries — generated, never committed
-bin/windows/clang-format.exe
 bin/linux/clang-format
 bin/linux/ninja
 bin/windows/ninja.exe

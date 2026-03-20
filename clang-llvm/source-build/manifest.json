@@ -41,6 +41,16 @@
       ]
     }
   },
+  "clang_format_windows": {
+    "version": "22.1.1",
+    "platform": "windows-x86_64",
+    "built_from": "llvmorg-22.1.1",
+    "compiler": "MSVC 14.50.35717 (VS Insiders 18)",
+    "build_type": "Release",
+    "binary_filename": "bin/windows/clang-format.exe",
+    "sha256_binary": "85c83cba356a79057e0715448f6164ce760a9b43b289291796520df65a047d61",
+    "_note": "Binary fits in a single file (3.1 MB) — no splitting required. Committed directly to git in bin/windows/. Verify with: sha256sum bin/windows/clang-format.exe"
+  },
   "clang_tidy_linux": {
     "version": "22.1.1",
     "platform": "linux-x86_64",
