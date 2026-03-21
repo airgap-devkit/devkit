@@ -79,6 +79,20 @@ echo ""
 # ---------------------------------------------------------------------------
 # Run clang-tidy
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Build extra-args — platform-aware include paths
+# ---------------------------------------------------------------------------
+EXTRA_ARGS=(-std=c++17)
+
+case "$(uname -s)" in
+    Linux*)
+        GCC_INCLUDES="$(gcc -print-file-name=include 2>/dev/null)"
+        if [[ -d "${GCC_INCLUDES}" ]]; then
+            EXTRA_ARGS+=(-I"${GCC_INCLUDES}")
+        fi
+        ;;
+esac
+
 echo "------------------------------------------------------------"
 echo " Diagnostics"
 echo "------------------------------------------------------------"
@@ -86,11 +100,16 @@ echo ""
 
 # --header-filter set to empty string so we only see issues in demo.cpp itself
 # --extra-arg passes C++17 standard so modernize checks work correctly
+EXTRA_ARGS_FLAGS=()
+for arg in "${EXTRA_ARGS[@]}"; do
+    EXTRA_ARGS_FLAGS+=(--extra-arg="${arg}")
+done
+
 "${CLANG_TIDY}" \
     "${DEMO_SRC}" \
     --checks="-*,${CHECKS_ARG}" \
     --header-filter="" \
-    --extra-arg="-std=c++17" \
+    "${EXTRA_ARGS_FLAGS[@]}" \
     -- 2>&1 || true
 # || true: clang-tidy exits non-zero when it finds issues; we want to see them
 
