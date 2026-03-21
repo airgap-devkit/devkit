@@ -51,6 +51,27 @@
     "sha256_binary": "85c83cba356a79057e0715448f6164ce760a9b43b289291796520df65a047d61",
     "_note": "Binary fits in a single file (3.1 MB) — no splitting required. Committed directly to git in bin/windows/. Verify with: sha256sum bin/windows/clang-format.exe"
   },
+
+  "clang_format_linux": {
+    "version": "22.1.1",
+    "platform": "linux-x86_64",
+    "built_from": "llvmorg-22.1.1",
+    "compiler": "GCC 8.5.0 (Red Hat 8.5.0-28)",
+    "build_type": "Release",
+    "binary_filename": "prebuilt-binaries/clang-llvm/clang-format-linux",
+    "sha256_binary": "44b2212e74a0d8afc0025c7e9d99e167f08065673b7c774684eef8c579c5d18b",
+    "_note": "Single file (4.3 MB) — committed directly to prebuilt-binaries submodule."
+  },
+  "ninja_linux": {
+    "version": "1.13.2",
+    "platform": "linux-x86_64",
+    "built_from": "ninja-1.13.2",
+    "compiler": "GCC 8.5.0 (Red Hat 8.5.0-28)",
+    "build_type": "Release",
+    "binary_filename": "prebuilt-binaries/clang-llvm/ninja-linux",
+    "sha256_binary": "e34911b853813843771d3e115c9f55fb6178ff0b3fa84fcebdb46e6768f05d86",
+    "_note": "Single file (10 MB) — committed directly to prebuilt-binaries submodule."
+  },
   "clang_tidy_linux": {
     "version": "22.1.1",
     "platform": "linux-x86_64",
