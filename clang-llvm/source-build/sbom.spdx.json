@@ -12,7 +12,9 @@
   "name": "airgap-cpp-devkit-clang-llvm-source-build",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm/source-build/sbom.spdx.json",
-  "documentDescribes": ["SPDXRef-clang-llvm-source-build"],
+  "documentDescribes": [
+    "SPDXRef-clang-llvm-source-build"
+  ],
   "packages": [
     {
       "SPDXID": "SPDXRef-clang-llvm-source-build",
@@ -25,7 +27,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Top-level subproject. Builds clang-format and clang-tidy from LLVM source (Windows) or installs pre-built clang-tidy binary (Linux) in air-gapped environments."
+      "comment": "Top-level subproject. Builds or installs clang-format, clang-tidy, and ninja for Windows and Linux in air-gapped environments. Pre-built binaries are in the prebuilt-binaries submodule; source builds use vendored LLVM 22.1.1."
     },
     {
       "SPDXID": "SPDXRef-llvm-project",
@@ -141,7 +143,7 @@
           "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
         }
       ],
-      "comment": "Pre-built clang-format.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Fits in a single file (3.1 MB) — committed directly to git in bin/windows/. Verified by scripts/verify-clang-format-windows.sh at bootstrap time."
+      "comment": "Pre-built clang-format.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Committed to prebuilt-binaries submodule (3.1 MB). Verified by scripts/verify-clang-format-windows.sh at bootstrap time."
     },
     {
       "SPDXID": "SPDXRef-clang-tidy-linux",
@@ -167,7 +169,7 @@
           "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
         }
       ],
-      "comment": "Pre-built clang-tidy binary for linux-x86_64. Built from llvmorg-22.1.1 on RHEL 8 / Rocky Linux 8 using GCC 8.5.0. Strip applied post-build. Assembled from split parts at bootstrap time; bin/linux/clang-tidy is not committed directly."
+      "comment": "Pre-built clang-tidy binary for linux-x86_64. Built from llvmorg-22.1.1 on RHEL 8 using GCC 8.5.0. Assembled from split parts in prebuilt-binaries submodule at bootstrap time."
     },
     {
       "SPDXID": "SPDXRef-clang-tidy-part-aa",
@@ -186,7 +188,7 @@
       "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "ARCHIVE",
-      "comment": "Split part 1 of 2 of the pre-built Linux clang-tidy binary (~52 MB). Committed to git in bin/linux/."
+      "comment": "Split part 1 of 2 of the pre-built Linux clang-tidy binary (~52 MB). Committed to prebuilt-binaries submodule."
     },
     {
       "SPDXID": "SPDXRef-clang-tidy-part-ab",
@@ -205,7 +207,7 @@
       "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "ARCHIVE",
-      "comment": "Split part 2 of 2 of the pre-built Linux clang-tidy binary (~31 MB). Committed to git in bin/linux/."
+      "comment": "Split part 2 of 2 of the pre-built Linux clang-tidy binary (~31 MB). Committed to prebuilt-binaries submodule."
     },
     {
       "SPDXID": "SPDXRef-clang-tidy-windows",
@@ -231,7 +233,7 @@
           "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
         }
       ],
-      "comment": "Pre-built clang-tidy.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Fits in a single file (46 MB) — committed directly to git in bin/windows/. Verified by scripts/verify-clang-tidy-windows.sh at bootstrap time."
+      "comment": "Pre-built clang-tidy.exe for windows-x86_64. Built from llvmorg-22.1.1 using MSVC 14.50.35717 (VS Insiders 18), CMake 4.1.2. Committed to prebuilt-binaries submodule (46 MB). Verified by scripts/verify-clang-tidy-windows.sh at bootstrap time."
     },
     {
       "SPDXID": "SPDXRef-cmake-build-dep",
@@ -258,6 +260,84 @@
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
       "comment": "Transitive build dependency. MSVC (Windows, tested: 14.50.35717 via VS Insiders 18) or GCC (Linux, tested: 8.5.0 on RHEL 8) required to compile LLVM from source. Provided by host system; not vendored."
+    },
+    {
+      "SPDXID": "SPDXRef-clang-format-linux",
+      "name": "clang-format-linux",
+      "versionInfo": "22.1.1",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "44b2212e74a0d8afc0025c7e9d99e167f08065673b7c774684eef8c579c5d18b"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0 WITH LLVM-exception",
+      "licenseDeclared": "Apache-2.0 WITH LLVM-exception",
+      "copyrightText": "Copyright (c) 2003-2026 University of Illinois at Urbana-Champaign and LLVM Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/llvm/llvm-project@llvmorg-22.1.1"
+        }
+      ],
+      "comment": "Pre-built clang-format binary for linux-x86_64. Built from llvmorg-22.1.1 on RHEL 8 using GCC 8.5.0. Committed to prebuilt-binaries submodule (4.3 MB). Verified by scripts/verify-clang-format-linux.sh at bootstrap time."
+    },
+    {
+      "SPDXID": "SPDXRef-ninja-linux",
+      "name": "ninja-linux",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e34911b853813843771d3e115c9f55fb6178ff0b3fa84fcebdb46e6768f05d86"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ],
+      "comment": "Pre-built ninja binary for linux-x86_64. Built from ninja-1.13.2 on RHEL 8 using GCC 8.5.0 bootstrap. Committed to prebuilt-binaries submodule (10 MB). Used as build accelerator for LLVM source builds."
+    },
+    {
+      "SPDXID": "SPDXRef-ninja-windows",
+      "name": "ninja.exe",
+      "versionInfo": "1.13.2",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b3dfdbddb242f3400b2965a6d3acfa94c449d4ac8b11cec68290c624fc3c57e5"
+        }
+      ],
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "primaryPackagePurpose": "APPLICATION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/ninja-build/ninja@v1.13.2"
+        }
+      ],
+      "comment": "Pre-built ninja.exe for windows-x86_64. Built from ninja-1.13.2 using MSVC 19.50.35726.0 (VS Insiders 18) bootstrap. Committed to prebuilt-binaries submodule (656 KB). Used as build accelerator for LLVM source builds."
     }
   ],
   "relationships": [
@@ -330,6 +410,36 @@
       "spdxElementId": "SPDXRef-clang-llvm-source-build",
       "relationshipType": "BUILD_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-host-compiler"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-clang-format-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-format-linux",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-llvm-project"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-ninja-linux",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-ninja-source"
+    },
+    {
+      "spdxElementId": "SPDXRef-clang-llvm-source-build",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-ninja-windows"
+    },
+    {
+      "spdxElementId": "SPDXRef-ninja-windows",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-ninja-source"
     }
   ]
 }
