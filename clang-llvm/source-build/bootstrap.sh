@@ -75,6 +75,8 @@ install_mode_init "clang-llvm" "22.1.1"
 install_log_capture_start
 OUTPUT_FMT_WIN="${PREBUILT_DIR}/clang-format.exe"
 OUTPUT_TIDY_WIN="${PREBUILT_DIR}/clang-tidy.exe"
+OUTPUT_FMT_LIN_PREBUILT="${PREBUILT_DIR}/clang-format-linux"
+OUTPUT_TIDY_LIN_PARTS="${PREBUILT_DIR}"
 OUTPUT_FMT_LIN="${SCRIPT_DIR}/bin/linux/clang-format"
 OUTPUT_TIDY_LIN="${SCRIPT_DIR}/bin/linux/clang-tidy"
 
@@ -121,12 +123,16 @@ else
             fi
             ;;
         linux)
-            echo "  Linux: building from source (~30-60 minutes)."
-            echo "  For a 5-second install, use the pip method instead:"
-            echo "    bash ${FORMATTER_DIR}/bootstrap.sh"
-            echo ""
-            export REBUILD
-            bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+            if [[ "${BUILD_FROM_SOURCE}" == "true" ]]; then
+                echo "  Linux: building from source (--build-from-source, ~30-60 min)."
+                echo ""
+                export REBUILD
+                bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+            else
+                echo "  Linux: verifying vendored pre-built binary..."
+                echo ""
+                bash "${SCRIPT_DIR}/scripts/verify-clang-format-linux.sh"
+            fi
             ;;
     esac
 
