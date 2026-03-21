@@ -7,9 +7,9 @@
       "Organization: NimaShafie",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
     ],
-    "comment": "SBOM for lcov-source-build module. Covers lcov 2.4 and all vendored Perl dependencies."
+    "comment": "Generated SBOM for lcov-source-build subproject of airgap-cpp-devkit."
   },
-  "name": "lcov-source-build",
+  "name": "airgap-cpp-devkit-lcov-source-build",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/lcov-source-build/sbom.spdx.json",
   "documentDescribes": ["SPDXRef-lcov-source-build"],
@@ -17,7 +17,7 @@
     {
       "SPDXID": "SPDXRef-lcov-source-build",
       "name": "lcov-source-build",
-      "versionInfo": "2.4",
+      "versionInfo": "1.0.0",
       "supplier": "Organization: NimaShafie",
       "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
       "filesAnalyzed": false,
@@ -25,18 +25,24 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Code coverage reporting module for air-gapped RHEL 8 / Linux environments. Vendors lcov 2.4 and all required Perl dependencies as pre-built tarballs. SHA256 verified via manifest.json."
+      "comment": "Optional subproject. Provides lcov 2.4 code coverage reporting for C++ projects on RHEL 8 / Linux. All Perl dependencies vendored as pre-built tarballs. No internet access, CPAN, or EPEL required."
     },
     {
       "SPDXID": "SPDXRef-lcov",
       "name": "lcov",
       "versionInfo": "2.4",
-      "supplier": "Organization: linux-test-project",
+      "supplier": "Organization: Linux Test Project",
       "downloadLocation": "https://github.com/linux-test-project/lcov/releases/tag/v2.4",
       "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5f349f8d01fa6dac1d48307df9d172d423bc938f81e590004848150aa69db0bb"
+        }
+      ],
       "licenseConcluded": "GPL-2.0-only",
       "licenseDeclared": "GPL-2.0-only",
-      "copyrightText": "NOASSERTION",
+      "copyrightText": "Copyright (c) Linux Test Project contributors",
       "primaryPackagePurpose": "APPLICATION",
       "externalRefs": [
         {
@@ -45,11 +51,30 @@
           "referenceLocator": "pkg:github/linux-test-project/lcov@v2.4"
         }
       ],
-      "comment": "Vendored as vendor/lcov-2.4.tar.gz. SHA256: 5f349f8d01fa6dac1d48307df9d172d423bc938f81e590004848150aa69db0bb"
+      "comment": "Vendored as lcov-2.4.tar.gz in vendor/. Provides lcov and genhtml binaries for code coverage reporting. SHA256 is self-computed from vendored tarball."
+    },
+    {
+      "SPDXID": "SPDXRef-perl-libs",
+      "name": "perl-libs",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: NimaShafie",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a8b5a1c6d3c471c23b33ff793414dca2a537706d81b93d44d6b0f98e42df6cd3"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "ARCHIVE",
+      "comment": "Bundled pre-built Perl dependencies required by lcov 2.4: Capture::Tiny 0.50, DateTime 1.66, DateTime::TimeZone 2.67, TimeDate 2.34. Vendored as perl-libs.tar.gz in vendor/. SHA256 is self-computed from vendored tarball."
     },
     {
       "SPDXID": "SPDXRef-perl-capture-tiny",
-      "name": "Capture-Tiny",
+      "name": "Capture::Tiny",
       "versionInfo": "0.50",
       "supplier": "Organization: CPAN",
       "downloadLocation": "https://metacpan.org/dist/Capture-Tiny",
@@ -62,10 +87,10 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:cpan/DAGOLDEN/Capture-Tiny@0.50"
+          "referenceLocator": "pkg:cpan/Capture-Tiny@0.50"
         }
       ],
-      "comment": "Vendored inside vendor/perl-libs.tar.gz. Required by lcov 2.x at runtime."
+      "comment": "Perl module required by lcov 2.4. Bundled in vendor/perl-libs.tar.gz."
     },
     {
       "SPDXID": "SPDXRef-perl-datetime",
@@ -82,14 +107,14 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:cpan/DROLSKY/DateTime@1.66"
+          "referenceLocator": "pkg:cpan/DateTime@1.66"
         }
       ],
-      "comment": "Vendored inside vendor/perl-libs.tar.gz. Required by lcov 2.x at runtime."
+      "comment": "Perl module required by lcov 2.4. Bundled in vendor/perl-libs.tar.gz."
     },
     {
       "SPDXID": "SPDXRef-perl-datetime-timezone",
-      "name": "DateTime-TimeZone",
+      "name": "DateTime::TimeZone",
       "versionInfo": "2.67",
       "supplier": "Organization: CPAN",
       "downloadLocation": "https://metacpan.org/dist/DateTime-TimeZone",
@@ -102,50 +127,56 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:cpan/DROLSKY/DateTime-TimeZone@2.67"
+          "referenceLocator": "pkg:cpan/DateTime-TimeZone@2.67"
         }
       ],
-      "comment": "Vendored inside vendor/perl-libs.tar.gz. Required by DateTime at runtime."
+      "comment": "Perl module required by lcov 2.4. Bundled in vendor/perl-libs.tar.gz."
     },
     {
-      "SPDXID": "SPDXRef-perl-time-hires",
-      "name": "Time-HiRes",
-      "versionInfo": "1.9758",
+      "SPDXID": "SPDXRef-perl-timedate",
+      "name": "TimeDate",
+      "versionInfo": "2.34",
       "supplier": "Organization: CPAN",
-      "downloadLocation": "https://metacpan.org/dist/Time-HiRes",
+      "downloadLocation": "https://metacpan.org/dist/TimeDate",
       "filesAnalyzed": false,
-      "licenseConcluded": "Artistic-1.0-Perl",
-      "licenseDeclared": "Artistic-1.0-Perl",
+      "licenseConcluded": "GPL-1.0-or-later",
+      "licenseDeclared": "GPL-1.0-or-later",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "LIBRARY",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:rpm/rockylinux/perl-Time-HiRes@1.9758-2.el8?arch=x86_64"
+          "referenceLocator": "pkg:cpan/TimeDate@2.34"
         }
       ],
-      "comment": "System package installed via dnf from RHEL 8 AppStream. Not vendored — must be present on target system."
+      "comment": "Perl module required by lcov 2.4. Bundled in vendor/perl-libs.tar.gz."
+    },
+    {
+      "SPDXID": "SPDXRef-perl-time-hires",
+      "name": "perl-Time-HiRes",
+      "versionInfo": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "System Perl dependency. Available in RHEL 8 base AppStream repo — no EPEL required. Install with: sudo dnf install perl-Time-HiRes"
     },
     {
       "SPDXID": "SPDXRef-perl-json",
       "name": "perl-JSON",
-      "versionInfo": "2.97.001",
-      "supplier": "Organization: CPAN",
-      "downloadLocation": "https://metacpan.org/dist/JSON",
+      "versionInfo": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
-      "licenseConcluded": "Artistic-1.0-Perl",
-      "licenseDeclared": "Artistic-1.0-Perl",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "LIBRARY",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:rpm/rockylinux/perl-JSON@2.97.001-2.el8?arch=noarch"
-        }
-      ],
-      "comment": "System package installed via dnf from RHEL 8 AppStream. Not vendored — must be present on target system."
+      "comment": "System Perl dependency. Available in RHEL 8 base AppStream repo — no EPEL required. Install with: sudo dnf install perl-JSON"
     }
   ],
   "relationships": [
@@ -162,17 +193,27 @@
     {
       "spdxElementId": "SPDXRef-lcov-source-build",
       "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-perl-libs"
+    },
+    {
+      "spdxElementId": "SPDXRef-perl-libs",
+      "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-perl-capture-tiny"
     },
     {
-      "spdxElementId": "SPDXRef-lcov-source-build",
+      "spdxElementId": "SPDXRef-perl-libs",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-perl-datetime"
     },
     {
-      "spdxElementId": "SPDXRef-lcov-source-build",
+      "spdxElementId": "SPDXRef-perl-libs",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-perl-datetime-timezone"
+    },
+    {
+      "spdxElementId": "SPDXRef-perl-libs",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-perl-timedate"
     },
     {
       "spdxElementId": "SPDXRef-lcov-source-build",
