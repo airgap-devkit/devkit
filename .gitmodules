@@ -1,0 +1,3 @@
+[submodule "prebuilt-binaries"]
+	path = prebuilt-binaries
+	url = https://github.com/NimaShafie/airgap-cpp-devkit-prebuilt.git
