@@ -59,8 +59,9 @@ fi
 echo "[PASS] vendor/perl-libs extracted"
 
 # ── 4. lcov --version ────────────────────────────────────────────────
-source "$SCRIPT_DIR/env-setup.sh"
-VERSION=$(lcov --version 2>&1)
+# Use vendor path directly — env-setup.sh not sourced here to avoid
+# the "legacy in-repo" warning that fires before install completes.
+VERSION=$("$MODULE_DIR/vendor/lcov-2.4/bin/lcov" --version 2>&1)
 if echo "$VERSION" | grep -q "LCOV version 2.4"; then
     echo "[PASS] $VERSION"
 else
