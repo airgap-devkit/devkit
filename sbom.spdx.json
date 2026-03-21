@@ -51,7 +51,7 @@
       "spdxDocument": "https://github.com/NimaShafie/airgap-cpp-devkit/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "be38d69cee6f0903f2e358e3153e61c4ecb77d76"
+        "checksumValue": "6138786b90732e5134545cdfd936fcb0084f4f24"
       }
     }
   ],
