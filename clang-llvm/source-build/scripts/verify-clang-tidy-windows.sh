@@ -24,7 +24,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
-BINARY="${MODULE_ROOT}/bin/windows/clang-tidy.exe"
+REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
+BINARY="${REPO_ROOT}/prebuilt-binaries/clang-llvm/clang-tidy.exe"
 
 echo "============================================================"
 echo " clang-llvm-source-build — Verify clang-tidy.exe"

@@ -66,9 +66,11 @@ case "$(uname -s)" in
     *)  echo "ERROR: Unsupported platform." >&2; exit 1 ;;
 esac
 
-OUTPUT_FMT_WIN="${SCRIPT_DIR}/bin/windows/clang-format.exe"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
+OUTPUT_FMT_WIN="${PREBUILT_DIR}/clang-format.exe"
+OUTPUT_TIDY_WIN="${PREBUILT_DIR}/clang-tidy.exe"
 OUTPUT_FMT_LIN="${SCRIPT_DIR}/bin/linux/clang-format"
-OUTPUT_TIDY_WIN="${SCRIPT_DIR}/bin/windows/clang-tidy.exe"
 OUTPUT_TIDY_LIN="${SCRIPT_DIR}/bin/linux/clang-tidy"
 
 case "${OS}" in

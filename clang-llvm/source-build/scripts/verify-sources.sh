@@ -25,6 +25,8 @@ MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 LLVM_SRC="${MODULE_ROOT}/llvm-src"
 NINJA_SRC="${MODULE_ROOT}/ninja-src"
+REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
 BIN_LINUX="${MODULE_ROOT}/bin/linux"
 
 echo "============================================================"
@@ -261,7 +263,7 @@ case "$(uname -s)" in
         ;;
     MINGW*|MSYS*|CYGWIN*)
         echo "[clang-format] Checking pre-built Windows binary..."
-        FMT_BINARY="${MODULE_ROOT}/bin/windows/clang-format.exe"
+        FMT_BINARY="${PREBUILT_DIR}/clang-format.exe"
         FMT_HASH=$(awk '
             /"clang_format_windows"/{found=1}
             found && /"sha256_binary"/{
@@ -289,7 +291,7 @@ case "$(uname -s)" in
         echo ""
 
         echo "[clang-tidy] Checking pre-built Windows binary..."
-        WIN_BINARY="${MODULE_ROOT}/bin/windows/clang-tidy.exe"
+        WIN_BINARY="${PREBUILT_DIR}/clang-tidy.exe"
         WIN_HASH=$(awk '
             /"clang_tidy_windows"/{found=1}
             found && /"sha256_binary"/{

@@ -30,7 +30,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
+REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
 BIN_DIR="${MODULE_ROOT}/bin/linux"
+mkdir -p "${BIN_DIR}"
 
 echo "============================================================"
 echo " clang-llvm-source-build — Reassemble clang-tidy"
@@ -112,7 +115,7 @@ ALL_OK=true
 
 while IFS= read -r part_basename; do
     [[ -z "${part_basename}" ]] && continue
-    part_path="${BIN_DIR}/${part_basename}"
+    part_path="${PREBUILT_DIR}/${part_basename}"
     expected_hash=$(get_tidy_part_hash "${part_basename}")
 
     if [[ -z "${expected_hash}" ]]; then
