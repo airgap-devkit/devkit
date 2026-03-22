@@ -10,6 +10,7 @@
 #   bash cmake/bootstrap.sh                    # prebuilt (default)
 #   bash cmake/bootstrap.sh --build-from-source
 #   bash cmake/bootstrap.sh --rebuild          # force re-install
+#   bash cmake/bootstrap.sh --prefix /custom/path
 # =============================================================================
 
 set -euo pipefail
@@ -19,39 +20,38 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/cmake"
 CMAKE_VERSION="4.3.0"
 
-# ---------------------------------------------------------------------------
-# Source install-mode library
-# ---------------------------------------------------------------------------
-source "${REPO_ROOT}/scripts/install-mode.sh"
-install_mode_init "cmake" "${CMAKE_VERSION}"
-install_log_capture_start
-
-# ---------------------------------------------------------------------------
-# Parse arguments
-# ---------------------------------------------------------------------------
 BUILD_FROM_SOURCE=false
 REBUILD=false
+PREFIX_OVERRIDE=""
 
 for arg in "$@"; do
     case "${arg}" in
         --build-from-source) BUILD_FROM_SOURCE=true ;;
         --rebuild)           REBUILD=true ;;
-        *) echo "[ERROR] Unknown argument: ${arg}"; exit 1 ;;
+        --prefix)            shift; PREFIX_OVERRIDE="$1" ;;
+        *) ;;
     esac
 done
 
-# ---------------------------------------------------------------------------
-# Detect platform
-# ---------------------------------------------------------------------------
+# Re-parse for --prefix since positional shift doesn't work in for loop
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --prefix) PREFIX_OVERRIDE="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+
+source "${REPO_ROOT}/scripts/install-mode.sh"
+[[ -n "${PREFIX_OVERRIDE}" ]] && export INSTALL_PREFIX_OVERRIDE="${PREFIX_OVERRIDE}"
+install_mode_init "cmake" "${CMAKE_VERSION}"
+install_log_capture_start
+
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) PLATFORM="windows" ;;
     Linux*)                PLATFORM="linux"   ;;
     *) echo "[ERROR] Unsupported platform: $(uname -s)"; exit 1 ;;
 esac
 
-# ---------------------------------------------------------------------------
-# Check if already installed
-# ---------------------------------------------------------------------------
 CMAKE_BIN="${INSTALL_BIN_DIR}/cmake"
 [[ "${PLATFORM}" == "windows" ]] && CMAKE_BIN="${INSTALL_BIN_DIR}/cmake.exe"
 
@@ -63,24 +63,16 @@ if [[ -f "${CMAKE_BIN}" ]] && [[ "${REBUILD}" == "false" ]]; then
     exit 0
 fi
 
-# ---------------------------------------------------------------------------
-# Verify prebuilt-binaries submodule is populated
-# ---------------------------------------------------------------------------
 if [[ ! -d "${PREBUILT_DIR}" ]]; then
     echo "[ERROR] prebuilt-binaries submodule not initialized."
     echo "        Run: bash scripts/setup-prebuilt-submodule.sh"
     exit 1
 fi
 
-# ---------------------------------------------------------------------------
-# SHA256 verification helper
-# ---------------------------------------------------------------------------
 _verify_sha256() {
-    local file="$1"
-    local expected="$2"
+    local file="$1" expected="$2"
     if [[ ! -f "${file}" ]]; then
-        echo "[ERROR] File not found: ${file}"
-        exit 1
+        echo "[ERROR] File not found: ${file}"; exit 1
     fi
     local actual
     actual="$(sha256sum "${file}" | awk '{print $1}')"
@@ -93,12 +85,8 @@ _verify_sha256() {
     echo "[OK]   SHA256 verified: $(basename "${file}")"
 }
 
-# ---------------------------------------------------------------------------
-# Extract zip — tries 7z, then PowerShell Expand-Archive (Windows 11 native)
-# ---------------------------------------------------------------------------
 _extract_zip() {
-    local zip_file="$1"
-    local dest_dir="$2"
+    local zip_file="$1" dest_dir="$2"
     mkdir -p "${dest_dir}"
     if command -v 7z &>/dev/null; then
         7z x "${zip_file}" -o"${dest_dir}" -y > /dev/null
@@ -111,9 +99,6 @@ _extract_zip() {
     fi
 }
 
-# ---------------------------------------------------------------------------
-# PREBUILT PATH
-# ---------------------------------------------------------------------------
 if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
 
     WORK_DIR="$(mktemp -d)"
@@ -163,7 +148,6 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64"
         if [[ ! -d "${EXTRACTED_DIR}" ]]; then
             echo "[ERROR] Expected extracted directory not found: ${EXTRACTED_DIR}"
-            echo "        Contents of work dir:"
             ls "${WORK_DIR}"
             exit 1
         fi
@@ -176,18 +160,14 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
 
     BUILD_TYPE="prebuilt"
 
-# ---------------------------------------------------------------------------
-# SOURCE BUILD PATH
-# ---------------------------------------------------------------------------
 else
 
     SOURCE_TARBALL="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}.tar.gz"
-
     echo "[INFO] Verifying source tarball..."
     _verify_sha256 "${SOURCE_TARBALL}" "f51b3c729f85d8dde46a92c071d2826ea6afb77d850f46894125de7cc51baa77"
 
     if ! command -v g++ &>/dev/null && ! command -v c++ &>/dev/null; then
-        echo "[ERROR] No C++ compiler found. Install GCC first:"
+        echo "[ERROR] No C++ compiler found."
         echo "        Linux  : sudo dnf install gcc-c++"
         echo "        Windows: ensure WinLibs GCC is on PATH"
         exit 1
@@ -201,8 +181,6 @@ else
     im_progress_stop "Source extracted"
 
     SRC_DIR="${BUILD_WORK}/cmake-${CMAKE_VERSION}"
-
-    echo "[INFO] Bootstrapping CMake from source (~10-20 min)..."
     mkdir -p "${BUILD_WORK}/cmake-build"
     cd "${BUILD_WORK}/cmake-build"
 
@@ -212,7 +190,7 @@ else
         --parallel="$(nproc 2>/dev/null || echo 4)"
     im_progress_stop "Bootstrap complete"
 
-    im_progress_start "Building CMake (this may take 10-20 min)"
+    im_progress_start "Building CMake (10-20 min)"
     make -j"$(nproc 2>/dev/null || echo 4)"
     im_progress_stop "Build complete"
 
@@ -224,9 +202,6 @@ else
     BUILD_TYPE="source"
 fi
 
-# ---------------------------------------------------------------------------
-# Verify installed binary works
-# ---------------------------------------------------------------------------
 echo ""
 echo "[INFO] Verifying installation..."
 if ! "${CMAKE_BIN}" --version &>/dev/null; then
@@ -235,9 +210,6 @@ if ! "${CMAKE_BIN}" --version &>/dev/null; then
 fi
 INSTALLED_VER=$("${CMAKE_BIN}" --version | head -1 | awk '{print $3}')
 
-# ---------------------------------------------------------------------------
-# Write receipt
-# ---------------------------------------------------------------------------
 install_receipt_write "success" \
     "cmake:${CMAKE_BIN}"
 
@@ -245,9 +217,6 @@ echo "Build type   : ${BUILD_TYPE}" >> "${INSTALL_RECEIPT}"
 
 install_env_register "${INSTALL_BIN_DIR}"
 
-# ---------------------------------------------------------------------------
-# Print footer
-# ---------------------------------------------------------------------------
 install_mode_print_footer "success" \
     "cmake:${CMAKE_BIN}"
 

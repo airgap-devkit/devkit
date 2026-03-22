@@ -1,54 +1,33 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# bootstrap.sh — Install clang-format and clang-tidy from vendored binaries
+# clang-llvm/source-build/bootstrap.sh
 #
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │  Windows: uses vendored pre-built binaries — no compiler required.      │
-# │  Linux:   builds clang-format from source; installs pre-built clang-tidy│
-# │                                                                         │
-# │  For the fast pip/venv method (clang-format only, both platforms):      │
-# │    bash clang-llvm-style-formatter/bootstrap.sh   # ~5 seconds          │
-# └─────────────────────────────────────────────────────────────────────────┘
+# Installs clang-format and clang-tidy from vendored binaries.
 #
-# Windows vendored binaries (committed to git, SHA256 verified at install):
-#   bin/windows/clang-format.exe   3.1 MB — instant
-#   bin/windows/clang-tidy.exe      46 MB — instant
+# Windows: uses vendored pre-built binaries — no compiler required.
+# Linux:   builds clang-format from source; installs pre-built clang-tidy.
 #
-# Linux:
-#   clang-format  — built from the vendored LLVM 22.1.1 source (~30-60 min)
-#   clang-tidy    — reassembled from vendored pre-built split parts (seconds)
+# USAGE:
+#   bash clang-llvm/source-build/bootstrap.sh [--rebuild] [--build-from-source] [--prefix <path>]
 #
-# Pass --build-from-source to compile from LLVM source on Windows instead.
-# Build prerequisites (source build only):
-#   Windows : Visual Studio 2017/2019/2022/Insiders with C++ workload
-#             Tested: VS Insiders 18 | MSVC toolchain 14.50.35717 | CMake 4.1.2
-#   RHEL 8  : GCC 8+ (gcc-c++), CMake 3.14+, Python 3.6+
-#
-# Output binaries:
-#   bin/linux/clang-format
-#   bin/linux/clang-tidy       (reassembled from vendored parts)
-#   bin/windows/clang-format.exe (vendored pre-built)
-#   bin/windows/clang-tidy.exe   (vendored pre-built)
-#
-# Usage:
-#   bash clang-llvm-source-build/bootstrap.sh [--rebuild] [--build-from-source]
-#
-# Options:
+# OPTIONS:
 #   --rebuild            Force re-verify/rebuild of all binaries
-#   --build-from-source  Windows only: build both tools from LLVM source
-#
-# See docs/llvm-install-guide.md for full prerequisites and troubleshooting.
+#   --build-from-source  Build both tools from LLVM source
+#   --prefix <path>      Install to a custom path instead of auto-detected
 # =============================================================================
 
 set -euo pipefail
 
 REBUILD=false
 BUILD_FROM_SOURCE=false
+PREFIX_OVERRIDE=""
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --rebuild)           REBUILD=true; shift ;;
         --build-from-source) BUILD_FROM_SOURCE=true; shift ;;
+        --prefix)            PREFIX_OVERRIDE="$2"; shift 2 ;;
         -h|--help)
             grep '^#' "$0" | grep -v '^#!/' | sed 's/^# \?//'
             exit 0 ;;
@@ -57,8 +36,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FORMATTER_DIR="$(cd "${SCRIPT_DIR}/../clang-llvm-style-formatter" 2>/dev/null && pwd)" || \
-    FORMATTER_DIR="${SCRIPT_DIR}/../clang-llvm-style-formatter"
+FORMATTER_DIR="$(cd "${SCRIPT_DIR}/../style-formatter" 2>/dev/null && pwd)" || \
+    FORMATTER_DIR="${SCRIPT_DIR}/../style-formatter"
 
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
@@ -66,17 +45,17 @@ case "$(uname -s)" in
     *)  echo "ERROR: Unsupported platform." >&2; exit 1 ;;
 esac
 
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
 
-# Source shared install-mode library
 source "${REPO_ROOT}/scripts/install-mode.sh"
+[[ -n "${PREFIX_OVERRIDE}" ]] && export INSTALL_PREFIX_OVERRIDE="${PREFIX_OVERRIDE}"
 install_mode_init "clang-llvm" "22.1.1"
 install_log_capture_start
+
 OUTPUT_FMT_WIN="${PREBUILT_DIR}/clang-format.exe"
 OUTPUT_TIDY_WIN="${PREBUILT_DIR}/clang-tidy.exe"
 OUTPUT_FMT_LIN_PREBUILT="${PREBUILT_DIR}/clang-format-linux"
-OUTPUT_TIDY_LIN_PARTS="${PREBUILT_DIR}"
 OUTPUT_FMT_LIN="${SCRIPT_DIR}/bin/linux/clang-format"
 OUTPUT_TIDY_LIN="${SCRIPT_DIR}/bin/linux/clang-tidy"
 
@@ -95,8 +74,6 @@ echo ""
 
 # ==========================================================================
 # PART 1 — clang-format
-#   Windows: verify vendored pre-built binary (instant)
-#   Linux:   build from source (~30-60 min)
 # ==========================================================================
 echo "------------------------------------------------------------------"
 echo "  [1/2] clang-format"
@@ -111,27 +88,30 @@ else
     case "${OS}" in
         windows)
             if [[ "${BUILD_FROM_SOURCE}" == "true" ]]; then
-                echo "  Windows: building from source (--build-from-source)."
-                echo "  This build takes 30-60 minutes."
-                echo ""
+                echo "  Windows: building from source (--build-from-source, ~30-60 min)..."
+                im_progress_start "Building clang-format from source"
                 export REBUILD
                 bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+                im_progress_stop "clang-format build complete"
             else
                 echo "  Windows: verifying vendored pre-built binary..."
-                echo ""
+                im_progress_start "Verifying clang-format.exe"
                 bash "${SCRIPT_DIR}/scripts/verify-clang-format-windows.sh"
+                im_progress_stop "clang-format verified"
             fi
             ;;
         linux)
             if [[ "${BUILD_FROM_SOURCE}" == "true" ]]; then
-                echo "  Linux: building from source (--build-from-source, ~30-60 min)."
-                echo ""
+                echo "  Linux: building from source (--build-from-source, ~30-60 min)..."
+                im_progress_start "Building clang-format from source"
                 export REBUILD
                 bash "${SCRIPT_DIR}/scripts/build-clang-format.sh"
+                im_progress_stop "clang-format build complete"
             else
                 echo "  Linux: verifying vendored pre-built binary..."
-                echo ""
+                im_progress_start "Verifying clang-format-linux"
                 bash "${SCRIPT_DIR}/scripts/verify-clang-format-linux.sh"
+                im_progress_stop "clang-format verified"
             fi
             ;;
     esac
@@ -141,7 +121,6 @@ else
         exit 1
     }
     VER="$("${OUTPUT_FMT}" --version 2>/dev/null | head -1)"
-    echo ""
     echo "  Ready: ${VER}"
 fi
 
@@ -149,8 +128,6 @@ echo ""
 
 # ==========================================================================
 # PART 2 — clang-tidy
-#   Linux  : reassemble pre-built vendored binary from split parts
-#   Windows: verify vendored pre-built binary (or build from source)
 # ==========================================================================
 echo "------------------------------------------------------------------"
 echo "  [2/2] clang-tidy"
@@ -165,8 +142,9 @@ else
     case "${OS}" in
         linux)
             echo "  Linux: reassembling from vendored pre-built parts..."
-            echo ""
+            im_progress_start "Reassembling clang-tidy from split parts"
             bash "${SCRIPT_DIR}/scripts/reassemble-clang-tidy.sh"
+            im_progress_stop "clang-tidy reassembled"
 
             [[ -x "${OUTPUT_TIDY}" ]] || {
                 echo "ERROR: clang-tidy not found at ${OUTPUT_TIDY} after reassembly." >&2
@@ -175,15 +153,16 @@ else
             ;;
         windows)
             if [[ "${BUILD_FROM_SOURCE}" == "true" ]]; then
-                echo "  Windows: building from source (--build-from-source)."
-                echo "  Expected time: ~60-120 min first build."
-                echo ""
+                echo "  Windows: building from source (~60-120 min)..."
+                im_progress_start "Building clang-tidy from source"
                 bash "${SCRIPT_DIR}/scripts/build-clang-tidy.sh" \
                     $([[ "${REBUILD}" == "true" ]] && echo "--rebuild" || true)
+                im_progress_stop "clang-tidy build complete"
             else
                 echo "  Windows: verifying vendored pre-built binary..."
-                echo ""
+                im_progress_start "Verifying clang-tidy.exe"
                 bash "${SCRIPT_DIR}/scripts/verify-clang-tidy-windows.sh"
+                im_progress_stop "clang-tidy verified"
             fi
 
             [[ -x "${OUTPUT_TIDY}" ]] || {
@@ -194,18 +173,15 @@ else
     esac
 
     VER="$("${OUTPUT_TIDY}" --version 2>/dev/null | grep "LLVM version" | head -1)"
-    echo ""
     echo "  Ready: ${VER}"
 fi
 
 echo ""
 
 # ==========================================================================
-# Summary
-# ==========================================================================
-# ---------------------------------------------------------------------------
 # Install binaries to system/user path
-# ---------------------------------------------------------------------------
+# ==========================================================================
+im_progress_start "Installing binaries to ${INSTALL_BIN_DIR}"
 mkdir -p "${INSTALL_BIN_DIR}"
 
 _install_bin() {
@@ -213,7 +189,6 @@ _install_bin() {
     if [[ -x "${src}" ]]; then
         cp -f "${src}" "${INSTALL_BIN_DIR}/${name}"
         chmod +x "${INSTALL_BIN_DIR}/${name}"
-        echo "  Installed: ${INSTALL_BIN_DIR}/${name}"
     fi
 }
 
@@ -227,17 +202,18 @@ case "${OS}" in
         _install_bin "${OUTPUT_TIDY}" "clang-tidy"
         ;;
 esac
+im_progress_stop "Binaries installed"
 
-install_receipt_write "success"     "clang-format:${INSTALL_BIN_DIR}/clang-format"     "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
+install_receipt_write "success" \
+    "clang-format:${INSTALL_BIN_DIR}/clang-format" \
+    "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
 
-install_mode_print_footer "success"     "clang-format:${INSTALL_BIN_DIR}/clang-format"     "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
+install_env_register "${INSTALL_BIN_DIR}"
 
-echo "=================================================================="
-echo "  All done."
-echo "  clang-format : ${OUTPUT_FMT}"
-echo "  clang-tidy   : ${OUTPUT_TIDY}"
-echo "=================================================================="
-echo ""
+install_mode_print_footer "success" \
+    "clang-format:${INSTALL_BIN_DIR}/clang-format" \
+    "clang-tidy:${INSTALL_BIN_DIR}/clang-tidy"
+
 echo "  Now activate the pre-commit hook:"
 echo "    bash ${FORMATTER_DIR}/bootstrap.sh"
 echo ""

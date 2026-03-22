@@ -7,17 +7,10 @@
 # Verifies, reassembles, and installs in one step.
 #
 # USAGE:
-#   bash setup.sh [x86_64|i686]     # default: x86_64
+#   bash prebuilt/winlibs-gcc-ucrt/setup.sh [x86_64|i686] [--prefix <path>]
 #
-# INSTALL MODES:
-#   Admin (system-wide) : C:\Program Files\airgap-cpp-devkit\winlibs\<arch>\
-#   User  (per-user)    : %LOCALAPPDATA%\airgap-cpp-devkit\winlibs\<arch>\
-#
-#   Admin mode is attempted first. If the current user cannot write to
-#   Program Files, user mode is used automatically with a clear warning.
-#
-# After setup completes, activate in your current shell with:
-#   source scripts/env-setup.sh [x86_64|i686]
+# OPTIONS:
+#   --prefix <path>   Install to a custom path instead of auto-detected
 # =============================================================================
 
 set -euo pipefail
@@ -26,11 +19,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SCRIPTS="${SCRIPT_DIR}/scripts"
 ARCH="${1:-x86_64}"
+PREFIX_OVERRIDE=""
 
-# ---------------------------------------------------------------------------
-# Source shared install-mode library
-# ---------------------------------------------------------------------------
+shift || true
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --prefix) PREFIX_OVERRIDE="$2"; shift 2 ;;
+        *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
+    esac
+done
+
 source "${REPO_ROOT}/scripts/install-mode.sh"
+[[ -n "${PREFIX_OVERRIDE}" ]] && export INSTALL_PREFIX_OVERRIDE="${PREFIX_OVERRIDE}"
 install_mode_init "winlibs-gcc-ucrt" "15.2.0"
 install_log_capture_start
 
@@ -45,29 +45,25 @@ echo " Install dir : ${INSTALL_DIR}"
 echo "============================================================"
 echo ""
 
-# ---------------------------------------------------------------------------
-# Step 1: Verify parts (from prebuilt-binaries submodule)
-# ---------------------------------------------------------------------------
-echo ">>> [1/3] Verifying vendor parts..."
+# Step 1: Verify parts
+im_progress_start "Verifying vendor parts"
 bash "${SCRIPTS}/verify.sh" "${ARCH}"
+im_progress_stop "Verification complete"
 
-# ---------------------------------------------------------------------------
+echo ""
+
 # Step 2: Reassemble
-# ---------------------------------------------------------------------------
-echo ""
-echo ">>> [2/3] Reassembling archive..."
+im_progress_start "Reassembling archive (this may take a moment)"
 bash "${SCRIPTS}/reassemble.sh" "${ARCH}"
+im_progress_stop "Archive reassembled"
 
-# ---------------------------------------------------------------------------
-# Step 3: Install
-# ---------------------------------------------------------------------------
 echo ""
-echo ">>> [3/3] Installing to ${INSTALL_DIR}..."
-bash "${SCRIPTS}/install.sh" "${ARCH}" "${INSTALL_DIR}"
 
-# ---------------------------------------------------------------------------
-# Write install receipt
-# ---------------------------------------------------------------------------
+# Step 3: Install
+im_progress_start "Installing to ${INSTALL_DIR}"
+bash "${SCRIPTS}/install.sh" "${ARCH}" "${INSTALL_DIR}"
+im_progress_stop "Installation complete"
+
 GCC_BIN="${INSTALL_DIR}/mingw64/bin/gcc.exe"
 [[ "${ARCH}" == "i686" ]] && GCC_BIN="${INSTALL_DIR}/mingw32/bin/gcc.exe"
 
@@ -75,11 +71,12 @@ install_receipt_write "success" \
     "gcc:${GCC_BIN}" \
     "install-dir:${INSTALL_DIR}"
 
+install_env_register "${INSTALL_DIR}/mingw64/bin"
+
 install_mode_print_footer "success" \
     "gcc:${GCC_BIN}" \
     "install-dir:${INSTALL_DIR}"
 
-echo ""
 echo "  Activate in your current shell:"
 echo "    source ${SCRIPT_DIR}/scripts/env-setup.sh ${ARCH} ${INSTALL_DIR}"
 echo ""
