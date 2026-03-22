@@ -7,7 +7,7 @@
 >
 > Most developers should use the faster pip method for clang-format instead:
 > ```bash
-> bash clang-llvm-style-formatter/bootstrap.sh   # ~5 seconds
+> bash clang-llvm/style-formatter/bootstrap.sh   # ~5 seconds
 > ```
 
 ---
@@ -16,18 +16,18 @@
 
 | Scenario | Recommended method |
 |----------|-------------------|
-| Windows — need clang-format + clang-tidy | `clang-llvm-source-build/bootstrap.sh` (this) — instant |
-| Linux — Python 3.8+ available, clang-format only | `clang-llvm-style-formatter/bootstrap.sh` (pip) |
-| Linux — Python unavailable | `clang-llvm-source-build/bootstrap.sh` (this) |
-| Policy requires source builds | `clang-llvm-source-build/bootstrap.sh --build-from-source` |
-| Need clang-tidy on Linux | `clang-llvm-source-build/bootstrap.sh` (this) |
+| Windows — need clang-format + clang-tidy | `clang-llvm/source-build/bootstrap.sh` (this) — instant |
+| Linux — Python 3.8+ available, clang-format only | `clang-llvm/style-formatter/bootstrap.sh` (pip) |
+| Linux — Python unavailable | `clang-llvm/source-build/bootstrap.sh` (this) |
+| Policy requires source builds | `clang-llvm/source-build/bootstrap.sh --build-from-source` |
+| Need clang-tidy on Linux | `clang-llvm/source-build/bootstrap.sh` (this) |
 
 ---
 
 ## Usage
 
 ```bash
-bash clang-llvm-source-build/bootstrap.sh
+bash clang-llvm/source-build/bootstrap.sh
 ```
 
 **On Linux**, this does two things:
@@ -44,7 +44,7 @@ bash clang-llvm-source-build/bootstrap.sh
 To build both tools from LLVM source instead of using the vendored binaries:
 
 ```bash
-bash clang-llvm-source-build/bootstrap.sh --build-from-source
+bash clang-llvm/source-build/bootstrap.sh --build-from-source
 ```
 
 **Build prerequisites are only required for `--build-from-source`:**
@@ -53,20 +53,20 @@ The binaries are placed at:
 
 | Binary | Linux | Windows |
 |--------|-------|---------|
-| clang-format | `bin/linux/clang-format` | `bin/windows/clang-format.exe` |
-| clang-tidy | `bin/linux/clang-tidy` | `bin/windows/clang-tidy.exe` |
+| clang-format | `prebuilt-binaries/clang-format-linux` | `prebuilt-binaries/clang-format.exe` |
+| clang-tidy | `prebuilt-binaries/clang-tidy-linux` | `prebuilt-binaries/clang-tidy.exe` |
 
-`clang-llvm-style-formatter/bootstrap.sh` detects these binaries automatically.
+`clang-llvm/style-formatter/bootstrap.sh` detects these binaries automatically.
 After this script completes, run the formatter bootstrap to install the hook:
 
 ```bash
-bash clang-llvm-style-formatter/bootstrap.sh
+bash clang-llvm/style-formatter/bootstrap.sh
 ```
 
 To force a full rebuild and re-verification:
 
 ```bash
-bash clang-llvm-source-build/bootstrap.sh --rebuild
+bash clang-llvm/source-build/bootstrap.sh --rebuild
 ```
 
 ---
@@ -109,11 +109,9 @@ instructions, troubleshooting, and known platform issues.
 
 1. Checks for an existing binary — skips if found (use `--rebuild` to override)
 2. Runs `scripts/verify-clang-format-windows.sh`:
-   - Verifies `bin/windows/clang-format.exe` SHA256 against `manifest.json`
+   - Verifies `prebuilt-binaries/clang-format.exe` SHA256 against `manifest.json`
    - Sets executable bit
-3. Binary ready at `bin/windows/clang-format.exe`
-
-### clang-format on Linux (source build)
+3. Binary ready at `prebuilt-binaries/clang-format.exe`
 
 ### clang-format on Linux (source build)
 
@@ -121,25 +119,25 @@ instructions, troubleshooting, and known platform issues.
 2. Runs `scripts/build-ninja.sh` — builds Ninja from `ninja-src/` (~30 sec)
 3. Runs `scripts/extract-llvm-source.sh` — reassembles the split tarball and extracts (~5-15 min)
 4. Runs `scripts/build-clang-format.sh` — compiles with CMake + Ninja (~30-60 min)
-5. Binary placed in `bin/linux/clang-format`
+5. Binary placed in `prebuilt-binaries/clang-format-linux`
 
 ### clang-tidy on Linux (pre-built vendored binary)
 
 1. Checks for an existing binary — skips if found (use `--rebuild` to override)
 2. Runs `scripts/reassemble-clang-tidy.sh`:
    - Verifies each split part against SHA256 in `manifest.json`
-   - Reassembles `clang-tidy.part-aa` + `clang-tidy.part-ab` → `clang-tidy`
+   - Reassembles `prebuilt-binaries/clang-tidy.part-aa` + `prebuilt-binaries/clang-tidy.part-ab` → `clang-tidy-linux`
    - Verifies the assembled binary SHA256
    - Sets executable bit
-3. Binary placed in `bin/linux/clang-tidy`
+3. Binary placed in `prebuilt-binaries/clang-tidy-linux`
 
 ### clang-tidy on Windows (vendored pre-built binary)
 
 1. Checks for an existing binary — skips if found (use `--rebuild` to override)
 2. Runs `scripts/verify-clang-tidy-windows.sh`:
-   - Verifies `bin/windows/clang-tidy.exe` SHA256 against `manifest.json`
+   - Verifies `prebuilt-binaries/clang-tidy.exe` SHA256 against `manifest.json`
    - Sets executable bit
-3. Binary ready at `bin/windows/clang-tidy.exe`
+3. Binary ready at `prebuilt-binaries/clang-tidy.exe`
 
 The Windows binary (46 MB) is committed directly to git — no splitting required.
 Pass `--build-from-source` to compile from the vendored LLVM source instead.
@@ -148,11 +146,12 @@ Pass `--build-from-source` to compile from the vendored LLVM source instead.
 
 ## Using clang-tidy
 
-After bootstrapping, the binary is at `bin/<platform>/clang-tidy[.exe]`.
+After bootstrapping, the binary is at `prebuilt-binaries/clang-tidy-linux` (Linux)
+or `prebuilt-binaries/clang-tidy.exe` (Windows).
 A minimal usage example and a C++ file with intentional issues are in `demo/`:
 
 ```bash
-bash clang-llvm-source-build/demo/run-demo.sh
+bash clang-llvm/source-build/demo/run-demo.sh
 ```
 
 This runs `clang-tidy` against a sample file and shows the diagnostics output.
@@ -172,7 +171,7 @@ See [`demo/README.md`](demo/README.md) for details on each check category.
 To reclaim build space after a successful build:
 
 ```bash
-rm -rf clang-llvm-source-build/llvm-src/build/
+rm -rf clang-llvm/source-build/llvm-src/build/
 ```
 
 ---
@@ -182,16 +181,16 @@ rm -rf clang-llvm-source-build/llvm-src/build/
 On a machine with internet access:
 
 ```bash
-bash clang-llvm-source-build/scripts/fetch-llvm-source.sh --version 23.x.x
-bash clang-llvm-source-build/scripts/split-llvm-tarball.sh
-git add clang-llvm-source-build/llvm-src/
+bash clang-llvm/source-build/scripts/fetch-llvm-source.sh --version 23.x.x
+bash clang-llvm/source-build/scripts/split-llvm-tarball.sh
+git add clang-llvm/source-build/llvm-src/
 git commit -m "vendor: update LLVM to 23.x.x"
 git push
 ```
 
 Developers rebuild with:
 ```bash
-bash clang-llvm-source-build/bootstrap.sh --rebuild
+bash clang-llvm/source-build/bootstrap.sh --rebuild
 ```
 
 ## Updating the Vendored clang-tidy Linux Binary (Maintainers Only)
@@ -200,12 +199,12 @@ Build `clang-tidy` from LLVM source on a RHEL 8 x86_64 machine, then split
 and update the manifest:
 
 ```bash
-strip bin/linux/clang-tidy
-split -b 52428800 bin/linux/clang-tidy bin/linux/clang-tidy.part-
-sha256sum bin/linux/clang-tidy
-sha256sum bin/linux/clang-tidy.part-aa bin/linux/clang-tidy.part-ab
+strip prebuilt-binaries/clang-tidy-linux
+split -b 52428800 prebuilt-binaries/clang-tidy-linux prebuilt-binaries/clang-tidy.part-
+sha256sum prebuilt-binaries/clang-tidy-linux
+sha256sum prebuilt-binaries/clang-tidy.part-aa prebuilt-binaries/clang-tidy.part-ab
 # Update manifest.json clang_tidy_linux block, then:
-git add bin/linux/clang-tidy.part-* manifest.json
+git add prebuilt-binaries/clang-tidy.part-* manifest.json
 git commit -m "vendor: update clang-tidy linux binary to LLVM 23.x.x"
 git push
 ```
@@ -220,13 +219,14 @@ git push
 | `manifest.json` | SHA256 pins for all vendored archives and binaries |
 | `llvm-src/*.part-*` | Vendored LLVM 22.1.1 source (split, committed) |
 | `ninja-src/ninja-1.13.2.tar.gz` | Vendored Ninja source (committed) |
-| `bin/linux/clang-format` | Built output — generated, not committed |
-| `bin/linux/clang-tidy` | Assembled from parts — generated, not committed |
-| `bin/linux/clang-tidy.part-aa` | Pre-built binary split part 1 (committed, ~52 MB) |
-| `bin/linux/clang-tidy.part-ab` | Pre-built binary split part 2 (committed, ~31 MB) |
-| `bin/linux/ninja` | Built output — generated, not committed |
-| `bin/windows/clang-format.exe` | Vendored pre-built binary (committed, 3.1 MB) |
-| `bin/windows/clang-tidy.exe` | Vendored pre-built binary (committed, 46 MB) |
+| `prebuilt-binaries/clang-format-linux` | Built output — generated, not committed |
+| `prebuilt-binaries/clang-tidy-linux` | Assembled from parts — generated, not committed |
+| `prebuilt-binaries/clang-tidy.part-aa` | Pre-built binary split part 1 (committed, ~52 MB) |
+| `prebuilt-binaries/clang-tidy.part-ab` | Pre-built binary split part 2 (committed, ~31 MB) |
+| `prebuilt-binaries/ninja-linux` | Built output — generated, not committed |
+| `prebuilt-binaries/clang-format.exe` | Vendored pre-built binary (committed, 3.1 MB) |
+| `prebuilt-binaries/clang-tidy.exe` | Vendored pre-built binary (committed, 46 MB) |
+| `prebuilt-binaries/ninja.exe` | Vendored pre-built binary (committed) |
 | `scripts/verify-clang-format-windows.sh` | Verify Windows clang-format.exe SHA256 |
 | `scripts/verify-clang-tidy-windows.sh` | Verify Windows clang-tidy.exe SHA256 |
 | `demo/` | clang-tidy demonstration — sample C++ file and runner |

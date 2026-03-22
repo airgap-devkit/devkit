@@ -1,0 +1,35 @@
+{
+  "cmake": {
+    "version": "4.3.0",
+    "linux_prebuilt": {
+      "filename": "cmake-4.3.0-linux-x86_64.tar.gz",
+      "parts": [
+        {
+          "filename": "cmake-4.3.0-linux-x86_64.tar.gz.part-aa",
+          "sha256": "57d532fe7e398e16c16b07a01313a74cf71b03b9ddb39493f337e3598d7838e5"
+        },
+        {
+          "filename": "cmake-4.3.0-linux-x86_64.tar.gz.part-ab",
+          "sha256": "0fe83ca763e44f555794cce952c7a6bc7484841a8ecff4de23a43f2e863dd738"
+        }
+      ]
+    },
+    "windows_prebuilt": {
+      "filename": "cmake-4.3.0-windows-x86_64.zip",
+      "parts": [
+        {
+          "filename": "cmake-4.3.0-windows-x86_64.zip.part-aa",
+          "sha256": "4ac8f0d10b7d771e28fa5ecba9f5683756b6327ebfdbd66c552f430c3655ba59"
+        },
+        {
+          "filename": "cmake-4.3.0-windows-x86_64.zip.part-ab",
+          "sha256": "bf4abc210d2c83ce6542de3158cbd8239e09c24605718095b68d1f1c1094a113"
+        }
+      ]
+    },
+    "source": {
+      "filename": "cmake-4.3.0.tar.gz",
+      "sha256": "f51b3c729f85d8dde46a92c071d2826ea6afb77d850f46894125de7cc51baa77"
+    }
+  }
+}
