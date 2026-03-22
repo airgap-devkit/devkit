@@ -45,7 +45,7 @@ case "$(uname -s)" in
     *)  echo "ERROR: Unsupported platform." >&2; exit 1 ;;
 esac
 
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/clang-llvm"
 
 source "${REPO_ROOT}/scripts/install-mode.sh"
