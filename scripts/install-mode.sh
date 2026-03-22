@@ -45,7 +45,7 @@
 #   Linux   : /var/log/airgap-cpp-devkit/  (falls back to ~/airgap-cpp-devkit-logs/)
 # =============================================================================
 
-[[ -n "${_INSTALL_MODE_LOADED:-}" ]] && return 0
+[[ -n "${_INSTALL_MODE_LOADED:-}" ]] && { _IM_BOX_WIDTH=98; return 0; } 2>/dev/null || true
 _INSTALL_MODE_LOADED=1
 
 # Box inner width (visual columns between the border chars)
