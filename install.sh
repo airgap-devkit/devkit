@@ -239,6 +239,22 @@ INSTALLED_TOOLS=()
 FAILED_TOOLS=()
 SKIPPED_TOOLS=()
 
+_run_bootstrap_no_prefix() {
+    local label="$1" script="$2"
+    shift 2
+    echo ""
+    echo "  -- ${label} ------------------------------------------------------"
+    local rebuild_arg=()
+    [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
+    if bash "${script}" "${rebuild_arg[@]}"; then
+        INSTALLED_TOOLS+=("${label}")
+    else
+        FAILED_TOOLS+=("${label}")
+        echo ""
+        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+    fi
+}
+
 _run_bootstrap() {
     local label="$1" script="$2"
     shift 2
@@ -320,7 +336,7 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [5/6] Installing style-formatter (required)..."
-_run_bootstrap "style-formatter" \
+_run_bootstrap_no_prefix "style-formatter" \
     "${REPO_ROOT}/clang-llvm/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
