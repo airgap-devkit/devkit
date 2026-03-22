@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
+# Author: Nima Shafie
 # =============================================================================
 # scripts/setup-prebuilt-submodule.sh
-# Author: Nima Shafie
 #
 # PURPOSE: One-time setup script to initialize the prebuilt-binaries submodule.
 #          Run this after cloning if you want the pre-built binaries (Base Case).
@@ -20,7 +20,7 @@
 #   If your air-gapped network does not permit pre-compiled binaries,
 #   do NOT run this script. Instead, build all tools from source:
 #     bash clang-llvm/source-build/bootstrap.sh --build-from-source
-#     bash prebuilt/winlibs-gcc-ucrt/setup.sh
+#     bash winlibs-gcc-ucrt/bootstrap.sh --build-from-source
 #     etc.
 # =============================================================================
 
@@ -66,38 +66,62 @@ echo "[INFO] Submodule initialized."
 echo ""
 
 # ---------------------------------------------------------------------------
+# Helper: check a single binary file or a set of split parts
+#
+# Usage:
+#   _check_binary  <label>  <relative-path-under-prebuilt-binaries>  [parts]
+#
+#   If the third argument is "parts", the function checks for <path>.part-*
+#   glob matches instead of a plain file, and reports them as split parts
+#   ready for assembly.
+# ---------------------------------------------------------------------------
+_check_binary() {
+    local label="$1"
+    local rel="$2"
+    local mode="${3:-file}"   # "file" or "parts"
+    local base="${REPO_ROOT}/prebuilt-binaries/${rel}"
+
+    if [[ "${mode}" == "parts" ]]; then
+        local parts=( "${base}".part-* )
+        if [[ -f "${parts[0]}" ]]; then
+            local count="${#parts[@]}"
+            echo "  ○  ${label} (${count} split parts — run bootstrap to assemble)"
+        else
+            echo "  ✗  ${label} (not found)"
+        fi
+    else
+        if [[ -f "${base}" ]]; then
+            local size
+            size="$(du -sh "${base}" 2>/dev/null | cut -f1)"
+            echo "  ✓  ${label} (${size})"
+        else
+            echo "  ✗  ${label} (not found)"
+        fi
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # Show what is available
 # ---------------------------------------------------------------------------
 echo "Available pre-built binaries:"
 echo ""
 
-_check_binary() {
-    local label="$1"
-    local path="${REPO_ROOT}/prebuilt-binaries/${2}"
-    if [[ -f "${path}" ]]; then
-        local size
-        size="$(du -sh "${path}" 2>/dev/null | cut -f1)"
-        echo "  ✓  ${label} (${size})"
-    elif ls "${path}".part-* &>/dev/null 2>&1; then
-        echo "  ○  ${label} (split parts — run bootstrap to assemble)"
-    else
-        echo "  ✗  ${label} (not found)"
-    fi
-}
-
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*)
-        _check_binary "clang-format.exe" "clang-llvm/clang-format.exe"
-        _check_binary "clang-tidy.exe"   "clang-llvm/clang-tidy.exe"
-        _check_binary "WinLibs GCC"      "winlibs-gcc-ucrt/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z"
+        _check_binary "clang-format.exe"  "clang-llvm/clang-format.exe"
+        _check_binary "clang-tidy.exe"    "clang-llvm/clang-tidy.exe"
+        _check_binary "ninja.exe"         "clang-llvm/ninja.exe"
+        _check_binary "WinLibs GCC"       "winlibs-gcc-ucrt/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z" parts
         ;;
     Linux*)
-        _check_binary "clang-tidy (linux)" "clang-llvm/clang-tidy-linux.part-aa"
+        _check_binary "clang-format (linux)"  "clang-llvm/clang-format-linux"
+        _check_binary "clang-tidy (linux)"    "clang-llvm/clang-tidy" parts
+        _check_binary "ninja (linux)"         "clang-llvm/ninja-linux"
         ;;
 esac
 
 echo ""
 echo "  Run the individual tool bootstraps to install:"
 echo "    bash clang-llvm/source-build/bootstrap.sh"
-echo "    bash prebuilt-binaries/winlibs-gcc-ucrt/setup.sh"
+echo "    bash winlibs-gcc-ucrt/bootstrap.sh"
 echo ""

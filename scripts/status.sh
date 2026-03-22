@@ -11,16 +11,13 @@
 #
 # Works on Windows (Git Bash / MINGW64) and Linux (RHEL 8+).
 # =============================================================================
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
     Linux*)               OS="linux"   ;;
     *)                    OS="unknown" ;;
 esac
-
 _admin_prefix() {
     case "${OS}" in
         windows)
@@ -32,7 +29,6 @@ _admin_prefix() {
         linux) echo "/opt/airgap-cpp-devkit" ;;
     esac
 }
-
 _user_prefix() {
     case "${OS}" in
         windows)
@@ -44,23 +40,19 @@ _user_prefix() {
         linux) echo "${HOME}/.local/share/airgap-cpp-devkit" ;;
     esac
 }
-
 ADMIN_PREFIX="$(_admin_prefix)"
 USER_PREFIX="$(_user_prefix)"
-
 GREEN="\033[0;32m"
 YELLOW="\033[1;33m"
 RED="\033[0;31m"
 CYAN="\033[0;36m"
 BOLD="\033[1m"
 RESET="\033[0m"
-
 _receipt_field() {
     local receipt="$1" field="$2"
     grep "^${field}" "${receipt}" 2>/dev/null \
         | head -1 | sed 's/^[^:]*: *//' | tr -d '\r'
 }
-
 _find_install_dir() {
     local tool="$1"
     local admin_dir="${ADMIN_PREFIX}/${tool}"
@@ -73,7 +65,6 @@ _find_install_dir() {
         echo ""
     fi
 }
-
 _check_bin() {
     local bin="${1%$'\r'}"
     bin="${bin% }"
@@ -85,7 +76,6 @@ _check_bin() {
         printf "${RED}✗ missing${RESET}"
     fi
 }
-
 _bin_version() {
     local bin="${1%$'\r'}"
     bin="${bin% }"
@@ -98,19 +88,16 @@ _bin_version() {
         echo "—"
     fi
 }
-
 _print_not_installed() {
     local tool="$1" hint="${2:-}"
     printf "  ${YELLOW}[–]${RESET} ${BOLD}%-22s${RESET} not installed\n" "${tool}"
     [[ -n "${hint}" ]] && printf "       hint: %s\n" "${hint}"
     echo ""
 }
-
 _print_platform_only() {
     local tool="$1" platform="$2"
     printf "  ${CYAN}[—]${RESET} ${BOLD}%-22s${RESET} %s only\n\n" "${tool}" "${platform}"
 }
-
 # Parse receipt binary section.
 # Binary lines:   "  <name> : <path>"  (2-space indent)
 # SHA256 lines:   "    SHA256 : <hash>" (4-space indent) — skip
@@ -121,11 +108,9 @@ _print_installed() {
     version="$(_receipt_field "${receipt}" "Version")"
     install_mode="$(_receipt_field "${receipt}" "Install mode")"
     install_date="$(_receipt_field "${receipt}" "Date")"
-
     printf "  ${GREEN}[✓]${RESET} ${BOLD}%-22s${RESET} %-8s  %-6s  %s\n" \
         "${tool}" "${version}" "${install_mode}" "${install_dir}"
     printf "       Installed : %s\n" "${install_date}"
-
     local in_binaries=false
     while IFS= read -r line; do
         line="${line%$'\r'}"
@@ -151,7 +136,6 @@ _print_installed() {
     done < "${receipt}"
     echo ""
 }
-
 _check_style_formatter() {
     local fmt_bin=""
     local candidates=(
@@ -164,11 +148,9 @@ _check_style_formatter() {
     for c in "${candidates[@]}"; do
         [[ -x "${c}" ]] && { fmt_bin="${c}"; break; }
     done
-
     local hook="${REPO_ROOT}/.git/hooks/pre-commit"
     local hook_status="${RED}not installed${RESET}"
     [[ -f "${hook}" ]] && hook_status="${GREEN}installed${RESET}"
-
     if [[ -n "${fmt_bin}" ]]; then
         local ver
         ver="$(_bin_version "${fmt_bin}")"
@@ -182,13 +164,41 @@ _check_style_formatter() {
             "bash clang-llvm/style-formatter/bootstrap.sh"
     fi
 }
-
+_check_cmake() {
+    local install_dir
+    install_dir="$(_find_install_dir "cmake")"
+    if [[ -n "${install_dir}" ]]; then
+        local receipt="${install_dir}/INSTALL_RECEIPT.txt"
+        local version install_mode install_date
+        version="$(_receipt_field "${receipt}" "Version")"
+        install_mode="$(_receipt_field "${receipt}" "Install mode")"
+        install_date="$(_receipt_field "${receipt}" "Date")"
+        printf "  ${GREEN}[✓]${RESET} ${BOLD}%-22s${RESET} %-8s  %-6s  %s\n" \
+            "cmake" "${version}" "${install_mode}" "${install_dir}"
+        printf "       Installed : %s\n" "${install_date}"
+        local cmake_bin=""
+        for b in "${install_dir}/bin/cmake" "${install_dir}/bin/cmake.exe"; do
+            [[ -f "${b}" ]] && cmake_bin="${b}" && break
+        done
+        if [[ -n "${cmake_bin}" ]]; then
+            local status ver
+            status="$(_check_bin "${cmake_bin}")"
+            ver="$(_bin_version "${cmake_bin}")"
+            printf "       cmake         : %-12s %b  %s\n" \
+                "${ver}" "${status}" "${cmake_bin}"
+        else
+            printf "       cmake         : %-12s %b\n" "binary missing" "${RED}✗${RESET}"
+        fi
+        echo ""
+    else
+        _print_not_installed "cmake" "bash cmake/bootstrap.sh"
+    fi
+}
 _check_winlibs() {
     if [[ "${OS}" != "windows" ]]; then
         _print_platform_only "winlibs-gcc-ucrt" "Windows"
         return
     fi
-
     local install_dir
     install_dir="$(_find_install_dir "winlibs-gcc-ucrt")"
     if [[ -n "${install_dir}" ]]; then
@@ -196,7 +206,6 @@ _check_winlibs() {
             "${install_dir}/INSTALL_RECEIPT.txt"
         return
     fi
-
     local legacy="${REPO_ROOT}/prebuilt/winlibs-gcc-ucrt/toolchain/x86_64/mingw64/bin/gcc.exe"
     if [[ -x "${legacy}" ]]; then
         local ver
@@ -209,13 +218,11 @@ _check_winlibs() {
             "bash prebuilt/winlibs-gcc-ucrt/setup.sh"
     fi
 }
-
 _check_grpc() {
     if [[ "${OS}" != "windows" ]]; then
         _print_platform_only "grpc-source-build" "Windows"
         return
     fi
-
     local found=false
     for base in "${ADMIN_PREFIX}" "${USER_PREFIX}"; do
         for ver in "grpc-1.76.0" "grpc-1.78.1"; do
@@ -232,13 +239,11 @@ _check_grpc() {
             fi
         done
     done
-
     if [[ "${found}" == false ]]; then
         _print_not_installed "grpc-source-build" \
             "bash grpc-source-build/setup_grpc.sh"
     fi
 }
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -250,14 +255,12 @@ printf "║  %-64s║\n" "  Platform : ${OS}   Date : $(date '+%Y-%m-%d')"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 printf "${RESET}"
 echo ""
-
 install_dir="$(_find_install_dir "clang-llvm")"
 if [[ -n "${install_dir}" ]]; then
     _print_installed "clang-llvm" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
 else
     _print_not_installed "clang-llvm" "bash clang-llvm/source-build/bootstrap.sh"
 fi
-
 if [[ "${OS}" == "linux" ]]; then
     install_dir="$(_find_install_dir "lcov")"
     if [[ -n "${install_dir}" ]]; then
@@ -268,11 +271,10 @@ if [[ "${OS}" == "linux" ]]; then
 else
     _print_platform_only "lcov" "Linux"
 fi
-
+_check_cmake
 _check_style_formatter
 _check_winlibs
 _check_grpc
-
 printf "${BOLD}"
 echo "══════════════════════════════════════════════════════════════════════"
 printf "${RESET}"
