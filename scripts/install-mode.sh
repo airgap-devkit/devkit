@@ -428,7 +428,7 @@ im_progress_stop() {
     mins=$(( elapsed / 60 ))
     secs=$(( elapsed % 60 ))
     # Clear line fully before printing final status
-    printf "\r%-80s\r" " "
+    printf "\r%-120s\r" " "
     printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}"
     _IM_PROGRESS_START_TIME=""
 }
