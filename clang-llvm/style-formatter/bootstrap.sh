@@ -15,6 +15,16 @@
 
 set -euo pipefail
 
+# Load install-mode helpers if available, otherwise stub progress functions
+REPO_ROOT_SF="$(git rev-parse --show-toplevel 2>/dev/null || echo "")"
+if [[ -f "${REPO_ROOT_SF}/scripts/install-mode.sh" ]]; then
+    source "${REPO_ROOT_SF}/scripts/install-mode.sh" 2>/dev/null || true
+fi
+if ! command -v im_progress_start &>/dev/null; then
+    im_progress_start() { echo "  [....] ${1:-Working}..."; }
+    im_progress_stop()  { echo "  [OK]  ${1:-Done}"; }
+fi
+
 FORCE=""
 FORCE_BOOL=false
 
