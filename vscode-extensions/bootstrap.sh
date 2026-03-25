@@ -197,6 +197,8 @@ while IFS= read -r ext_json; do
     echo "  [....] Reassembling: ${filename}"
     parts=()
     while IFS= read -r part_file; do
+        part_file="${part_file//$'\r'/}"
+        [[ -z "${part_file}" ]] && continue
         parts+=("${VENDOR_DIR}/${part_file}")
     done < <(echo "${ext_json}" | python3 -c "
 import json,sys
