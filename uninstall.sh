@@ -268,7 +268,6 @@ for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVER
 
     # If env.sh is now empty (only comments), remove it too
     if [[ -f "${env_file}" ]]; then
-        local non_comment
         non_comment="$(grep -v '^#' "${env_file}" | grep -v '^$' || true)"
         if [[ -z "${non_comment}" ]]; then
             if [[ "${DRY_RUN}" == "true" ]]; then
