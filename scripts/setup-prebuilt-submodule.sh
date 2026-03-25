@@ -111,7 +111,7 @@ case "$(uname -s)" in
         _check_binary "clang-format.exe"  "clang-llvm/clang-format.exe"
         _check_binary "clang-tidy.exe"    "clang-llvm/clang-tidy.exe"
         _check_binary "ninja.exe"         "clang-llvm/ninja.exe"
-        _check_binary "WinLibs GCC"       "winlibs-gcc-ucrt/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.7z" parts
+        _check_binary "WinLibs GCC"       "winlibs-gcc-ucrt/winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-13.0.0-r6.zip" parts
         ;;
     Linux*)
         _check_binary "clang-format (linux)"  "clang-llvm/clang-format-linux"
