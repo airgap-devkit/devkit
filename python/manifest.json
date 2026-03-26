@@ -1,0 +1,34 @@
+{
+  "_comment": "airgap-cpp-devkit Python module manifest. SHA256 hashes for all vendored Python distributions. Linux tarball is split into parts and must be reassembled before installation. Windows embeddable package is a single file.",
+  "schema_version": "1.0",
+  "generated": "2026-03-25",
+  "python": {
+    "version": "3.14.3",
+    "linux": {
+      "source": "python-build-standalone",
+      "source_release": "20260203",
+      "platform": "x86_64-unknown-linux-gnu",
+      "tarball_filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz",
+      "sha256_reassembled": "d4c6712210b69540ab4ed51825b99388b200e4f90ca4e53fbb5a67c2467feb48",
+      "split_parts": [
+        {
+          "filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz.part-aa",
+          "sha256": "5a59d87c70f7dd15a31c668d34558fd7add43df7484b013c4648a5194796b406"
+        },
+        {
+          "filename": "cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz.part-ab",
+          "sha256": "12f5f6d8af2ee1fa6946b1732e6733ddd504d729ca4a70cda76e7be3439985ff"
+        }
+      ],
+      "upstream_url": "https://github.com/astral-sh/python-build-standalone/releases/tag/20260203"
+    },
+    "windows": {
+      "source": "python.org embeddable package",
+      "platform": "win32-amd64",
+      "zip_filename": "python-3.14.3-embed-amd64.zip",
+      "sha256": "ad4961a479dedbeb7c7d113253f8db1b1935586b73c27488712beec4f2c894e6",
+      "split": false,
+      "upstream_url": "https://www.python.org/downloads/release/python-3143/"
+    }
+  }
+}

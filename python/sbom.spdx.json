@@ -1,0 +1,64 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "airgap-cpp-devkit-python",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/python/sbom.spdx.json",
+  "creationInfo": {
+    "created": "2026-03-25T00:00:00Z",
+    "creators": [
+      "Tool: airgap-cpp-devkit",
+      "Organization: airgap-cpp-devkit"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-python-linux",
+      "name": "CPython (linux-x86_64)",
+      "version": "3.14.3",
+      "supplier": "Organization: Python Software Foundation",
+      "downloadLocation": "https://github.com/astral-sh/python-build-standalone/releases/tag/20260203",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d4c6712210b69540ab4ed51825b99388b200e4f90ca4e53fbb5a67c2467feb48"
+        }
+      ],
+      "licenseConcluded": "Python-2.0",
+      "licenseDeclared": "Python-2.0",
+      "copyrightText": "Copyright (c) 2001-2026 Python Software Foundation",
+      "comment": "Portable CPython build from python-build-standalone (astral-sh). Distributed as split parts: part-aa (100MB) + part-ab (~19MB)."
+    },
+    {
+      "SPDXID": "SPDXRef-python-windows",
+      "name": "CPython embeddable package (win32-amd64)",
+      "version": "3.14.3",
+      "supplier": "Organization: Python Software Foundation",
+      "downloadLocation": "https://www.python.org/downloads/release/python-3143/",
+      "filesAnalyzed": false,
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ad4961a479dedbeb7c7d113253f8db1b1935586b73c27488712beec4f2c894e6"
+        }
+      ],
+      "licenseConcluded": "Python-2.0",
+      "licenseDeclared": "Python-2.0",
+      "copyrightText": "Copyright (c) 2001-2026 Python Software Foundation",
+      "comment": "Official Python.org embeddable package for Windows x86-64. Single file, no installer required."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-python-linux"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-python-windows"
+    }
+  ]
+}
