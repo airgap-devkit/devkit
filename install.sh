@@ -9,12 +9,14 @@
 # REQUIRED tools (installed automatically):
 #   - clang-llvm  (clang-format + clang-tidy)
 #   - cmake       4.3.0
+#   - python      3.14.3  (portable interpreter)
 #   - lcov        2.4  (Linux only)
 #   - style-formatter  (pre-commit hook)
 #
 # OPTIONAL tools (prompted):
-#   - winlibs-gcc-ucrt  (Windows only)
-#   - grpc-source-build (Windows only)
+#   - vscode-extensions  (requires VS Code + 'code' on PATH)
+#   - winlibs-gcc-ucrt   (Windows only)
+#   - grpc-source-build  (Windows only, requires Visual Studio)
 #
 # USAGE:
 #   bash install.sh [--prefix <path>] [--rebuild] [--yes]
@@ -118,19 +120,21 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     _box_blank
     _box_line "  REQUIRED (installed automatically):"
-    _box_line "    [1] clang-llvm    clang-format + clang-tidy 22.1.1"
-    _box_line "    [2] cmake         4.3.0"
+    _box_line "    [1] clang-llvm         clang-format + clang-tidy 22.1.1"
+    _box_line "    [2] cmake              4.3.0"
+    _box_line "    [3] python             3.14.3 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
-    _box_line "    [3] lcov          2.4"
+    _box_line "    [4] lcov               2.4 (Linux only)"
     fi
-    _box_line "    [4] style-formatter   pre-commit hook"
+    _box_line "    [5] style-formatter    pre-commit hook"
     _box_blank
-    if [[ "${OS}" == "windows" ]]; then
     _box_line "  OPTIONAL (you will be prompted):"
-    _box_line "    [5] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
-    _box_line "    [6] grpc-source-build  gRPC C++ (requires Visual Studio)"
-    _box_blank
+    _box_line "    [6] vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
+    if [[ "${OS}" == "windows" ]]; then
+    _box_line "    [7] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
+    _box_line "    [8] grpc-source-build  gRPC C++ (requires Visual Studio)"
     fi
+    _box_blank
     _box_mid
     _box_line "  INSTALL MODE"
     _box_blank
@@ -171,9 +175,14 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
 
     # --- Optional tools ---
+    INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
-    GRPC_VERSION="1.78.1"
+    GRPC_VERSION="1.76.0"
+
+    printf "  Install vscode-extensions? (requires 'code' on PATH) [y/N]: "
+    read -r reply
+    [[ "${reply^^}" == "Y" ]] && INSTALL_VSCODE=true
 
     if [[ "${OS}" == "windows" ]]; then
         printf "  Install winlibs-gcc-ucrt? (GCC 15.2.0 + MinGW-w64) [y/N]: "
@@ -186,13 +195,13 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             INSTALL_GRPC=true
             echo ""
             echo "  gRPC version:"
-            echo "    [1] 1.76.0  (production-tested)"
-            echo "    [2] 1.78.1  (latest, default)"
-            printf "  Choose [1/2, default=2]: "
+            echo "    [1] 1.76.0  (production-tested, default)"
+            echo "    [2] 1.78.1  (latest candidate)"
+            printf "  Choose [1/2, default=1]: "
             read -r ver_choice
             case "${ver_choice}" in
-                1) GRPC_VERSION="1.76.0" ;;
-                *) GRPC_VERSION="1.78.1" ;;
+                2) GRPC_VERSION="1.78.1" ;;
+                *) GRPC_VERSION="1.76.0" ;;
             esac
             echo "  [OK] gRPC version: ${GRPC_VERSION}"
         fi
@@ -208,10 +217,11 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  Rebuild        : ${REBUILD}"
     _box_blank
     _box_line "  Tools to install:"
-    _box_line "    [OK] clang-llvm, cmake, style-formatter"
+    _box_line "    [OK] clang-llvm, cmake, python, style-formatter"
     [[ "${OS}" == "linux" ]] && _box_line "    [OK] lcov"
-    [[ "${INSTALL_WINLIBS}" == "true" ]] && _box_line "    [OK] winlibs-gcc-ucrt"
-    [[ "${INSTALL_GRPC}" == "true" ]]    && _box_line "    [OK] grpc-source-build ${GRPC_VERSION}"
+    [[ "${INSTALL_VSCODE}" == "true" ]]   && _box_line "    [OK] vscode-extensions"
+    [[ "${INSTALL_WINLIBS}" == "true" ]]  && _box_line "    [OK] winlibs-gcc-ucrt"
+    [[ "${INSTALL_GRPC}" == "true" ]]     && _box_line "    [OK] grpc-source-build ${GRPC_VERSION}"
     _box_bot
     echo ""
     printf "  Press Enter to begin installation, or Ctrl+C to cancel..."
@@ -224,9 +234,10 @@ else
     else
         export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
     fi
+    INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
-    GRPC_VERSION="1.78.1"
+    GRPC_VERSION="1.76.0"
     echo ""
     echo "  [--yes] Non-interactive mode. Installing to: ${INSTALL_PREFIX_OVERRIDE}"
     echo ""
@@ -246,7 +257,6 @@ _run_bootstrap_winlibs() {
     echo "  -- ${label} ------------------------------------------------------"
     local rebuild_arg=()
     [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
-    # setup.sh takes: [arch] [--prefix path]
     if bash "${script}" "x86_64" --prefix "${tool_prefix}" "${rebuild_arg[@]}"; then
         INSTALLED_TOOLS+=("${label}")
     else
@@ -283,7 +293,6 @@ _run_bootstrap() {
     local rebuild_arg=()
     [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
 
-    # Each tool gets its own subdirectory under the base prefix
     local tool_prefix="${INSTALL_PREFIX_OVERRIDE}/${label}"
     if bash "${script}" \
         --prefix "${tool_prefix}" \
@@ -311,7 +320,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 1: prebuilt-binaries submodule
 # ---------------------------------------------------------------------------
-echo "  [1/6] Checking prebuilt-binaries submodule..."
+echo "  [1/8] Checking prebuilt-binaries submodule..."
 if ! git -C "${REPO_ROOT}" submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
     im_progress_start "Initialising prebuilt-binaries submodule"
     git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt-binaries
@@ -324,7 +333,7 @@ fi
 # Step 2: clang-llvm
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/6] Installing clang-llvm (required)..."
+echo "  [2/8] Installing clang-llvm (required)..."
 _run_bootstrap "clang-llvm" \
     "${REPO_ROOT}/clang-llvm/source-build/bootstrap.sh"
 
@@ -332,37 +341,58 @@ _run_bootstrap "clang-llvm" \
 # Step 3: cmake
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [3/6] Installing cmake (required)..."
+echo "  [3/8] Installing cmake (required)..."
 _run_bootstrap "cmake" \
     "${REPO_ROOT}/cmake/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
-# Step 4: lcov (Linux only)
+# Step 4: python
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [4/8] Installing python (required)..."
+_run_bootstrap "python" \
+    "${REPO_ROOT}/python/bootstrap.sh"
+
+# ---------------------------------------------------------------------------
+# Step 5: lcov (Linux only)
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]]; then
     echo ""
-    echo "  [4/6] Installing lcov (required on Linux)..."
+    echo "  [5/8] Installing lcov (required on Linux)..."
     _run_bootstrap "lcov" \
         "${REPO_ROOT}/lcov-source-build/bootstrap.sh"
 else
     echo ""
-    echo "  [4/6] lcov — skipped (Linux only)"
+    echo "  [5/8] lcov — skipped (Linux only)"
     SKIPPED_TOOLS+=("lcov (Linux only)")
 fi
 
 # ---------------------------------------------------------------------------
-# Step 5: style-formatter
+# Step 6: style-formatter
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [5/6] Installing style-formatter (required)..."
+echo "  [6/8] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
     "${REPO_ROOT}/clang-llvm/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
-# Step 6: optional tools
+# Step 7: vscode-extensions (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [6/6] Optional tools..."
+echo "  [7/8] VS Code extensions (optional)..."
+if [[ "${INSTALL_VSCODE}" == "true" ]]; then
+    _run_bootstrap_no_prefix "vscode-extensions" \
+        "${REPO_ROOT}/vscode-extensions/bootstrap.sh"
+else
+    echo "  [--]  Skipped: vscode-extensions"
+    SKIPPED_TOOLS+=("vscode-extensions")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 8: optional platform tools
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [8/8] Optional platform tools..."
 
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
