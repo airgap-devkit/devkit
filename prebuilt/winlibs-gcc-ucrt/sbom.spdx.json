@@ -4,14 +4,14 @@
   "creationInfo": {
     "created": "2026-03-17T00:00:00Z",
     "creators": [
-      "Organization: NimaShafie",
+      "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
     ],
     "comment": "Generated SBOM for prebuilt/winlibs-gcc-ucrt subproject of airgap-cpp-devkit. Covers all tools bundled in the WinLibs GCC 15.2.0 UCRT release 6 package."
   },
   "name": "airgap-cpp-devkit-prebuilt-winlibs-gcc-ucrt",
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/prebuilt/winlibs-gcc-ucrt/sbom.spdx.json",
   "documentDescribes": ["SPDXRef-winlibs-gcc-ucrt"],
   "packages": [
     {
