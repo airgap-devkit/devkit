@@ -4,14 +4,14 @@
   "creationInfo": {
     "created": "2026-03-20T00:00:00Z",
     "creators": [
-      "Organization: NimaShafie",
+      "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
     ],
     "comment": "Generated SBOM for clang-llvm-source-build subproject of airgap-cpp-devkit."
   },
   "name": "airgap-cpp-devkit-clang-llvm-source-build",
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/clang-llvm/source-build/sbom.spdx.json",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/clang-llvm/source-build/sbom.spdx.json",
   "documentDescribes": [
     "SPDXRef-clang-llvm-source-build"
   ],
@@ -20,8 +20,8 @@
       "SPDXID": "SPDXRef-clang-llvm-source-build",
       "name": "clang-llvm-source-build",
       "versionInfo": "1.0.0",
-      "supplier": "Organization: NimaShafie",
-      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
@@ -59,7 +59,7 @@
       "SPDXID": "SPDXRef-llvm-part-aa",
       "name": "llvm-project-22.1.1.src.tar.xz.part-aa",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -78,7 +78,7 @@
       "SPDXID": "SPDXRef-llvm-part-ab",
       "name": "llvm-project-22.1.1.src.tar.xz.part-ab",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -123,7 +123,7 @@
       "SPDXID": "SPDXRef-clang-format-windows",
       "name": "clang-format.exe",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -149,7 +149,7 @@
       "SPDXID": "SPDXRef-clang-tidy-linux",
       "name": "clang-tidy",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -175,7 +175,7 @@
       "SPDXID": "SPDXRef-clang-tidy-part-aa",
       "name": "clang-tidy.part-aa",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -194,7 +194,7 @@
       "SPDXID": "SPDXRef-clang-tidy-part-ab",
       "name": "clang-tidy.part-ab",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -213,7 +213,7 @@
       "SPDXID": "SPDXRef-clang-tidy-windows",
       "name": "clang-tidy.exe",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -265,7 +265,7 @@
       "SPDXID": "SPDXRef-clang-format-linux",
       "name": "clang-format-linux",
       "versionInfo": "22.1.1",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -291,7 +291,7 @@
       "SPDXID": "SPDXRef-ninja-linux",
       "name": "ninja-linux",
       "versionInfo": "1.13.2",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
@@ -317,7 +317,7 @@
       "SPDXID": "SPDXRef-ninja-windows",
       "name": "ninja.exe",
       "versionInfo": "1.13.2",
-      "supplier": "Organization: NimaShafie",
+      "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [

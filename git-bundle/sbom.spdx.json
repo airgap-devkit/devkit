@@ -4,22 +4,22 @@
   "creationInfo": {
     "created": "2026-03-17T00:00:00Z",
     "creators": [
-      "Organization: NimaShafie",
+      "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
     ],
     "comment": "Generated SBOM for git-bundle subproject of airgap-cpp-devkit."
   },
   "name": "airgap-cpp-devkit-git-bundle",
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://github.com/NimaShafie/airgap-cpp-devkit/git-bundle/sbom.spdx.json",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/git-bundle/sbom.spdx.json",
   "documentDescribes": ["SPDXRef-git-bundle"],
   "packages": [
     {
       "SPDXID": "SPDXRef-git-bundle",
       "name": "git-bundle",
       "versionInfo": "1.0.0",
-      "supplier": "Organization: NimaShafie",
-      "downloadLocation": "https://github.com/NimaShafie/airgap-cpp-devkit",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
