@@ -1,6 +1,6 @@
 # airgap-cpp-devkit
 
-### Author: Nima Shafie
+**Author: Nima Shafie**
 
 Air-gapped C++ developer toolkit for network-restricted environments.
 
@@ -23,7 +23,7 @@ required for most tools.
 ```bash
 git clone <this-repo-url>
 cd airgap-cpp-devkit
-git submodule update --init --recursive   # includes prebuilt-binaries
+git submodule update --init --recursive
 bash clang-llvm/source-build/bootstrap.sh
 bash clang-llvm/style-formatter/bootstrap.sh
 ```
@@ -73,35 +73,47 @@ To install system-wide on Windows, right-click Git Bash and select
 |-----------|---------|-----------|
 | [`clang-llvm/style-formatter/`](clang-llvm/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
 | [`clang-llvm/source-build/`](clang-llvm/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.1 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
+| [`cmake/`](cmake/README.md) | CMake 4.3.0 — build from source or install pre-built; RHEL 8 + Windows | No |
 | [`git-bundle/`](git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
 | [`lcov-source-build/`](lcov-source-build/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
-| [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | **No — standalone** |
-| [`grpc-source-build/`](grpc-source-build/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested, v1.78.1 candidate) | **No — standalone** |
-| [`prebuilt-binaries/`](https://github.com/NimaShafie/airgap-cpp-devkit-prebuilt) | Pre-built binary submodule (clang-format, clang-tidy, winlibs GCC) | **No — base case only** |
+| [`python/`](python/README.md) | Portable Python 3.14.3 interpreter — Windows embeddable + Linux standalone (python-build-standalone) | No |
+| [`vscode-extensions/`](vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
+| [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No — standalone |
+| [`grpc-source-build/`](grpc-source-build/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested) | No — standalone |
 
 ---
 
-## Can I skip optional tools?
+## Optional Tools
 
-**Yes. All optional tools are fully independent.**
+All tools outside of `clang-llvm/style-formatter/` and `git-bundle/` are
+fully independent and optional. You can use any subset without affecting
+the others.
 
-`prebuilt/winlibs-gcc-ucrt/` is a standalone GCC 15.2.0 toolchain for
-developers who need to *compile C++ projects* in an air-gapped Windows
-environment. It has no relationship to any other tool in this devkit.
+**`python/`** installs a portable Python 3.14.3 that lives alongside any
+existing system Python. It does not modify your PATH until you explicitly
+run `source python/scripts/env-setup.sh`. Other devkit tools that require
+Python will prefer this interpreter if active, and fall back to the system
+Python if not.
 
-`grpc-source-build/` is a standalone gRPC source tree for teams that need
-gRPC in their air-gapped C++ projects. The bash entry point `setup_grpc.sh`
-handles admin detection and install path selection; it delegates VS
-environment initialization to the companion `setup_grpc.bat`.
+**`vscode-extensions/`** installs offline VS Code extensions for C++
+development. Requires VS Code to be installed and `code` on PATH.
+Extensions are installed per-user into VS Code's extension directory.
 
-`lcov-source-build/` provides code coverage reporting for C++ projects
-compiled with GCC's `-fprofile-arcs -ftest-coverage` flags. It vendors
-lcov 2.4 and all required Perl dependencies — no internet access, no CPAN,
-no EPEL required.
+**`cmake/`** provides CMake 4.3.0 for environments where the system CMake
+is too old. On RHEL 8 the system CMake is 3.x — this module builds or
+installs 4.3.0 into the devkit path without touching the system.
 
-`prebuilt-binaries/` is a git submodule containing pre-compiled binaries.
-In binary-restricted environments, skip `git submodule update` entirely and
-use `--build-from-source` instead.
+**`prebuilt/winlibs-gcc-ucrt/`** is a standalone GCC 15.2.0 + MinGW-w64
+toolchain for developers who need to compile C++ projects in an air-gapped
+Windows environment. It has no relationship to any other tool in this devkit.
+
+**`grpc-source-build/`** is a standalone gRPC source tree for teams that
+need gRPC in their air-gapped C++ projects. The bash entry point
+`setup_grpc.sh` handles admin detection and install path selection.
+
+**`lcov-source-build/`** provides code coverage reporting for C++ projects
+compiled with GCC's `-fprofile-arcs -ftest-coverage` flags. Vendors lcov
+2.4 and all required Perl dependencies — no CPAN, no EPEL required.
 
 If you only need the formatter and git transfer tool, ignore everything else.
 
@@ -132,6 +144,10 @@ See [Development Setup](#development-setup) below.
 
 ## Deploying to Production Repositories
 
+> **Optional.** Only needed if you want to enforce LLVM C++ style in another
+> repository using this devkit as a submodule. Skip this section entirely
+> if you are only using the devkit tools directly.
+
 The formatter lives as a submodule under `tools/` in each production repo.
 Developers only ever run `bash setup.sh`.
 
@@ -150,7 +166,7 @@ your-cpp-project/
 cd your-cpp-project/
 
 git submodule add \
-    https://bitbucket.your-org.com/your-team/airgap-cpp-devkit.git \
+    <airgap-cpp-devkit-repo-url> \
     tools/style-formatter
 
 git submodule update --init --recursive
@@ -205,8 +221,8 @@ bash clang-llvm/style-formatter/bootstrap.sh
 
 | Platform | Requirements |
 |----------|-------------|
-| Windows 11 | Python 3.8+, Git Bash (MINGW64) |
-| RHEL 8 | Python 3.8+, Bash 4.x |
+| Windows 11 | Git Bash (MINGW64) |
+| RHEL 8 | Bash 4.x |
 
 No compiler, no Visual Studio, no CMake required for the standard install.
 See each tool's README for source-build prerequisites.
@@ -222,13 +238,11 @@ No network access. No compiler. No admin rights required (installs in-repo).
 
 **Method 2 — clang-format + clang-tidy from vendored binaries (base case)**
 ```bash
-# Initialize prebuilt-binaries submodule first
 bash scripts/setup-prebuilt-submodule.sh
 bash clang-llvm/source-build/bootstrap.sh
 ```
 Verifies and installs pre-built binaries from the `prebuilt-binaries`
 submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
-Installs to system-wide or per-user path based on available privileges.
 
 **Method 3 — Build from LLVM source (worst case / policy requirement)**
 ```bash
@@ -237,37 +251,55 @@ bash clang-llvm/source-build/bootstrap.sh --build-from-source
 Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.1
 source tarball (~30-120 minutes). Use when pre-built binaries are not
 permitted or Python is unavailable.
-Requires: Visual Studio 2022 (Windows, tested: VS Insiders 18, MSVC 14.50.35717)
-or GCC 8+ (Linux). CMake 3.14+ on both platforms.
+Requires: Visual Studio 2022 (Windows) or GCC 8+ (Linux). CMake 3.14+.
 
-**Method 4 — GCC toolchain for Windows**
+**Method 4 — CMake 4.3.0**
+```bash
+bash cmake/bootstrap.sh
+# or build from source:
+bash cmake/bootstrap.sh --build-from-source
+```
+Installs CMake 4.3.0 to the devkit path. Required for RHEL 8 environments
+where the system CMake is too old for modern C++ projects.
+
+**Method 5 — Portable Python 3.14.3**
+```bash
+bash python/bootstrap.sh
+source python/scripts/env-setup.sh
+```
+Installs a self-contained Python 3.14.3 alongside any existing system Python.
+Does not affect system Python until `env-setup.sh` is sourced.
+
+**Method 6 — VS Code extensions (offline)**
+```bash
+bash vscode-extensions/bootstrap.sh
+```
+Installs C/C++, C++ TestMate, and Python extensions into VS Code offline.
+Requires VS Code installed and `code` on PATH.
+
+**Method 7 — GCC toolchain for Windows**
 ```bash
 cd prebuilt/winlibs-gcc-ucrt
 bash setup.sh x86_64
 source scripts/env-setup.sh x86_64
 ```
-Installs GCC 15.2.0 + MinGW-w64 13.0.0 UCRT from the `prebuilt-binaries`
-submodule. Only needed if you require GCC to compile C++ projects on Windows.
-Installs to system-wide or per-user path based on available privileges.
+Installs GCC 15.2.0 + MinGW-w64 13.0.0 UCRT. Only needed if you require
+GCC to compile C++ projects on Windows.
 
-**Method 5 — gRPC for Windows**
+**Method 8 — gRPC for Windows**
 ```bash
 cd grpc-source-build
 bash setup_grpc.sh
 ```
-Detects admin/user privileges, then builds gRPC from vendored source using
-MSVC + CMake. Prompts for version selection (v1.76.0 or v1.78.1).
-Requires: Visual Studio 2022 (any edition) with Desktop C++ workload, Git Bash.
-Linux: not supported by this script (requires MSVC/Windows SDK).
+Builds gRPC from vendored source using MSVC + CMake.
+Requires: Visual Studio 2022 with Desktop C++ workload, Git Bash.
 
-**Method 6 — lcov code coverage (RHEL 8 / Linux)**
+**Method 9 — lcov code coverage (RHEL 8 / Linux)**
 ```bash
 bash lcov-source-build/bootstrap.sh
 source lcov-source-build/scripts/env-setup.sh
 ```
 Installs lcov 2.4 and all Perl dependencies from vendored tarballs.
-Installs to `/opt/airgap-cpp-devkit/lcov/` (admin) or
-`~/.local/share/airgap-cpp-devkit/lcov/` (user).
 No internet access, no CPAN, no EPEL required.
 
 ---
@@ -282,8 +314,9 @@ No internet access, no CPAN, no EPEL required.
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point per tool | `bash bootstrap.sh` or `bash setup_grpc.sh` — nothing else required |
+| Single entry point per tool | `bash bootstrap.sh` — nothing else required |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives and binaries |
+| No personal URLs | All SBOM namespaces use `airgap-cpp-devkit.internal` — safe for internal distribution |
 
 ---
 
@@ -293,6 +326,8 @@ No internet access, no CPAN, no EPEL required.
 airgap-cpp-devkit/
 ├── README.md                              <- you are here
 ├── sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
+├── install.sh                             <- top-level orchestrator
+├── uninstall.sh                           <- removes all installed tools
 ├── .gitmodules                            <- prebuilt-binaries submodule pointer
 │
 ├── scripts/
@@ -303,94 +338,101 @@ airgap-cpp-devkit/
 ├── prebuilt-binaries/                     <- SUBMODULE (separate repo, optional)
 │   │                                         Skip entirely in binary-restricted envs
 │   ├── clang-llvm/
-│   │   ├── clang-format.exe               <- Windows pre-built (3.1 MB)
-│   │   ├── clang-tidy.exe                 <- Windows pre-built (46 MB)
-│   │   ├── clang-tidy.part-aa             <- Linux pre-built split part (~52 MB)
-│   │   └── clang-tidy.part-ab             <- Linux pre-built split part (~31 MB)
+│   │   ├── clang-format.exe
+│   │   ├── clang-tidy.exe
+│   │   ├── clang-tidy.part-aa
+│   │   └── clang-tidy.part-ab
 │   └── winlibs-gcc-ucrt/
-│       └── *.7z.part-*                    <- GCC toolchain split parts
+│       └── *.zip.part-*                   <- GCC toolchain split parts
 │
 ├── clang-llvm/                            <- LLVM/Clang tooling group
 │   ├── style-formatter/                   <- LLVM style enforcement tool
-│   │   ├── bootstrap.sh                   <- core install (called by setup.sh)
-│   │   ├── sbom.spdx.json                 <- SPDX 2.3 SBOM
-│   │   ├── python-packages/               <- vendored .whl files (committed)
+│   │   ├── bootstrap.sh
+│   │   ├── sbom.spdx.json
+│   │   ├── python-packages/               <- vendored .whl files
 │   │   ├── config/
-│   │   │   ├── .clang-format              <- LLVM style rules
-│   │   │   ├── .clang-tidy                <- static analysis rules
-│   │   │   └── hooks.conf                 <- runtime defaults
-│   │   ├── hooks/pre-commit               <- the enforcement hook
-│   │   ├── scripts/                       <- install, verify, fix helpers
+│   │   │   ├── .clang-format
+│   │   │   ├── .clang-tidy
+│   │   │   └── hooks.conf
+│   │   ├── hooks/pre-commit
+│   │   ├── scripts/
 │   │   └── docs/
-│   │       ├── gitignore-snippet.txt      <- append to production repo .gitignore
+│   │       ├── gitignore-snippet.txt
 │   │       └── production-repo-template/
-│   │           ├── setup.sh               <- copy to production repo root
-│   │           └── README.md              <- maintainer checklist
+│   │           ├── setup.sh
+│   │           └── README.md
 │   │
 │   └── source-build/                      <- clang-format + clang-tidy build/install
-│       ├── bootstrap.sh                   <- entry point (base case + worst case)
-│       ├── manifest.json                  <- SHA256 pins for LLVM + Ninja + binaries
-│       ├── sbom.spdx.json                 <- SPDX 2.3 SBOM
-│       ├── demo/                          <- clang-tidy demo with intentional issues
+│       ├── bootstrap.sh
+│       ├── manifest.json
+│       ├── sbom.spdx.json
 │       ├── llvm-src/                      <- vendored LLVM 22.1.1 (split parts)
-│       │   ├── llvm-project-22.1.1.src.tar.xz.part-aa
-│       │   └── llvm-project-22.1.1.src.tar.xz.part-ab
-│       ├── ninja-src/                     <- vendored Ninja 1.13.2 source
-│       │   └── ninja-1.13.2.tar.gz
+│       ├── ninja-src/                     <- vendored Ninja 1.13.2
 │       ├── bin/
-│       │   ├── windows/                   <- local build output (not committed)
-│       │   └── linux/                     <- local build output (not committed)
+│       │   ├── windows/
+│       │   └── linux/
 │       └── scripts/
-│           ├── build-clang-format.sh      <- compile clang-format from source
-│           ├── build-clang-tidy.sh        <- compile clang-tidy from source
-│           ├── build-ninja.sh             <- compile Ninja from source
-│           ├── extract-llvm-source.sh     <- extract LLVM tarball
-│           ├── reassemble-clang-tidy.sh   <- assemble Linux clang-tidy from parts
-│           ├── reassemble-llvm.sh         <- join LLVM parts into tarball
-│           ├── verify-clang-format-windows.sh <- verify pre-built clang-format.exe
-│           ├── verify-clang-tidy-windows.sh   <- verify pre-built clang-tidy.exe
-│           └── verify-sources.sh          <- SHA256 check all vendored archives
+│
+├── cmake/                                 <- CMake 4.3.0
+│   ├── bootstrap.sh
+│   ├── manifest.json
+│   └── vendor/                            <- vendored source tarball (split parts)
 │
 ├── git-bundle/                            <- air-gap git transfer tool
 │   ├── bundle.py
 │   ├── export.py
-│   ├── sbom.spdx.json                     <- SPDX 2.3 SBOM
+│   ├── sbom.spdx.json
 │   └── tests/
 │
 ├── lcov-source-build/                     <- code coverage reporting (Linux)
-│   ├── bootstrap.sh                       <- extracts, installs, writes receipt
-│   ├── manifest.json                      <- SHA256 pins for lcov + perl-libs
-│   ├── sbom.spdx.json                     <- SPDX 2.3 SBOM
+│   ├── bootstrap.sh
+│   ├── manifest.json
+│   ├── sbom.spdx.json
 │   ├── scripts/
-│   │   ├── download.sh                    <- internet machine: populate vendor/
-│   │   ├── verify.sh                      <- SHA256 + version check
-│   │   └── env-setup.sh                   <- source to activate lcov in shell
 │   └── vendor/
-│       ├── lcov-2.4.tar.gz                <- vendored lcov 2.4 (committed, 1.1 MB)
-│       └── perl-libs.tar.gz               <- vendored Perl deps (committed, 4.6 MB)
+│       ├── lcov-2.4.tar.gz
+│       └── perl-libs.tar.gz
 │
-├── prebuilt/                              <- source entry points for prebuilt tools
+├── python/                                <- portable Python 3.14.3
+│   ├── bootstrap.sh
+│   ├── manifest.json
+│   ├── sbom.spdx.json
+│   ├── README.md
+│   ├── scripts/
+│   │   ├── verify.sh
+│   │   └── env-setup.sh
+│   └── vendor/
+│       ├── python-3.14.3-embed-amd64.zip              <- Windows (~12MB)
+│       ├── cpython-3.14.3+...linux-gnu...part-aa      <- Linux split part (~100MB)
+│       └── cpython-3.14.3+...linux-gnu...part-ab      <- Linux split part (~19MB)
+│
+├── vscode-extensions/                     <- offline VS Code extensions
+│   ├── bootstrap.sh
+│   ├── manifest.json
+│   ├── sbom.spdx.json
+│   ├── README.md
+│   └── vendor/
+│       ├── ms-vscode.cpptools-extension-pack-1.5.1.vsix
+│       ├── ms-vscode.cpptools-1.30.4-win32-x64.vsix.part-*
+│       ├── ms-vscode.cpptools-1.30.4-linux-x64.vsix.part-*
+│       ├── matepek.vscode-catch2-test-adapter-4.22.3.vsix
+│       ├── ms-python.python-2026.5...-win32-x64.vsix
+│       └── ms-python.python-2026.5...-linux-x64.vsix
+│
+├── prebuilt/                              <- prebuilt tools
 │   └── winlibs-gcc-ucrt/                  <- GCC 15.2.0 + MinGW-w64 13.0.0 UCRT
-│       ├── setup.sh                       <- entry point: verify + reassemble + install
-│       ├── manifest.json                  <- SHA256 pins (dual-source verified)
-│       ├── sbom.spdx.json                 <- SPDX 2.3 SBOM
-│       ├── scripts/
-│       │   ├── verify.sh                  <- offline integrity check
-│       │   ├── reassemble.sh              <- joins split parts into .7z
-│       │   ├── install.sh                 <- extracts toolchain to install path
-│       │   └── env-setup.sh               <- source to activate in current shell
-│       └── vendor/                        <- assembled .7z (generated, gitignored)
+│       ├── setup.sh
+│       ├── manifest.json
+│       ├── sbom.spdx.json
+│       └── scripts/
 │
-└── grpc-source-build/                     <- gRPC source build (Windows only)
-    ├── setup_grpc.sh                      <- bash entry point: admin detection + logging
-    ├── setup_grpc.bat                     <- VS init + CMake build (called by .sh)
-    ├── manifest.json                      <- SHA256 pins for all vendored versions
-    ├── sbom.spdx.json                     <- SPDX 2.3 SBOM (pending)
+└── grpc-source-build/                     <- gRPC source build (Windows)
+    ├── setup_grpc.sh
+    ├── setup_grpc.bat
+    ├── manifest.json
+    ├── sbom.spdx.json
     ├── README.md
     ├── scripts/
-    │   ├── verify.sh                      <- offline integrity check (accepts version arg)
-    │   └── reassemble.sh                  <- joins parts into tarball (accepts version arg)
-    └── vendor/                            <- split .tar.gz parts committed to git
-        ├── grpc-1.76.0.tar.gz.part-aa     <- ~89MB (production-tested)
-        └── grpc-1.78.1.tar.gz.part-aa     <- ~15MB (candidate-testing)
+    └── vendor/
+        └── grpc-1.76.0.tar.gz.part-aa
 ```
