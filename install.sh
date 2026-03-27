@@ -131,7 +131,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_blank
     _box_line "  OPTIONAL (you will be prompted):"
     _box_line "    [6] 7zip               26.00 (Windows + Linux, admin + user)"
-    _box_line "    [7] vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
+    _box_line "    [7] servy              7.3 (Windows service manager, Windows only)"
+    _box_line "    [8] vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
     if [[ "${OS}" == "windows" ]]; then
     _box_line "    [8] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
     _box_line "    [9] grpc-source-build  gRPC C++ (requires Visual Studio)"
@@ -187,6 +188,10 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     read -r reply
     [[ "${reply^^}" == "Y" ]] && INSTALL_7ZIP=true
 
+    printf "  Install servy 7.3? (Windows service manager, Windows only) [y/N]: "
+    read -r reply
+    [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
+
     printf "  Install vscode-extensions? (requires 'code' on PATH) [y/N]: "
     read -r reply
     [[ "${reply^^}" == "Y" ]] && INSTALL_VSCODE=true
@@ -227,6 +232,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "    [OK] clang-llvm, cmake, python, style-formatter"
     [[ "${OS}" == "linux" ]] && _box_line "    [OK] lcov"
     [[ "${INSTALL_7ZIP}" == "true" ]]     && _box_line "    [OK] 7zip 26.00"
+    [[ "${INSTALL_SERVY}" == "true" ]]    && _box_line "    [OK] servy 7.3 (Windows only)"
     [[ "${INSTALL_VSCODE}" == "true" ]]   && _box_line "    [OK] vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && _box_line "    [OK] winlibs-gcc-ucrt"
     [[ "${INSTALL_GRPC}" == "true" ]]     && _box_line "    [OK] grpc-source-build ${GRPC_VERSION}"
@@ -243,6 +249,7 @@ else
         export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
     fi
     INSTALL_7ZIP=false
+    INSTALL_SERVY=false
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
@@ -402,7 +409,7 @@ _run_bootstrap_no_prefix "style-formatter" \
 # Step 7: 7zip (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [7/9] 7-Zip 26.00 (optional)..."
+echo "  [7/10] 7-Zip 26.00 (optional)..."
 if [[ "${INSTALL_7ZIP}" == "true" ]]; then
     _run_setup "7zip" "${REPO_ROOT}/prebuilt/7zip/setup.sh"
 else
@@ -411,10 +418,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 8: vscode-extensions (optional, both platforms)
+# Step 8: servy (optional, Windows only — exits cleanly on Linux)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [8/9] VS Code extensions (optional)..."
+echo "  [8/10] Servy 7.3 (optional, Windows only)..."
+if [[ "${INSTALL_SERVY}" == "true" ]]; then
+    _run_setup "servy" "${REPO_ROOT}/prebuilt/servy/setup.sh"
+else
+    echo "  [--]  Skipped: servy"
+    SKIPPED_TOOLS+=("servy")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 9: vscode-extensions (optional, both platforms)
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [9/10] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     _run_bootstrap_no_prefix "vscode-extensions" \
         "${REPO_ROOT}/vscode-extensions/bootstrap.sh"
@@ -424,10 +443,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 9: optional platform tools
+# Step 10: optional platform tools
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [9/9] Optional platform tools..."
+echo "  [10/10] Optional platform tools..."
 
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
