@@ -80,6 +80,7 @@ To install system-wide on Windows, right-click Git Bash and select
 | [`vscode-extensions/`](vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
 | [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No — standalone |
 | [`prebuilt/7zip/`](prebuilt/7zip/README.md) | 7-Zip 26.00 — admin + user install for Windows and Linux | No — standalone |
+| [`prebuilt/servy/`](prebuilt/servy/README.md) | Servy 7.3 — Windows service manager (Windows only, graceful no-op on Linux) | No — standalone |
 | [`grpc-source-build/`](grpc-source-build/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested) | No — standalone |
 
 ---
@@ -113,6 +114,12 @@ archive support. Admin install uses the official silent installer (Windows)
 or places `7zz` in `/usr/local/bin` (Linux). User install uses the portable
 `7za.exe` (Windows) or `~/.local/bin/7zz` (Linux). No internet access or
 package manager required.
+
+**`prebuilt/servy/`** provides Servy 7.3, a Windows service manager that turns
+any executable into a native Windows service with health checks, log rotation,
+restart policies, and a full GUI + CLI + PowerShell interface. Requires 7-Zip
+(`prebuilt/7zip/`) for extraction. Running `setup.sh` on Linux exits cleanly
+with an informational message — no error.
 
 **`grpc-source-build/`** is a standalone gRPC source tree for teams that
 need gRPC in their air-gapped C++ projects. The bash entry point
@@ -301,7 +308,16 @@ Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
 drop-in with no elevation required. Supports `.7z`, `.zip`, `.tar.xz`, and
 all major archive formats on both Windows and Linux.
 
-**Method 9 — gRPC for Windows**
+**Method 9 — Servy 7.3 (Windows service manager)**
+```bash
+bash prebuilt/servy/setup.sh
+```
+Installs Servy 7.3 portable — GUI, Manager app, CLI, and PowerShell module.
+Turns any executable into a native Windows service with health checks, log
+rotation, and restart policies. Admin: `C:\Program Files\servy\`. User:
+`%LOCALAPPDATA%\airgap-cpp-devkit\servy\`. Requires 7-Zip first. Windows only.
+
+**Method 10 — gRPC for Windows**
 ```bash
 cd grpc-source-build
 bash setup_grpc.sh
@@ -309,7 +325,7 @@ bash setup_grpc.sh
 Builds gRPC from vendored source using MSVC + CMake.
 Requires: Visual Studio 2022 with Desktop C++ workload, Git Bash.
 
-**Method 10 — lcov code coverage (RHEL 8 / Linux)**
+**Method 11 — lcov code coverage (RHEL 8 / Linux)**
 ```bash
 bash lcov-source-build/bootstrap.sh
 source lcov-source-build/scripts/env-setup.sh
@@ -363,6 +379,9 @@ airgap-cpp-devkit/
 │       ├── 7z2600-x64.exe                 <- Windows admin installer
 │       ├── 7z2600-extra.7z                <- Windows portable (7za.exe)
 │       └── 7z2600-linux-x64.tar.xz        <- Linux 7zz binary
+│   └── servy/
+│       ├── servy-7.3-x64-portable.7z.part-aa   <- ~50 MB
+│       └── servy-7.3-x64-portable.7z.part-ab   <- ~30 MB
 │
 ├── clang-llvm/                            <- LLVM/Clang tooling group
 │   ├── style-formatter/                   <- LLVM style enforcement tool
@@ -453,6 +472,15 @@ airgap-cpp-devkit/
 │           ├── verify.sh
 │           ├── install-windows.sh
 │           └── install-linux.sh
+│   └── servy/                             <- Servy 7.3 (Windows service manager)
+│       ├── setup.sh
+│       ├── manifest.json
+│       ├── sbom.spdx.json
+│       ├── README.md
+│       └── scripts/
+│           ├── verify.sh
+│           ├── install-windows.sh
+│           └── install-linux.sh           <- graceful no-op on Linux
 │
 └── grpc-source-build/                     <- gRPC source build (Windows)
     ├── setup_grpc.sh

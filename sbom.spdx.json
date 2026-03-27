@@ -61,6 +61,14 @@
         "algorithm": "SHA1",
         "checksumValue": "59a16572fe110989b0b32cca0e9375b2788d50de"
       }
+    },
+    {
+      "externalDocumentId": "DocumentRef-servy",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/prebuilt/servy/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "79d61759c05c0addbba82562ea583aa148a18371"
+      }
     }
   ],
   "packages": [
@@ -153,7 +161,20 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. 7-Zip 26.00 prebuilt binaries for Windows x64 and Linux x86-64. Supports admin and user install modes on both platforms. Can be excluded without affecting other tools. See DocumentRef-7zip for full component SBOM."
+      "comment": "Optional standalone subproject. 7-Zip 26.00 prebuilt binaries for Windows x64 and Linux x86-64. Supports admin and user install modes on both platforms. See DocumentRef-7zip for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-servy",
+      "name": "prebuilt-servy",
+      "versionInfo": "7.3",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional standalone subproject. Servy 7.3 Windows service manager — portable prebuilt for Windows x64 only. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
     }
   ],
   "relationships": [
@@ -193,6 +214,11 @@
       "relatedSpdxElement": "SPDXRef-subproject-7zip"
     },
     {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-servy"
+    },
+    {
       "spdxElementId": "SPDXRef-subproject-clang-llvm-source-build",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-clang-llvm-source-build:SPDXRef-clang-llvm-source-build"
@@ -221,6 +247,11 @@
       "spdxElementId": "SPDXRef-subproject-7zip",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-7zip:SPDXRef-7zip-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-servy",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-servy:SPDXRef-servy-subproject"
     }
   ]
 }
