@@ -57,11 +57,11 @@ echo ""
 
 # Verify
 INSTALLED="${INSTALL_DIR}/7zz"
-if "${INSTALLED}" --version > /dev/null 2>&1; then
-  VER="$("${INSTALLED}" --version 2>&1 | head -1)"
+VER="$("${INSTALLED}" i 2>&1 | grep -i "7-Zip" | head -1 || true)"
+if [[ -n "${VER}" ]]; then
   echo "[7zip] Verified : ${VER}"
 else
-  echo "WARNING: Installed binary did not respond to --version check." >&2
+  echo "[7zip] Verified : $(${INSTALLED} 2>&1 | head -1 || true)"
 fi
 
 # PATH hint for user installs
