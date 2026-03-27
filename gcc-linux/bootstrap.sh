@@ -83,8 +83,10 @@ VENDOR_DIR="${SCRIPT_DIR}/vendor"
 TARBALL="x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz"
 PART_AA="${TARBALL}.part-aa"
 PART_AB="${TARBALL}.part-ab"
-EXPECTED_SHA_AA="c35f91f3c025fb41c382ee82420ce7ef1742c04b04fafe93b7e8e4eebd05da95"
-EXPECTED_SHA_AB="5d736c51a69cb2157cd0f95e0c418fd3dcb9a3eba15c2b36a59e640cd5345aeb"
+PART_AC="${TARBALL}.part-ac"
+EXPECTED_SHA_AA="84e09929876ceec7b5d519921c38be05196f3b13bea150f13ac54156cb371ed8"
+EXPECTED_SHA_AB="136429b957e94395565619f6d3c18201d6eb82ba420c131f3090d29d5d4fd853"
+EXPECTED_SHA_AC="5d736c51a69cb2157cd0f95e0c418fd3dcb9a3eba15c2b36a59e640cd5345aeb"
 EXPECTED_SHA_FULL="92cd7d00efa27298b6a2c7956afc6df4132051846c357547f278a52de56e7762"
 
 # ---------------------------------------------------------------------------
@@ -120,6 +122,7 @@ verify_parts() {
   echo "[INFO] Verifying split parts..."
   verify_sha256 "${VENDOR_DIR}/${PART_AA}" "${EXPECTED_SHA_AA}" "${PART_AA}"
   verify_sha256 "${VENDOR_DIR}/${PART_AB}" "${EXPECTED_SHA_AB}" "${PART_AB}"
+  verify_sha256 "${VENDOR_DIR}/${PART_AC}" "${EXPECTED_SHA_AC}" "${PART_AC}"
 }
 
 # ---------------------------------------------------------------------------
@@ -137,6 +140,7 @@ reassemble() {
   im_progress_start "Reassembling tarball from parts"
   cat "${VENDOR_DIR}/${PART_AA}" \
       "${VENDOR_DIR}/${PART_AB}" \
+      "${VENDOR_DIR}/${PART_AC}" \
       > "${tarball_path}"
   im_progress_stop "Tarball reassembled"
 
