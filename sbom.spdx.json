@@ -59,7 +59,7 @@
       "spdxDocument": "https://airgap-cpp-devkit.internal/prebuilt/7zip/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
+        "checksumValue": "59a16572fe110989b0b32cca0e9375b2788d50de"
       }
     }
   ],
