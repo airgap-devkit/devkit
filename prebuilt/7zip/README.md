@@ -5,11 +5,13 @@ and **user** (no-root/no-elevation) install modes on Windows 11 and RHEL 8.
 
 ## Vendored Assets
 
+Binaries are stored in the `prebuilt-binaries/7zip/` submodule:
+
 | File | Platform | Purpose |
 |------|----------|---------|
-| `vendor/7z2600-x64.exe` | Windows x64 | Admin silent installer → `C:\Program Files\7-Zip\` |
-| `vendor/7z2600-extra.7z` | Windows x64 | Contains `7za.exe` for user (portable) installs |
-| `vendor/7z2600-linux-x64.tar.xz` | Linux x86-64 | Contains `7zz` binary for admin and user installs |
+| `prebuilt-binaries/7zip/7z2600-x64.exe` | Windows x64 | Admin silent installer → `C:\Program Files\7-Zip\` |
+| `prebuilt-binaries/7zip/7z2600-extra.7z` | Windows x64 | Contains `7za.exe` for user (portable) installs |
+| `prebuilt-binaries/7zip/7z2600-linux-x64.tar.xz` | Linux x86-64 | Contains `7zz` binary for admin and user installs |
 
 ## Install Matrix
 
@@ -50,8 +52,10 @@ The tarball contains two binaries:
 
 After install, verify with:
 ```bash
-7zz --version
+7zz i
 ```
+
+Note: `7zz` does not support `--version`. Use `7zz i` to print version and capability info.
 
 ## Upstream
 
