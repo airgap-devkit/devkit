@@ -14,6 +14,7 @@
 #   - style-formatter  (pre-commit hook)
 #
 # OPTIONAL tools (prompted):
+#   - 7zip               (Windows + Linux, admin + user)
 #   - vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
 #   - grpc-source-build  (Windows only, requires Visual Studio)
@@ -120,7 +121,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     _box_blank
     _box_line "  REQUIRED (installed automatically):"
-    _box_line "    [1] clang-llvm         clang-format + clang-tidy 22.1.1"
+    _box_line "    [1] clang-llvm         clang-format + clang-tidy 22.1.2"
     _box_line "    [2] cmake              4.3.0"
     _box_line "    [3] python             3.14.3 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
@@ -129,10 +130,11 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "    [5] style-formatter    pre-commit hook"
     _box_blank
     _box_line "  OPTIONAL (you will be prompted):"
-    _box_line "    [6] vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
+    _box_line "    [6] 7zip               26.00 (Windows + Linux, admin + user)"
+    _box_line "    [7] vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
     if [[ "${OS}" == "windows" ]]; then
-    _box_line "    [7] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
-    _box_line "    [8] grpc-source-build  gRPC C++ (requires Visual Studio)"
+    _box_line "    [8] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
+    _box_line "    [9] grpc-source-build  gRPC C++ (requires Visual Studio)"
     fi
     _box_blank
     _box_mid
@@ -175,10 +177,15 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
 
     # --- Optional tools ---
+    INSTALL_7ZIP=false
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
     GRPC_VERSION="1.76.0"
+
+    printf "  Install 7zip 26.00? (archive tool, Windows + Linux) [y/N]: "
+    read -r reply
+    [[ "${reply^^}" == "Y" ]] && INSTALL_7ZIP=true
 
     printf "  Install vscode-extensions? (requires 'code' on PATH) [y/N]: "
     read -r reply
@@ -219,6 +226,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _box_line "  Tools to install:"
     _box_line "    [OK] clang-llvm, cmake, python, style-formatter"
     [[ "${OS}" == "linux" ]] && _box_line "    [OK] lcov"
+    [[ "${INSTALL_7ZIP}" == "true" ]]     && _box_line "    [OK] 7zip 26.00"
     [[ "${INSTALL_VSCODE}" == "true" ]]   && _box_line "    [OK] vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && _box_line "    [OK] winlibs-gcc-ucrt"
     [[ "${INSTALL_GRPC}" == "true" ]]     && _box_line "    [OK] grpc-source-build ${GRPC_VERSION}"
@@ -234,6 +242,7 @@ else
     else
         export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
     fi
+    INSTALL_7ZIP=false
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
@@ -306,6 +315,20 @@ _run_bootstrap() {
     fi
 }
 
+_run_setup() {
+    local label="$1" script="$2"
+    shift 2
+    echo ""
+    echo "  ── ${label} ──────────────────────────────────────────────────────"
+    if bash "${script}" "$@"; then
+        INSTALLED_TOOLS+=("${label}")
+    else
+        FAILED_TOOLS+=("${label}")
+        echo ""
+        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # Banner
 # ---------------------------------------------------------------------------
@@ -320,7 +343,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 1: prebuilt-binaries submodule
 # ---------------------------------------------------------------------------
-echo "  [1/8] Checking prebuilt-binaries submodule..."
+echo "  [1/9] Checking prebuilt-binaries submodule..."
 if ! git -C "${REPO_ROOT}" submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
     im_progress_start "Initialising prebuilt-binaries submodule"
     git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt-binaries
@@ -333,7 +356,7 @@ fi
 # Step 2: clang-llvm
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/8] Installing clang-llvm (required)..."
+echo "  [2/9] Installing clang-llvm (required)..."
 _run_bootstrap "clang-llvm" \
     "${REPO_ROOT}/clang-llvm/source-build/bootstrap.sh"
 
@@ -341,7 +364,7 @@ _run_bootstrap "clang-llvm" \
 # Step 3: cmake
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [3/8] Installing cmake (required)..."
+echo "  [3/9] Installing cmake (required)..."
 _run_bootstrap "cmake" \
     "${REPO_ROOT}/cmake/bootstrap.sh"
 
@@ -349,7 +372,7 @@ _run_bootstrap "cmake" \
 # Step 4: python
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [4/8] Installing python (required)..."
+echo "  [4/9] Installing python (required)..."
 _run_bootstrap "python" \
     "${REPO_ROOT}/python/bootstrap.sh"
 
@@ -358,12 +381,12 @@ _run_bootstrap "python" \
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]]; then
     echo ""
-    echo "  [5/8] Installing lcov (required on Linux)..."
+    echo "  [5/9] Installing lcov (required on Linux)..."
     _run_bootstrap "lcov" \
         "${REPO_ROOT}/lcov-source-build/bootstrap.sh"
 else
     echo ""
-    echo "  [5/8] lcov — skipped (Linux only)"
+    echo "  [5/9] lcov — skipped (Linux only)"
     SKIPPED_TOOLS+=("lcov (Linux only)")
 fi
 
@@ -371,15 +394,27 @@ fi
 # Step 6: style-formatter
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [6/8] Installing style-formatter (required)..."
+echo "  [6/9] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
     "${REPO_ROOT}/clang-llvm/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
-# Step 7: vscode-extensions (optional, both platforms)
+# Step 7: 7zip (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [7/8] VS Code extensions (optional)..."
+echo "  [7/9] 7-Zip 26.00 (optional)..."
+if [[ "${INSTALL_7ZIP}" == "true" ]]; then
+    _run_setup "7zip" "${REPO_ROOT}/prebuilt/7zip/setup.sh"
+else
+    echo "  [--]  Skipped: 7zip"
+    SKIPPED_TOOLS+=("7zip")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 8: vscode-extensions (optional, both platforms)
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [8/9] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     _run_bootstrap_no_prefix "vscode-extensions" \
         "${REPO_ROOT}/vscode-extensions/bootstrap.sh"
@@ -389,10 +424,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 8: optional platform tools
+# Step 9: optional platform tools
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [8/8] Optional platform tools..."
+echo "  [9/9] Optional platform tools..."
 
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then

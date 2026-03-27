@@ -72,13 +72,14 @@ To install system-wide on Windows, right-click Git Bash and select
 | Directory | Purpose | Required? |
 |-----------|---------|-----------|
 | [`clang-llvm/style-formatter/`](clang-llvm/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
-| [`clang-llvm/source-build/`](clang-llvm/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.1 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
+| [`clang-llvm/source-build/`](clang-llvm/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
 | [`cmake/`](cmake/README.md) | CMake 4.3.0 — build from source or install pre-built; RHEL 8 + Windows | No |
 | [`git-bundle/`](git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
 | [`lcov-source-build/`](lcov-source-build/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
 | [`python/`](python/README.md) | Portable Python 3.14.3 interpreter — Windows embeddable + Linux standalone (python-build-standalone) | No |
 | [`vscode-extensions/`](vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
 | [`prebuilt/winlibs-gcc-ucrt/`](prebuilt/winlibs-gcc-ucrt/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No — standalone |
+| [`prebuilt/7zip/`](prebuilt/7zip/README.md) | 7-Zip 26.00 — admin + user install for Windows and Linux | No — standalone |
 | [`grpc-source-build/`](grpc-source-build/README.md) | Vendored gRPC source build for Windows (v1.76.0 production-tested) | No — standalone |
 
 ---
@@ -106,6 +107,12 @@ installs 4.3.0 into the devkit path without touching the system.
 **`prebuilt/winlibs-gcc-ucrt/`** is a standalone GCC 15.2.0 + MinGW-w64
 toolchain for developers who need to compile C++ projects in an air-gapped
 Windows environment. It has no relationship to any other tool in this devkit.
+
+**`prebuilt/7zip/`** provides 7-Zip 26.00 for environments that need `.7z`
+archive support. Admin install uses the official silent installer (Windows)
+or places `7zz` in `/usr/local/bin` (Linux). User install uses the portable
+`7za.exe` (Windows) or `~/.local/bin/7zz` (Linux). No internet access or
+package manager required.
 
 **`grpc-source-build/`** is a standalone gRPC source tree for teams that
 need gRPC in their air-gapped C++ projects. The bash entry point
@@ -248,7 +255,7 @@ submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
 ```bash
 bash clang-llvm/source-build/bootstrap.sh --build-from-source
 ```
-Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.1
+Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.2
 source tarball (~30-120 minutes). Use when pre-built binaries are not
 permitted or Python is unavailable.
 Requires: Visual Studio 2022 (Windows) or GCC 8+ (Linux). CMake 3.14+.
@@ -286,7 +293,15 @@ source scripts/env-setup.sh x86_64
 Installs GCC 15.2.0 + MinGW-w64 13.0.0 UCRT. Only needed if you require
 GCC to compile C++ projects on Windows.
 
-**Method 8 — gRPC for Windows**
+**Method 8 — 7-Zip 26.00 (Windows + Linux)**
+```bash
+bash prebuilt/7zip/setup.sh
+```
+Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
+drop-in with no elevation required. Supports `.7z`, `.zip`, `.tar.xz`, and
+all major archive formats on both Windows and Linux.
+
+**Method 9 — gRPC for Windows**
 ```bash
 cd grpc-source-build
 bash setup_grpc.sh
@@ -294,7 +309,7 @@ bash setup_grpc.sh
 Builds gRPC from vendored source using MSVC + CMake.
 Requires: Visual Studio 2022 with Desktop C++ workload, Git Bash.
 
-**Method 9 — lcov code coverage (RHEL 8 / Linux)**
+**Method 10 — lcov code coverage (RHEL 8 / Linux)**
 ```bash
 bash lcov-source-build/bootstrap.sh
 source lcov-source-build/scripts/env-setup.sh
@@ -314,7 +329,7 @@ No internet access, no CPAN, no EPEL required.
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point per tool | `bash bootstrap.sh` — nothing else required |
+| Single entry point per tool | `bash bootstrap.sh` or `bash setup.sh` — nothing else required |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives and binaries |
 | No personal URLs | All SBOM namespaces use `airgap-cpp-devkit.internal` — safe for internal distribution |
 
@@ -342,8 +357,12 @@ airgap-cpp-devkit/
 │   │   ├── clang-tidy.exe
 │   │   ├── clang-tidy.part-aa
 │   │   └── clang-tidy.part-ab
-│   └── winlibs-gcc-ucrt/
-│       └── *.zip.part-*                   <- GCC toolchain split parts
+│   ├── winlibs-gcc-ucrt/
+│   │   └── *.zip.part-*                   <- GCC toolchain split parts
+│   └── 7zip/
+│       ├── 7z2600-x64.exe                 <- Windows admin installer
+│       ├── 7z2600-extra.7z                <- Windows portable (7za.exe)
+│       └── 7z2600-linux-x64.tar.xz        <- Linux 7zz binary
 │
 ├── clang-llvm/                            <- LLVM/Clang tooling group
 │   ├── style-formatter/                   <- LLVM style enforcement tool
@@ -366,7 +385,7 @@ airgap-cpp-devkit/
 │       ├── bootstrap.sh
 │       ├── manifest.json
 │       ├── sbom.spdx.json
-│       ├── llvm-src/                      <- vendored LLVM 22.1.1 (split parts)
+│       ├── llvm-src/                      <- vendored LLVM 22.1.2 (split parts)
 │       ├── ninja-src/                     <- vendored Ninja 1.13.2
 │       ├── bin/
 │       │   ├── windows/
@@ -419,12 +438,21 @@ airgap-cpp-devkit/
 │       ├── ms-python.python-2026.5...-win32-x64.vsix
 │       └── ms-python.python-2026.5...-linux-x64.vsix
 │
-├── prebuilt/                              <- prebuilt tools
-│   └── winlibs-gcc-ucrt/                  <- GCC 15.2.0 + MinGW-w64 13.0.0 UCRT
+├── prebuilt/                              <- prebuilt tools (scripts + manifests only)
+│   ├── winlibs-gcc-ucrt/                  <- GCC 15.2.0 + MinGW-w64 13.0.0 UCRT
+│   │   ├── setup.sh
+│   │   ├── manifest.json
+│   │   ├── sbom.spdx.json
+│   │   └── scripts/
+│   └── 7zip/                              <- 7-Zip 26.00 (Windows + Linux)
 │       ├── setup.sh
 │       ├── manifest.json
 │       ├── sbom.spdx.json
+│       ├── README.md
 │       └── scripts/
+│           ├── verify.sh
+│           ├── install-windows.sh
+│           └── install-linux.sh
 │
 └── grpc-source-build/                     <- gRPC source build (Windows)
     ├── setup_grpc.sh

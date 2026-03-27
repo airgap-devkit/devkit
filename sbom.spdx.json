@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-03-20T00:00:00Z",
+    "created": "2026-03-27T00:00:00Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -53,6 +53,14 @@
         "algorithm": "SHA1",
         "checksumValue": "6138786b90732e5134545cdfd936fcb0084f4f24"
       }
+    },
+    {
+      "externalDocumentId": "DocumentRef-7zip",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/prebuilt/7zip/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
     }
   ],
   "packages": [
@@ -80,7 +88,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Builds clang-format from LLVM 22.1.1 source. See DocumentRef-clang-llvm-source-build for full component SBOM."
+      "comment": "Optional subproject. Builds clang-format and clang-tidy from LLVM 22.1.2 source. See DocumentRef-clang-llvm-source-build for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-clang-llvm-style-formatter",
@@ -133,6 +141,19 @@
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
       "comment": "Optional standalone subproject. Pre-built GCC 15.2.0 toolchain for Windows x86_64. Can be excluded without affecting other tools. See DocumentRef-winlibs-gcc-ucrt for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-7zip",
+      "name": "prebuilt-7zip",
+      "versionInfo": "26.00",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional standalone subproject. 7-Zip 26.00 prebuilt binaries for Windows x64 and Linux x86-64. Supports admin and user install modes on both platforms. Can be excluded without affecting other tools. See DocumentRef-7zip for full component SBOM."
     }
   ],
   "relationships": [
@@ -167,6 +188,11 @@
       "relatedSpdxElement": "SPDXRef-subproject-winlibs-gcc-ucrt"
     },
     {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-7zip"
+    },
+    {
       "spdxElementId": "SPDXRef-subproject-clang-llvm-source-build",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-clang-llvm-source-build:SPDXRef-clang-llvm-source-build"
@@ -190,6 +216,11 @@
       "spdxElementId": "SPDXRef-subproject-winlibs-gcc-ucrt",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-winlibs-gcc-ucrt:SPDXRef-winlibs-gcc-ucrt"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-7zip",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-7zip:SPDXRef-7zip-subproject"
     }
   ]
 }
