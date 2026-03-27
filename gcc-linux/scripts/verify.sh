@@ -44,9 +44,12 @@ echo "airgap-cpp-devkit — GCC 15.2 Linux integrity check"
 echo "==================================================="
 
 check "${VENDOR_DIR}/x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz.part-aa" \
-      "c35f91f3c025fb41c382ee82420ce7ef1742c04b04fafe93b7e8e4eebd05da95"
+      "84e09929876ceec7b5d519921c38be05196f3b13bea150f13ac54156cb371ed8"
 
 check "${VENDOR_DIR}/x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz.part-ab" \
+      "136429b957e94395565619f6d3c18201d6eb82ba420c131f3090d29d5d4fd853"
+
+check "${VENDOR_DIR}/x-tools-x86_64-bionic-linux-gnu-gcc15.tar.xz.part-ac" \
       "5d736c51a69cb2157cd0f95e0c418fd3dcb9a3eba15c2b36a59e640cd5345aeb"
 
 # Check reassembled tarball if present
