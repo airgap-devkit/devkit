@@ -1,0 +1,64 @@
+{
+  "_comment": "7-Zip 26.00 pre-built binary manifest for airgap-cpp-devkit. Vendors the Windows installer, Windows portable (7za.exe from extra package), and Linux console binary (7zz). SHA256 hashes are self-computed from the vendored files at time of pinning.",
+  "tool": {
+    "name": "7zip",
+    "version": "26.00",
+    "release_date": "2026-02-12",
+    "upstream_repo": "https://github.com/ip7z/7zip",
+    "upstream_release": "https://github.com/ip7z/7zip/releases/tag/26.00",
+    "download_page": "https://www.7-zip.org/download.html",
+    "license": "LGPL-2.1-or-later WITH unRAR-restriction",
+    "license_url": "https://www.7-zip.org/license.txt"
+  },
+  "assets": {
+    "windows_installer": {
+      "filename": "7z2600-x64.exe",
+      "url": "https://www.7-zip.org/a/7z2600-x64.exe",
+      "platform": "windows-x86_64",
+      "purpose": "Admin install — installs 7-Zip for all users to C:\\Program Files\\7-Zip\\",
+      "sha256": "6fe18d5b3080e39678cabfa6cef12cfb25086377389b803a36a3c43236a8a82c",
+      "binary_path": "prebuilt-binaries/7zip/7z2600-x64.exe",
+      "install_binary": "C:\\Program Files\\7-Zip\\7z.exe",
+      "_note": "Run with /S flag for silent install. Requires administrator privileges."
+    },
+    "windows_portable": {
+      "filename": "7z2600-extra.7z",
+      "url": "https://www.7-zip.org/a/7z2600-extra.7z",
+      "platform": "windows-x86_64",
+      "purpose": "User (non-admin) install — portable 7za.exe extracted from extra package",
+      "sha256": "1cc38a9e3777ce0e4bbf84475672888a581d400633b0448fd973a7a6aa56cfdc",
+      "binary_path": "prebuilt-binaries/7zip/7z2600-extra.7z",
+      "portable_binary_inside": "x64/7za.exe",
+      "_note": "Extract x64/7za.exe only. No installation required. Drop into user PATH location."
+    },
+    "linux_x64": {
+      "filename": "7z2600-linux-x64.tar.xz",
+      "url": "https://www.7-zip.org/a/7z2600-linux-x64.tar.xz",
+      "platform": "linux-x86_64",
+      "purpose": "Admin install → /usr/local/bin/7zz  |  User install → ~/.local/bin/7zz",
+      "sha256": "c74dc4a48492cde43f5fec10d53fb2a66f520e4a62a69d630c44cb22c477edc6",
+      "binary_path": "prebuilt-binaries/7zip/7z2600-linux-x64.tar.xz",
+      "binary_inside": "7zz",
+      "binary_size_bytes": 2882096,
+      "_note": "Tarball contains 7zz (full, with codec plugins) and 7zzs (standalone). We use 7zz. chmod +x required after extraction."
+    }
+  },
+  "install_targets": {
+    "windows_admin": {
+      "binary": "C:\\Program Files\\7-Zip\\7z.exe",
+      "path_entry": "C:\\Program Files\\7-Zip"
+    },
+    "windows_user": {
+      "binary": "%LOCALAPPDATA%\\airgap-cpp-devkit\\7zip\\7za.exe",
+      "path_entry": "%LOCALAPPDATA%\\airgap-cpp-devkit\\7zip"
+    },
+    "linux_admin": {
+      "binary": "/usr/local/bin/7zz",
+      "path_entry": "/usr/local/bin"
+    },
+    "linux_user": {
+      "binary": "~/.local/bin/7zz",
+      "path_entry": "~/.local/bin"
+    }
+  }
+}
