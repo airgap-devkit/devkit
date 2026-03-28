@@ -80,14 +80,14 @@ sudo dnf install perl-Time-HiRes perl-JSON
 ```
 
 Everything else (`Capture::Tiny`, `DateTime`, `DateTime::TimeZone`) is
-vendored in `vendor/perl-libs.tar.gz` and installed locally by `bootstrap.sh`.
+vendored in `vendor/perl-libs.tar.gz` and installed locally by `setup.sh`.
 
 ---
 
 ## Integrity Verification
 
 SHA256 hashes for both tarballs are pinned in `manifest.json`.
-`bootstrap.sh` verifies them before extracting. To verify manually:
+`setup.sh` verifies them before extracting. To verify manually:
 
 ```bash
 bash build-tools/lcov/scripts/verify.sh
@@ -120,7 +120,7 @@ Then update the SHA256 hashes in `manifest.json` and commit.
 
 | Path | Purpose |
 |------|---------|
-| `bootstrap.sh` | **Start here** — verify + extract, no admin rights |
+| `setup.sh` | **Start here** — verify + extract, no admin rights |
 | `manifest.json` | SHA256 pins for vendored tarballs |
 | `vendor/lcov-2.4.tar.gz` | Vendored lcov 2.4 source + binaries (committed) |
 | `vendor/perl-libs.tar.gz` | Vendored Perl dependencies (committed) |

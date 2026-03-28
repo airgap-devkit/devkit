@@ -15,7 +15,7 @@ bash toolchains/clang-source-build/demo/run-demo.sh
 `clang-tidy` must be assembled first:
 
 ```bash
-bash toolchains/clang-source-build/bootstrap.sh
+bash toolchains/clang-source-build/setup.sh
 ```
 
 ---

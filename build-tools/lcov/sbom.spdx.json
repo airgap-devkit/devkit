@@ -12,10 +12,10 @@
   "name": "airgap-cpp-devkit-build-tools/lcov",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/build-tools/lcov/sbom.spdx.json",
-  "documentDescribes": ["SPDXRef-build-tools/lcov"],
+  "documentDescribes": ["SPDXRef-build-tools-lcov"],
   "packages": [
     {
-      "SPDXID": "SPDXRef-build-tools/lcov",
+      "SPDXID": "SPDXRef-build-tools-lcov",
       "name": "build-tools/lcov",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
@@ -183,15 +183,15 @@
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-build-tools/lcov"
+      "relatedSpdxElement": "SPDXRef-build-tools-lcov"
     },
     {
-      "spdxElementId": "SPDXRef-build-tools/lcov",
+      "spdxElementId": "SPDXRef-build-tools-lcov",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-lcov"
     },
     {
-      "spdxElementId": "SPDXRef-build-tools/lcov",
+      "spdxElementId": "SPDXRef-build-tools-lcov",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-perl-libs"
     },
@@ -216,12 +216,12 @@
       "relatedSpdxElement": "SPDXRef-perl-timedate"
     },
     {
-      "spdxElementId": "SPDXRef-build-tools/lcov",
+      "spdxElementId": "SPDXRef-build-tools-lcov",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-perl-time-hires"
     },
     {
-      "spdxElementId": "SPDXRef-build-tools/lcov",
+      "spdxElementId": "SPDXRef-build-tools-lcov",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-perl-json"
     }

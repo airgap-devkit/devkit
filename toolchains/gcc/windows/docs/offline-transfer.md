@@ -1,4 +1,4 @@
-# Offline Transfer Guide — winlibs-gcc-ucrt
+# Offline Transfer Guide — toolchains/gcc/windows
 
 ### Author: Nima Shafie
 

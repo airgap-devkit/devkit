@@ -9,14 +9,14 @@
     ],
     "comment": "Generated SBOM for toolchains/gcc/windows subproject of airgap-cpp-devkit. Covers all tools bundled in the WinLibs GCC 15.2.0 UCRT release 6 package."
   },
-  "name": "airgap-cpp-devkit-prebuilt-winlibs-gcc-ucrt",
+  "name": "airgap-cpp-devkit-prebuilt-toolchains/gcc/windows",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/toolchains/gcc/windows/sbom.spdx.json",
-  "documentDescribes": ["SPDXRef-winlibs-gcc-ucrt"],
+  "documentDescribes": ["SPDXRef-toolchains-gcc-windows"],
   "packages": [
     {
-      "SPDXID": "SPDXRef-winlibs-gcc-ucrt",
-      "name": "winlibs-gcc-ucrt",
+      "SPDXID": "SPDXRef-toolchains-gcc-windows",
+      "name": "toolchains/gcc/windows",
       "versionInfo": "15.2.0posix-13.0.0-ucrt-r6",
       "supplier": "Person: Brecht Sanders (brechtsanders)",
       "downloadLocation": "https://github.com/brechtsanders/winlibs_mingw/releases/tag/15.2.0posix-13.0.0-ucrt-r6",
@@ -321,80 +321,80 @@
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-winlibs-gcc-ucrt"
+      "relatedSpdxElement": "SPDXRef-toolchains-gcc-windows"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-gcc"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-mingw-w64"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-gdb"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-binutils"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-make"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-cmake"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-ninja"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-nasm"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-yasm"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-ccache"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-cppcheck"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-doxygen"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-dos2unix"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-pkgconf"
     },
     {
-      "spdxElementId": "SPDXRef-winlibs-gcc-ucrt",
+      "spdxElementId": "SPDXRef-toolchains-gcc-windows",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-winlibs-tools"
     },

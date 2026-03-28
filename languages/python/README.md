@@ -11,13 +11,13 @@ Portable Python 3.14.3 interpreter for air-gapped Windows and Linux (RHEL 8 / x8
 
 ```bash
 # Verify, reassemble (Linux), and install
-bash python/bootstrap.sh
+bash python/setup.sh
 
 # Verify SHA256 only — no installation
-bash python/bootstrap.sh --verify
+bash python/setup.sh --verify
 
 # Show what would be installed without installing
-bash python/bootstrap.sh --dry-run
+bash python/setup.sh --dry-run
 ```
 
 Installs to:
@@ -46,7 +46,7 @@ python3.14 --version
 | `cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz.part-ab` | Linux | ~19MB | Split part 2 of 2 |
 | `python-3.14.3-embed-amd64.zip` | Windows | ~12MB | Single file |
 
-The Linux tarball is split due to git file size limits. `bootstrap.sh` reassembles it automatically.
+The Linux tarball is split due to git file size limits. `setup.sh` reassembles it automatically.
 
 ---
 
@@ -73,4 +73,4 @@ To update to a newer Python version:
 3. Compute SHA256 for all files and parts
 4. Replace files in `vendor/`
 5. Update `manifest.json` and `sbom.spdx.json`
-6. Run `bash python/bootstrap.sh --verify`
+6. Run `bash python/setup.sh --verify`

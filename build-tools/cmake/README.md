@@ -10,9 +10,9 @@ or builds from the vendored source tarball (`--build-from-source`, ~10-20 min).
 ## Usage
 
 ```bash
-bash cmake/bootstrap.sh                    # prebuilt (default)
-bash cmake/bootstrap.sh --build-from-source
-bash cmake/bootstrap.sh --rebuild          # force re-install
+bash cmake/setup.sh                    # prebuilt (default)
+bash cmake/setup.sh --build-from-source
+bash cmake/setup.sh --rebuild          # force re-install
 ```
 
 ---
@@ -21,9 +21,9 @@ bash cmake/bootstrap.sh --rebuild          # force re-install
 
 | Scenario | Recommended |
 |----------|-------------|
-| Air-gapped, binaries permitted | `bootstrap.sh` (prebuilt, default) |
-| Binary-restricted environment | `bootstrap.sh --build-from-source` |
-| Force reinstall / version change | `bootstrap.sh --rebuild` |
+| Air-gapped, binaries permitted | `setup.sh` (prebuilt, default) |
+| Binary-restricted environment | `setup.sh --build-from-source` |
+| Force reinstall / version change | `setup.sh --rebuild` |
 
 ---
 
@@ -55,7 +55,7 @@ Both platforms:
 | Platform | Requirement |
 |----------|-------------|
 | Linux (RHEL 8) | GCC 8.5+ (`sudo dnf install gcc-c++`) |
-| Windows | WinLibs GCC on PATH (`winlibs-gcc-ucrt/bootstrap.sh` first) |
+| Windows | WinLibs GCC on PATH (`toolchains/gcc/windows/setup.sh` first) |
 
 ---
 
@@ -114,7 +114,7 @@ sha256sum cmake-4.x.x-windows-x86_64.zip.part-*
 sha256sum cmake-4.x.x.tar.gz
 
 # Update cmake/manifest.json with new version + hashes
-# Update CMAKE_VERSION in cmake/bootstrap.sh
+# Update CMAKE_VERSION in cmake/setup.sh
 # Update version references in this README
 
 git add .

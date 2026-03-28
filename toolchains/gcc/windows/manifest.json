@@ -1,7 +1,7 @@
 {
   "_comment": "WinLibs GCC UCRT pre-built binary manifest. The .zip is split into parts and committed to prebuilt-binaries submodule. SHA256 hashes cover each individual part AND the reassembled .zip.",
   "toolchain": {
-    "name": "winlibs-gcc-ucrt",
+    "name": "toolchains/gcc/windows",
     "gcc_version": "15.2.0",
     "mingw_w64_version": "13.0.0",
     "crt": "ucrt",

@@ -12,10 +12,10 @@
   "name": "airgap-cpp-devkit-toolchains/clang-style-formatter",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/toolchains/clang/style-formatter/sbom.spdx.json",
-  "documentDescribes": ["SPDXRef-toolchains/clang-style-formatter"],
+  "documentDescribes": ["SPDXRef-toolchains-clang-style-formatter"],
   "packages": [
     {
-      "SPDXID": "SPDXRef-toolchains/clang-style-formatter",
+      "SPDXID": "SPDXRef-toolchains-clang-style-formatter",
       "name": "toolchains/clang-style-formatter",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
@@ -118,10 +118,10 @@
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-toolchains/clang-style-formatter"
+      "relatedSpdxElement": "SPDXRef-toolchains-clang-style-formatter"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-style-formatter",
+      "spdxElementId": "SPDXRef-toolchains-clang-style-formatter",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-clang-format-wheel"
     },
@@ -131,17 +131,17 @@
       "relatedSpdxElement": "SPDXRef-clang-format"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-style-formatter",
+      "spdxElementId": "SPDXRef-toolchains-clang-style-formatter",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-python"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-style-formatter",
+      "spdxElementId": "SPDXRef-toolchains-clang-style-formatter",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-pip"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-style-formatter",
+      "spdxElementId": "SPDXRef-toolchains-clang-style-formatter",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-git"
     }
