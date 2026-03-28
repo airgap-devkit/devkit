@@ -66,11 +66,18 @@ _find_clang_tool() {
         [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
     done
 
-    # 3. toolchains/clang-source-build bin/ (optional LLVM source build path).
+    # 3. Option D source-build bin/ (installed path, Windows + Linux).
     for _bundled in \
-            "${_FIND_SUBMODULE_ROOT}/../toolchains/clang-source-build/bin/windows/${tool}.exe" \
-            "${_FIND_SUBMODULE_ROOT}/../toolchains/clang-source-build/bin/linux/${tool}"; do
-        [[ -x "${_bundled}" ]] && { echo "${_bundled}"; return 0; }
+            "${_FIND_SUBMODULE_ROOT}/../source-build/bin/${tool}.exe" \
+            "/opt/airgap-cpp-devkit/toolchains/clang/source-build/bin/${tool}"; do
+        if [[ -x "${_bundled}" ]]; then
+            if [[ "${_FIND_OS}" == "linux" ]]; then
+                _gcc15_lib="$(find /opt/rh/gcc-toolset-15 -name 'libstdc++.so.6.0.*' 2>/dev/null | head -1 | xargs dirname 2>/dev/null || true)"
+                [[ -z "${_gcc15_lib}" ]] && _gcc15_lib="/opt/rh/gcc-toolset-15/root/usr/lib/gcc/x86_64-redhat-linux/15"
+                export LD_LIBRARY_PATH="${_gcc15_lib}:${LD_LIBRARY_PATH:-}"
+            fi
+            echo "${_bundled}"; return 0
+        fi
     done
 
     # 4. Plain name on PATH
