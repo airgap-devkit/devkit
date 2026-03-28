@@ -12,14 +12,16 @@
   "name": "airgap-cpp-devkit",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/sbom.spdx.json",
-  "documentDescribes": ["SPDXRef-airgap-cpp-devkit"],
+  "documentDescribes": [
+    "SPDXRef-airgap-cpp-devkit"
+  ],
   "externalDocumentRefs": [
     {
       "externalDocumentId": "DocumentRef-clang-llvm-source-build",
       "spdxDocument": "https://airgap-cpp-devkit.internal/clang-llvm/source-build/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "f4b7ac265ab98035eec15c85fc91f8fcf062ce6d"
+        "checksumValue": "d475175c5de0c82020f5d7caace6d3fe779c27ac"
       }
     },
     {
