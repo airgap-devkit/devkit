@@ -8,19 +8,19 @@
     "split_parts": [
       {
         "filename": "llvm-project-22.1.2.src.tar.xz.part-aa",
-        "sha256": "9bad69282673024744d6b466df5f9621e69027c94ada249b54d7ca915395aa3b"
+        "sha256": "4dd11a4daa1b76c7fde0561bb9d8621d922bc0cfed064cd717c668ee3c52372f"
       },
       {
         "filename": "llvm-project-22.1.2.src.tar.xz.part-ab",
-        "sha256": "1c6edbf992c25c00efa88c347ff634c120241784e971394c6d00c0b1a8ba65cd"
+        "sha256": "273d1ab18c960aee709461332b3ffbc88a565975b4c42e75b4ad541471ca74c1"
       },
       {
         "filename": "llvm-project-22.1.2.src.tar.xz.part-ac",
-        "sha256": "4d590112b9a37d1113299782379e2ea4ac1965a351377d60a0f59efc2942d4fe"
+        "sha256": "f03f1aff6385031630668c53539394f99be8f706165f503c03eaec4ca9682c5a"
       },
       {
         "filename": "llvm-project-22.1.2.src.tar.xz.part-ad",
-        "sha256": "058159448fb8c82593de0cc17417e2483e2b1404e2f482d2bf7ee2a0ac61d858"
+        "sha256": "8581c5e522fd5fa4268cba3d3830c3def285a4d9c1d0453e43eaa018e8d27a9f"
       }
     ],
     "sha256_reassembled": {
@@ -31,7 +31,8 @@
           "url": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.2"
         }
       ]
-    }
+    },
+    "sha256": "62f2f13ff25b1bb28ea507888e858212d19aafb65e8e72b4a65ee0629ec4ae0c"
   },
   "ninja": {
     "version": "1.13.2",
@@ -63,11 +64,11 @@
     "version": "22.1.2",
     "platform": "linux-x86_64",
     "built_from": "llvmorg-22.1.2",
-    "compiler": "GCC 15.2.0 (tttapa/toolchains x86_64-bionic-linux-gnu)",
+    "compiler": "GCC 15.1.1 (gcc-toolset-15, RHEL 8)",
     "build_type": "Release",
-    "binary_filename": "prebuilt-binaries/toolchains/clang/clang-format-linux",
-    "sha256_binary": "6711fa0ff6ed78592cabafc4f9730d915b1c92ddfcafe94ff8545ce78bed5f7e",
-    "_note": "Single file (4.7 MB) — committed directly to prebuilt-binaries submodule."
+    "binary_filename": "prebuilt-binaries/toolchains/clang/source-build/clang-format-linux",
+    "sha256_binary": "a1f70326692f3afee4907ca0601d337d33c6571481314837bce8fe445584c438",
+    "_note": "Built from LLVM 22.1.2 on RHEL 8 using gcc-toolset-15. Stripped (4.2MB). Requires LD_LIBRARY_PATH to gcc-toolset-15 libstdc++ to run."
   },
   "ninja_linux": {
     "version": "1.13.2",
