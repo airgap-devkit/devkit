@@ -6,11 +6,13 @@
 # Installs LLVM toolchain components on Linux (RHEL 8 / Rocky Linux).
 #
 # Components:
-#   clang   Slim Clang/LLVM 22.1.2 (clang, lld, llvm-ar, etc.)
-#   mingw   llvm-mingw 20260324 cross-compiler (Linux → Windows)
+#   clang        Slim Clang/LLVM 22.1.2 (Ubuntu-built, requires GLIBC 2.29+)
+#                NOTE: Not compatible with RHEL 8 (GLIBC 2.28)
+#   clang-rhel8  Clang 20.1.8 native RHEL 8 RPMs (GLIBC 2.28 compatible)
+#   mingw        llvm-mingw 20260324 cross-compiler (Linux -> Windows)
 #
 # USAGE:
-#   bash scripts/install-linux.sh <all|clang|mingw> <admin|user> [prefix_override]
+#   bash scripts/install-linux.sh <all|clang|clang-rhel8|mingw> <admin|user> [prefix_override]
 # =============================================================================
 set -euo pipefail
 
@@ -22,7 +24,6 @@ COMPONENT="${1:-all}"
 MODE="${2:-user}"
 PREFIX_OVERRIDE="${3:-}"
 
-# Determine install base
 if [[ -n "${PREFIX_OVERRIDE}" ]]; then
   INSTALL_BASE="${PREFIX_OVERRIDE}"
 elif [[ "${MODE}" == "admin" ]]; then
@@ -41,9 +42,6 @@ echo ""
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "${TMPDIR}"' EXIT
 
-# ---------------------------------------------------------------------------
-# Install clang (Linux slim tarball)
-# ---------------------------------------------------------------------------
 install_clang() {
   local PART_AA="${VENDOR_DIR}/clang-linux/clang-llvm-22.1.2-linux-x64-slim.tar.xz.part-aa"
   local PART_AB="${VENDOR_DIR}/clang-linux/clang-llvm-22.1.2-linux-x64-slim.tar.xz.part-ab"
@@ -53,14 +51,11 @@ install_clang() {
   echo "[llvm-toolchain] Reassembling clang slim tarball..."
   cat "${PART_AA}" "${PART_AB}" "${PART_AC}" > "${REASSEMBLED}"
 
-  # Verify reassembled
   local ACTUAL
   ACTUAL="$(sha256sum "${REASSEMBLED}" | awk '{print $1}')"
   local EXPECTED="1988d3c2a84af6e16e968787c5c072ecaa37f93405aa2a0ec4c38096a5f3e14c"
   if [[ "${ACTUAL}" != "${EXPECTED}" ]]; then
     echo "ERROR: Reassembled clang tarball SHA256 mismatch." >&2
-    echo "  Expected: ${EXPECTED}" >&2
-    echo "  Got     : ${ACTUAL}" >&2
     exit 1
   fi
   echo "[llvm-toolchain] Reassembled tarball verified OK"
@@ -69,7 +64,6 @@ install_clang() {
   echo "[llvm-toolchain] Extracting to ${CLANG_DIR}..."
   tar -xJf "${REASSEMBLED}" -C "${CLANG_DIR}" --strip-components=1
 
-  # Create symlinks (were symlinks in original, failed on Windows extraction)
   cd "${CLANG_DIR}/bin"
   ln -sf clang-22 clang
   ln -sf clang-22 clang++
@@ -82,12 +76,40 @@ install_clang() {
   cd - > /dev/null
 
   echo "[llvm-toolchain] clang installed: ${CLANG_DIR}"
-  "${CLANG_DIR}/bin/clang" --version | head -1
+  "${CLANG_DIR}/bin/clang" --version | head -1 || \
+    echo "WARNING: clang binary requires GLIBC 2.29+ — not available on RHEL 8. Use --component clang-rhel8 instead."
 }
 
-# ---------------------------------------------------------------------------
-# Install llvm-mingw (Linux cross-compiler)
-# ---------------------------------------------------------------------------
+install_clang_rhel8() {
+  local PART_AA="${VENDOR_DIR}/clang-rhel8/clang-20.1.8-rhel8-rpms.tar.part-aa"
+  local PART_AB="${VENDOR_DIR}/clang-rhel8/clang-20.1.8-rhel8-rpms.tar.part-ab"
+  local REASSEMBLED="${TMPDIR}/clang-rhel8-rpms.tar"
+  local RPM_DIR="${TMPDIR}/clang-rpms"
+
+  echo "[llvm-toolchain] Reassembling clang RHEL 8 RPM tarball..."
+  cat "${PART_AA}" "${PART_AB}" > "${REASSEMBLED}"
+
+  local ACTUAL
+  ACTUAL="$(sha256sum "${REASSEMBLED}" | awk '{print $1}')"
+  local EXPECTED="ce6af160506b5465ece4458a59f2b209ad5c20096a47f7cfd177001a5345de8f"
+  if [[ "${ACTUAL}" != "${EXPECTED}" ]]; then
+    echo "ERROR: Reassembled clang-rhel8 tarball SHA256 mismatch." >&2
+    exit 1
+  fi
+  echo "[llvm-toolchain] Reassembled tarball verified OK"
+
+  mkdir -p "${RPM_DIR}"
+  echo "[llvm-toolchain] Extracting RPMs..."
+  tar -xf "${REASSEMBLED}" -C "${RPM_DIR}"
+
+  echo "[llvm-toolchain] Installing clang 20.1.8 RPMs via rpm..."
+  rpm -Uvh --nodeps --replacepkgs "${RPM_DIR}"/*.rpm
+
+  echo "[llvm-toolchain] clang-rhel8 installed"
+  clang --version | head -1 2>/dev/null || true
+  echo "[llvm-toolchain] clang binary: $(which clang 2>/dev/null || echo 'run: hash -r to refresh PATH')"
+}
+
 install_mingw() {
   local PART_AA="${VENDOR_DIR}/llvm-mingw/llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-aa"
   local PART_AB="${VENDOR_DIR}/llvm-mingw/llvm-mingw-20260324-ucrt-ubuntu-22.04-x86_64.tar.xz.part-ab"
@@ -110,22 +132,17 @@ install_mingw() {
   tar -xJf "${REASSEMBLED}" -C "${MINGW_DIR}" --strip-components=1
 
   echo "[llvm-toolchain] llvm-mingw installed: ${MINGW_DIR}"
-  "${MINGW_DIR}/bin/x86_64-w64-mingw32-clang" --version | head -1
+  "${MINGW_DIR}/bin/x86_64-w64-mingw32-clang" --version | head -1 || \
+    echo "WARNING: llvm-mingw requires GLIBC 2.29+ — not available on RHEL 8."
 }
 
-# ---------------------------------------------------------------------------
-# Run selected components
-# ---------------------------------------------------------------------------
 case "${COMPONENT}" in
-  all)   install_clang; echo ""; install_mingw ;;
-  clang) install_clang ;;
-  mingw) install_mingw ;;
+  all)         install_clang; echo ""; install_mingw ;;
+  clang)       install_clang ;;
+  clang-rhel8) install_clang_rhel8 ;;
+  mingw)       install_mingw ;;
   *) echo "ERROR: Unknown component: ${COMPONENT}" >&2; exit 1 ;;
 esac
 
 echo ""
 echo "[llvm-toolchain] Installation complete."
-if [[ "${MODE}" == "user" ]]; then
-  echo "[llvm-toolchain] NOTE: Add to PATH in ~/.bashrc:"
-  echo "  export PATH=\"${CLANG_DIR}/bin:${MINGW_DIR}/bin:\${PATH}\""
-fi
