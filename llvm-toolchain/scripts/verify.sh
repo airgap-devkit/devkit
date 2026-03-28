@@ -51,7 +51,9 @@ echo "Verifying llvm-toolchain vendor assets (${OS}, component=${COMPONENT})..."
 echo ""
 
 # ---------------------------------------------------------------------------
-# clang-linux — Linux only
+# clang-linux — official LLVM 22.1.2 prebuilt (Ubuntu-built, GLIBC 2.29+)
+# NOTE: Requires GLIBC 2.29+ — not compatible with RHEL 8 (GLIBC 2.28)
+#       Use clang-rhel8 component for RHEL 8 targets.
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]] && [[ "${COMPONENT}" == "all" || "${COMPONENT}" == "clang" ]]; then
   verify_file \
@@ -66,6 +68,20 @@ if [[ "${OS}" == "linux" ]] && [[ "${COMPONENT}" == "all" || "${COMPONENT}" == "
     "${VENDOR_DIR}/clang-linux/clang-llvm-22.1.2-linux-x64-slim.tar.xz.part-ac" \
     "e68779f0738c388bdb4cb68c0c1fbc9a02778faf67d536a8ab9eee50b763256f" \
     "clang-llvm-22.1.2-linux-x64-slim.tar.xz.part-ac"
+fi
+
+# ---------------------------------------------------------------------------
+# clang-rhel8 — RHEL 8 native clang 20.1.8 RPMs (GLIBC 2.28 compatible)
+# ---------------------------------------------------------------------------
+if [[ "${OS}" == "linux" ]] && [[ "${COMPONENT}" == "all" || "${COMPONENT}" == "clang-rhel8" ]]; then
+  verify_file \
+    "${VENDOR_DIR}/clang-rhel8/clang-20.1.8-rhel8-rpms.tar.part-aa" \
+    "3dd0b1bf8bc4f46387fbe289016d1e94b41978c4433ef4d14da6705f0859d7d6" \
+    "clang-20.1.8-rhel8-rpms.tar.part-aa"
+  verify_file \
+    "${VENDOR_DIR}/clang-rhel8/clang-20.1.8-rhel8-rpms.tar.part-ab" \
+    "1e41c30b62cdf2ce0f9c46b4d9c5681c6b1b4a3c19b5281a5d857ecbc2caadc5" \
+    "clang-20.1.8-rhel8-rpms.tar.part-ab"
 fi
 
 # ---------------------------------------------------------------------------
