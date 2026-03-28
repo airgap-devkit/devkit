@@ -25,7 +25,7 @@ git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
 bash toolchains/clang/source-build/setup.sh
-bash toolchains/clang/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/setup.sh
 ```
 
 ### Worst Case — Binaries not permitted, source only
@@ -38,7 +38,7 @@ git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
 bash toolchains/clang/source-build/setup.sh --build-from-source
-bash toolchains/clang/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/setup.sh
 ```
 
 Each tool's bootstrap script detects which scenario applies and responds
@@ -228,7 +228,7 @@ cd airgap-cpp-devkit
 bash scripts/setup-prebuilt-submodule.sh
 
 # Install the formatter (fast, ~5 seconds)
-bash toolchains/clang/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/setup.sh
 ```
 
 ### Prerequisites
@@ -245,7 +245,7 @@ See each tool's README for source-build prerequisites.
 
 **Method 1 — pip/venv for clang-format (recommended, ~5 seconds)**
 ```bash
-bash toolchains/clang/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/setup.sh
 ```
 Installs `clang-format` from a vendored `.whl` file into a local Python venv.
 No network access. No compiler. No admin rights required (installs in-repo).
@@ -269,16 +269,16 @@ Requires: Visual Studio 2022 (Windows) or GCC 8+ (Linux). CMake 3.14+.
 
 **Method 4 — CMake 4.3.0**
 ```bash
-bash cmake/bootstrap.sh
+bash cmake/setup.sh
 # or build from source:
-bash cmake/bootstrap.sh --build-from-source
+bash cmake/setup.sh --build-from-source
 ```
 Installs CMake 4.3.0 to the devkit path. Required for RHEL 8 environments
 where the system CMake is too old for modern C++ projects.
 
 **Method 5 — Portable Python 3.14.3**
 ```bash
-bash python/bootstrap.sh
+bash python/setup.sh
 source python/scripts/env-setup.sh
 ```
 Installs a self-contained Python 3.14.3 alongside any existing system Python.
@@ -345,7 +345,7 @@ No internet access, no CPAN, no EPEL required.
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point per tool | `bash bootstrap.sh` or `bash setup.sh` — nothing else required |
+| Single entry point per tool | `bash setup.sh` or `bash setup.sh` — nothing else required |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives and binaries |
 | No personal URLs | All SBOM namespaces use `airgap-cpp-devkit.internal` — safe for internal distribution |
 
@@ -373,7 +373,7 @@ airgap-cpp-devkit/
 │   │   ├── clang-tidy.exe
 │   │   ├── clang-tidy.part-aa
 │   │   └── clang-tidy.part-ab
-│   ├── winlibs-gcc-ucrt/
+│   ├── toolchains/gcc/windows/
 │   │   └── *.zip.part-*                   <- GCC toolchain split parts
 │   └── 7zip/
 │       ├── 7z2600-x64.exe                 <- Windows admin installer
@@ -385,7 +385,7 @@ airgap-cpp-devkit/
 │
 ├── toolchains/clang/                            <- LLVM/Clang tooling group
 │   ├── style-formatter/                   <- LLVM style enforcement tool
-│   │   ├── bootstrap.sh
+│   │   ├── setup.sh
 │   │   ├── sbom.spdx.json
 │   │   ├── python-packages/               <- vendored .whl files
 │   │   ├── config/
@@ -401,7 +401,7 @@ airgap-cpp-devkit/
 │   │           └── README.md
 │   │
 │   └── source-build/                      <- clang-format + clang-tidy build/install
-│       ├── bootstrap.sh
+│       ├── setup.sh
 │       ├── manifest.json
 │       ├── sbom.spdx.json
 │       ├── llvm-src/                      <- vendored LLVM 22.1.2 (split parts)
@@ -412,7 +412,7 @@ airgap-cpp-devkit/
 │       └── scripts/
 │
 ├── cmake/                                 <- CMake 4.3.0
-│   ├── bootstrap.sh
+│   ├── setup.sh
 │   ├── manifest.json
 │   └── vendor/                            <- vendored source tarball (split parts)
 │
@@ -423,7 +423,7 @@ airgap-cpp-devkit/
 │   └── tests/
 │
 ├── build-tools/lcov/                     <- code coverage reporting (Linux)
-│   ├── bootstrap.sh
+│   ├── setup.sh
 │   ├── manifest.json
 │   ├── sbom.spdx.json
 │   ├── scripts/
@@ -432,7 +432,7 @@ airgap-cpp-devkit/
 │       └── perl-libs.tar.gz
 │
 ├── python/                                <- portable Python 3.14.3
-│   ├── bootstrap.sh
+│   ├── setup.sh
 │   ├── manifest.json
 │   ├── sbom.spdx.json
 │   ├── README.md
@@ -445,7 +445,7 @@ airgap-cpp-devkit/
 │       └── cpython-3.14.3+...linux-gnu...part-ab      <- Linux split part (~19MB)
 │
 ├── dev-tools/vscode-extensions/                     <- offline VS Code extensions
-│   ├── bootstrap.sh
+│   ├── setup.sh
 │   ├── manifest.json
 │   ├── sbom.spdx.json
 │   ├── README.md
@@ -458,7 +458,7 @@ airgap-cpp-devkit/
 │       └── ms-python.python-2026.5...-linux-x64.vsix
 │
 ├── prebuilt/                              <- prebuilt tools (scripts + manifests only)
-│   ├── winlibs-gcc-ucrt/                  <- GCC 15.2.0 + MinGW-w64 13.0.0 UCRT
+│   ├── toolchains/gcc/windows/                  <- GCC 15.2.0 + MinGW-w64 13.0.0 UCRT
 │   │   ├── setup.sh
 │   │   ├── manifest.json
 │   │   ├── sbom.spdx.json

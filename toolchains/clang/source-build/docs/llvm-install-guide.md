@@ -136,5 +136,5 @@ If the binary exists at `bin/linux/clang-format` or `bin/windows/clang-format.ex
 confirm it is executable (`chmod +x`) and rerun bootstrap:
 
 ```bash
-bash .llvm-hooks/bootstrap.sh --force
+bash .llvm-hooks/setup.sh --force
 ```

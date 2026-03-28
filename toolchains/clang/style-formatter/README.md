@@ -36,17 +36,17 @@ LLVM style automatically.
 
 ### Situation B — You have cloned this formatter directly (no setup.sh)
 
-Run `bootstrap.sh` directly from inside the formatter directory:
+Run `setup.sh` directly from inside the formatter directory:
 
 ```bash
 # If you are working inside airgap-cpp-devkit:
-bash toolchains/clang-style-formatter/bootstrap.sh
+bash toolchains/clang-style-formatter/setup.sh
 
 # If you have cloned toolchains/clang-style-formatter on its own:
-bash bootstrap.sh
+bash setup.sh
 ```
 
-`bootstrap.sh` works with or without a surrounding git repository:
+`setup.sh` works with or without a surrounding git repository:
 - **Inside a git repo** — installs clang-format and wires the pre-commit hook.
 - **Outside a git repo** — installs clang-format only; prints instructions
   for installing the hook once you have a repo to target.
@@ -59,7 +59,7 @@ See [For Maintainers](#for-maintainers--adding-to-a-new-production-repository) b
 
 ---
 
-## What bootstrap.sh Does
+## What setup.sh Does
 
 | Step | What happens | Git repo required? |
 |------|-------------|-------------------|
@@ -132,7 +132,7 @@ git submodule update --init --recursive
 ### Step 2 — Copy setup.sh to the repo root
 
 `setup.sh` is a ~50 line wrapper that lives at the root of each production
-repo and delegates entirely to `bootstrap.sh`. Copy it from the template:
+repo and delegates entirely to `setup.sh`. Copy it from the template:
 
 ```bash
 cp tools/toolchains/clang-style-formatter/docs/production-repo-template/setup.sh ./setup.sh
@@ -160,7 +160,7 @@ your-cpp-project/
 ├── .gitmodules                       ← auto-generated submodule pointer
 ├── tools/
 │   └── toolchains/clang-style-formatter/  ← submodule ref (zero bytes until init)
-│       ├── bootstrap.sh
+│       ├── setup.sh
 │       ├── python-packages/          ← vendored wheels (no network needed)
 │       ├── config/                   ← style rules (.clang-format, .clang-tidy)
 │       └── scripts/
@@ -198,7 +198,7 @@ Expected smoke test output:
 
 ## Local Configuration Overrides (Per-Developer)
 
-After running `setup.sh` or `bootstrap.sh`, a file is created at:
+After running `setup.sh` or `setup.sh`, a file is created at:
 ```
 tools/toolchains/clang-style-formatter/.llvm-hooks-local/hooks.conf
 ```
@@ -230,7 +230,7 @@ formatter submodule updates all repos at once.
 
 | Path | Purpose |
 |------|---------|
-| `bootstrap.sh` | Core install — works standalone or inside a git repo |
+| `setup.sh` | Core install — works standalone or inside a git repo |
 | `python-packages/` | Vendored `.whl` files — clang-format installs from here |
 | `hooks/pre-commit` | The enforcement hook wired into `.git/hooks/` |
 | `config/.clang-format` | LLVM style rules |

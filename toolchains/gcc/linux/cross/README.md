@@ -82,5 +82,5 @@ With GCC 15.2 active, you can build gRPC from source on RHEL 8:
 
 ```bash
 source toolchains/gcc/linux/cross/scripts/env-setup.sh   # activate GCC 15.2
-bash grpc-linux/bootstrap.sh            # build gRPC (coming soon)
+bash grpc-linux/setup.sh            # build gRPC (coming soon)
 ```

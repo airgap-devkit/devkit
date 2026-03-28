@@ -7,7 +7,7 @@
 >
 > Most developers should use the faster pip method for clang-format instead:
 > ```bash
-> bash toolchains/clang/style-formatter/bootstrap.sh   # ~5 seconds
+> bash toolchains/clang/style-formatter/setup.sh   # ~5 seconds
 > ```
 
 ---
@@ -17,7 +17,7 @@
 | Scenario | Recommended method |
 |----------|-------------------|
 | Windows — need clang-format + clang-tidy | `toolchains/clang/source-build/setup.sh` (this) — instant |
-| Linux — Python 3.8+ available, clang-format only | `toolchains/clang/style-formatter/bootstrap.sh` (pip) |
+| Linux — Python 3.8+ available, clang-format only | `toolchains/clang/style-formatter/setup.sh` (pip) |
 | Linux — Python unavailable | `toolchains/clang/source-build/setup.sh` (this) |
 | Policy requires source builds | `toolchains/clang/source-build/setup.sh --build-from-source` |
 | Need clang-tidy on Linux | `toolchains/clang/source-build/setup.sh` (this) |
@@ -56,11 +56,11 @@ The binaries are placed at:
 | clang-format | `prebuilt-binaries/clang-format-linux` | `prebuilt-binaries/clang-format.exe` |
 | clang-tidy | `prebuilt-binaries/clang-tidy-linux` | `prebuilt-binaries/clang-tidy.exe` |
 
-`toolchains/clang/style-formatter/bootstrap.sh` detects these binaries automatically.
+`toolchains/clang/style-formatter/setup.sh` detects these binaries automatically.
 After this script completes, run the formatter bootstrap to install the hook:
 
 ```bash
-bash toolchains/clang/style-formatter/bootstrap.sh
+bash toolchains/clang/style-formatter/setup.sh
 ```
 
 To force a full rebuild and re-verification:
@@ -84,7 +84,7 @@ bash toolchains/clang/source-build/setup.sh --rebuild
 | Visual Studio | 2017 any edition | VS Insiders 18 | "Desktop development with C++" workload required |
 | MSVC toolchain | any | 14.50.35717 | Installed automatically with VS C++ workload |
 | CMake | 3.14 | 4.1.2 | Bundled with VS 2019+; or install separately |
-| Git Bash | any | MINGW64 | Run `bootstrap.sh` from Git Bash — not cmd.exe or PowerShell |
+| Git Bash | any | MINGW64 | Run `setup.sh` from Git Bash — not cmd.exe or PowerShell |
 
 ### RHEL 8
 
@@ -215,7 +215,7 @@ git push
 
 | Path | Purpose |
 |------|---------|
-| `bootstrap.sh` | **Start here** — orchestrates the full build and install |
+| `setup.sh` | **Start here** — orchestrates the full build and install |
 | `manifest.json` | SHA256 pins for all vendored archives and binaries |
 | `llvm-src/*.part-*` | Vendored LLVM 22.1.1 source (split, committed) |
 | `ninja-src/ninja-1.13.2.tar.gz` | Vendored Ninja source (committed) |

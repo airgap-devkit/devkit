@@ -13,11 +13,11 @@
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/toolchains/clang/source-build/sbom.spdx.json",
   "documentDescribes": [
-    "SPDXRef-toolchains/clang-source-build"
+    "SPDXRef-toolchains-clang-source-build"
   ],
   "packages": [
     {
-      "SPDXID": "SPDXRef-toolchains/clang-source-build",
+      "SPDXID": "SPDXRef-toolchains-clang-source-build",
       "name": "toolchains/clang-source-build",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
@@ -344,20 +344,20 @@
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-toolchains/clang-source-build"
+      "relatedSpdxElement": "SPDXRef-toolchains-clang-source-build"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-llvm-project"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-ninja-source"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-clang-format-windows"
     },
@@ -367,12 +367,12 @@
       "relatedSpdxElement": "SPDXRef-llvm-project"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-clang-tidy-linux"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-clang-tidy-windows"
     },
@@ -402,17 +402,17 @@
       "relatedSpdxElement": "SPDXRef-llvm-project"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "BUILD_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-cmake-build-dep"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "BUILD_DEPENDENCY_OF",
       "relatedSpdxElement": "SPDXRef-host-compiler"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-clang-format-linux"
     },
@@ -422,7 +422,7 @@
       "relatedSpdxElement": "SPDXRef-llvm-project"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-ninja-linux"
     },
@@ -432,7 +432,7 @@
       "relatedSpdxElement": "SPDXRef-ninja-source"
     },
     {
-      "spdxElementId": "SPDXRef-toolchains/clang-source-build",
+      "spdxElementId": "SPDXRef-toolchains-clang-source-build",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-ninja-windows"
     },

@@ -12,10 +12,10 @@
   "name": "airgap-cpp-devkit-dev-tools/git-bundle",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/dev-tools/git-bundle/sbom.spdx.json",
-  "documentDescribes": ["SPDXRef-dev-tools/git-bundle"],
+  "documentDescribes": ["SPDXRef-dev-tools-git-bundle"],
   "packages": [
     {
-      "SPDXID": "SPDXRef-dev-tools/git-bundle",
+      "SPDXID": "SPDXRef-dev-tools-git-bundle",
       "name": "dev-tools/git-bundle",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
@@ -28,7 +28,7 @@
       "comment": "Top-level subproject. Transfers Git repositories with arbitrarily nested submodules across air-gapped boundaries using git bundle. 58/58 tests passing."
     },
     {
-      "SPDXID": "SPDXRef-python-dev-tools/git-bundle",
+      "SPDXID": "SPDXRef-python-dev-tools-git-bundle",
       "name": "python",
       "versionInfo": "3.8+",
       "supplier": "Organization: Python Software Foundation",
@@ -48,7 +48,7 @@
       "comment": "Transitive runtime dependency. All scripts (bundle.py, export.py, create_test_repo.py, verify_test.py) are pure Python. Uses standard library only — no third-party packages. Provided by host system."
     },
     {
-      "SPDXID": "SPDXRef-git-dev-tools/git-bundle",
+      "SPDXID": "SPDXRef-git-dev-tools-git-bundle",
       "name": "git",
       "versionInfo": "2.x+",
       "supplier": "Organization: Software Freedom Conservancy",
@@ -78,20 +78,20 @@
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
       "relationshipType": "DESCRIBES",
-      "relatedSpdxElement": "SPDXRef-dev-tools/git-bundle"
+      "relatedSpdxElement": "SPDXRef-dev-tools-git-bundle"
     },
     {
-      "spdxElementId": "SPDXRef-dev-tools/git-bundle",
+      "spdxElementId": "SPDXRef-dev-tools-git-bundle",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
-      "relatedSpdxElement": "SPDXRef-python-dev-tools/git-bundle"
+      "relatedSpdxElement": "SPDXRef-python-dev-tools-git-bundle"
     },
     {
-      "spdxElementId": "SPDXRef-dev-tools/git-bundle",
+      "spdxElementId": "SPDXRef-dev-tools-git-bundle",
       "relationshipType": "RUNTIME_DEPENDENCY_OF",
-      "relatedSpdxElement": "SPDXRef-git-dev-tools/git-bundle"
+      "relatedSpdxElement": "SPDXRef-git-dev-tools-git-bundle"
     },
     {
-      "spdxElementId": "SPDXRef-python-dev-tools/git-bundle",
+      "spdxElementId": "SPDXRef-python-dev-tools-git-bundle",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-python-stdlib"
     }
