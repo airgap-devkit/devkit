@@ -108,7 +108,8 @@ im_progress_start "Building gRPC v${GRPC_VERSION} from source (this takes ~15-45
 TAIL_PID=$!
 
 # Run bat synchronously, redirecting all output to log
-cmd.exe /c "\"${BAT_WIN}\" --dest \"${DEST_WIN}\" --version \"${GRPC_VERSION}\" > \"${BAT_LOG_WIN}\" 2>&1"
+GRPC_DIR_WIN="$(cygpath -w "${SCRIPT_DIR}")"
+cmd.exe /c "cd /d \"${GRPC_DIR_WIN}\" && \"${BAT_WIN}\" --dest \"${DEST_WIN}\" --version \"${GRPC_VERSION}\" > \"${BAT_LOG_WIN}\" 2>&1"
 BAT_EXIT=$?
 
 kill "${TAIL_PID}" 2>/dev/null || true
