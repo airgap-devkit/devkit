@@ -14,7 +14,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd "${MODULE_ROOT}/../.." && pwd)"
+REPO_ROOT="$(cd "${MODULE_ROOT}/../../.." && pwd)"
 MANIFEST="${MODULE_ROOT}/manifest.json"
 VENDOR_DIR="${MODULE_ROOT}/vendor"
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/toolchains/gcc/windows"

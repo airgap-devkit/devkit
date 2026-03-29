@@ -10,7 +10,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # scripts/ is inside toolchains/clang/scripts/ — repo root is 2 levels up
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/toolchains/clang"
 
 COMPONENT="${1:-all}"
