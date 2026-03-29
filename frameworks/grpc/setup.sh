@@ -79,26 +79,38 @@ DEST_WIN="$(cygpath -w "${INSTALL_PREFIX}" 2>/dev/null || \
 echo "[INFO] Windows install path: ${DEST_WIN}"
 echo ""
 
-BAT_FILE="${SCRIPT_DIR}/setup_grpc.bat"
+BAT_FILE="${SCRIPT_DIR}/setup.bat"
 if [[ ! -f "${BAT_FILE}" ]]; then
-    echo "ERROR: setup_grpc.bat not found at ${BAT_FILE}" >&2
+    echo "ERROR: setup.bat not found at ${BAT_FILE}" >&2
     exit 1
 fi
 
 BAT_WIN="$(cygpath -w "${BAT_FILE}")"
 
-echo "[INFO] Invoking setup_grpc.bat..."
+echo "[INFO] Invoking setup.bat..."
 echo ""
 
+BAT_LOG="$(mktemp /tmp/grpc-build-XXXXXX.log)"
 im_progress_start "Building gRPC v${GRPC_VERSION} from source (this takes ~15-45 min)"
-cmd.exe /c "\"${BAT_WIN}\" --dest \"${DEST_WIN}\" --version \"${GRPC_VERSION}\""
+
+# Run bat in background, stream last log line below spinner
+cmd.exe /c "\"${BAT_WIN}\" --dest \"${DEST_WIN}\" --version \"${GRPC_VERSION}\"" > "${BAT_LOG}" 2>&1 &
+BAT_PID=$!
+while kill -0 "${BAT_PID}" 2>/dev/null; do
+    LAST="$(grep -v "^[[:space:]]*$" "${BAT_LOG}" 2>/dev/null | tail -1 | cut -c1-90)"
+    [[ -n "${LAST}" ]] && printf "\r\n  > %-90s\033[1A" "${LAST}" 2>/dev/null || true
+    sleep 2
+done
+wait "${BAT_PID}"
 BAT_EXIT=$?
+printf "\r\n  > %-90s\n" "Build finished." 2>/dev/null || true
+
 im_progress_stop "gRPC build complete"
 
 if [[ "${BAT_EXIT}" -ne 0 ]]; then
     install_receipt_write "failure"
     install_mode_print_footer "failure"
-    echo "ERROR: setup_grpc.bat exited with code ${BAT_EXIT}" >&2
+    echo "ERROR: setup.bat exited with code ${BAT_EXIT}" >&2
     exit "${BAT_EXIT}"
 fi
 
