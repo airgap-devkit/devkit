@@ -70,7 +70,7 @@ if "!VERSION_CHOICE!"=="1" (
     set "GRPC_VERSION=1.78.1"
 ) else (
     echo [ERROR] Invalid selection. Enter 1 or 2.
-    pause
+REM pause removed
     exit /b 1
 )
 
@@ -84,7 +84,7 @@ if "!GRPC_VERSION!"=="1.76.0" (
 ) else (
     echo [ERROR] Unknown version: !GRPC_VERSION!
     echo         Supported: 1.76.0, 1.78.1
-    pause
+REM pause removed
     exit /b 1
 )
 
@@ -158,7 +158,7 @@ where bash.exe >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] bash.exe not found on PATH.
     echo         Install Git for Windows and ensure Git Bash is on PATH.
-    pause
+REM pause removed
     exit /b 1
 )
 echo [OK] bash.exe found.
@@ -171,7 +171,7 @@ echo *** Verifying vendored source parts for v!GRPC_VERSION! ***
 bash scripts/verify.sh !GRPC_VERSION!
 if errorlevel 1 (
     echo [ERROR] Source verification failed.
-    pause
+REM pause removed
     exit /b 1
 )
 
@@ -183,7 +183,7 @@ echo *** Reassembling source archive ***
 bash scripts/reassemble.sh !GRPC_VERSION!
 if errorlevel 1 (
     echo [ERROR] Reassembly failed.
-    pause
+REM pause removed
     exit /b 1
 )
 
@@ -198,7 +198,7 @@ if exist "src\!EXTRACT_ROOT!\" (
     bash -c "mkdir -p src && tar -xzf vendor/grpc-!GRPC_VERSION!.tar.gz -C src/"
     if errorlevel 1 (
         echo [ERROR] Extraction failed.
-        pause
+REM pause removed
         exit /b 1
     )
     echo [OK] Source tree extracted to src\!EXTRACT_ROOT!\
@@ -212,7 +212,7 @@ echo *** Initializing Visual Studio Developer Environment ***
 call "!VSDEVCMD!"
 if errorlevel 1 (
     echo [ERROR] Failed to initialize VS developer environment.
-    pause
+REM pause removed
     exit /b 1
 )
 echo [OK] VS developer environment initialized.
@@ -225,7 +225,7 @@ for %%D in ("!DEMO_DIR!" "!DEMO_HELLO!" "!DEMO_PROTOS!") do (
         mkdir %%D
         if errorlevel 1 (
             echo [ERROR] Failed to create directory %%D.
-            pause
+REM pause removed
             exit /b 1
         )
     )
@@ -241,13 +241,13 @@ if not exist "!DEST_GRPC!\" (
         xcopy /E /I /Y "!SOURCE_GRPC_FOLDER!\*" "!DEST_GRPC!"
         if errorlevel 1 (
             echo [ERROR] Failed to copy gRPC folder.
-            pause
+REM pause removed
             exit /b 1
         )
         echo [OK] gRPC v!GRPC_VERSION! copied to !DEST_GRPC!.
     ) else (
         echo [ERROR] Source folder not found: !SOURCE_GRPC_FOLDER!
-        pause
+REM pause removed
         exit /b 1
     )
 ) else (
@@ -287,7 +287,7 @@ set "Path=%Path%;!MY_INSTALL_DIR!\bin"
 cd "!DEST_GRPC!"
 if errorlevel 1 (
     echo [ERROR] Unable to cd to !DEST_GRPC!
-    pause
+REM pause removed
     exit /b 1
 )
 if not exist "cmake\build\" ( mkdir "cmake\build" )
@@ -296,13 +296,13 @@ if exist * ( del * /Q )
 cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX="!MY_INSTALL_DIR!" ..\..
 if errorlevel 1 (
     echo [ERROR] CMake configuration failed.
-    pause
+REM pause removed
     exit /b 1
 )
 cmake --build . --config Release --target install -j 4
 if errorlevel 1 (
     echo [ERROR] gRPC build failed.
-    pause
+REM pause removed
     exit /b 1
 )
 
@@ -318,7 +318,7 @@ echo [INFO] Copying HelloWorld demo files...
 xcopy /E /I /H /Y "!GRPC_EXAMPLES!\*" "!DEMO_HELLO!\"
 if errorlevel 1 (
     echo [ERROR] Failed to copy HelloWorld demo files.
-    pause
+REM pause removed
     exit /b 1
 )
 if not exist "!LINK_CMAKE!\common.cmake" (
@@ -339,7 +339,7 @@ if not exist "!GEN_DIR!" ( mkdir "!GEN_DIR!" )
 "!OUTPUT_DIR!\bin\protoc.exe" -I "!DEMO_PROTOS!" --cpp_out="!GEN_DIR!" --grpc_out="!GEN_DIR!" --plugin=protoc-gen-grpc="!OUTPUT_DIR!\bin\grpc_cpp_plugin.exe" helloworld.proto
 if errorlevel 1 (
     echo [ERROR] Protoc generation failed.
-    pause
+REM pause removed
     exit /b 1
 )
 echo [OK] Protobuf sources generated.
@@ -353,13 +353,13 @@ cd ".build"
 cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_PREFIX_PATH="!DEST_GRPC!" ..
 if errorlevel 1 (
     echo [ERROR] CMake configuration for demo failed.
-    pause
+REM pause removed
     exit /b 1
 )
 cmake --build . --config Release -j 4
 if errorlevel 1 (
     echo [ERROR] Demo build failed.
-    pause
+REM pause removed
     exit /b 1
 )
 echo [OK] Demo built successfully.
