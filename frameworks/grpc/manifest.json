@@ -37,14 +37,22 @@
       "split_parts": [
         {
           "filename": "grpc-1.78.1.tar.gz.part-aa",
-          "sha256": "3bb18f315a09e5a14cd9d3b5b76529fd0cd8d4c52b02fee2d9f32e409e63934d"
+          "sha256": "a9679740431080adda2f23ba023e74d65753cb8a69476e41ec2029930f7e4fdd"
+        },
+        {
+          "filename": "grpc-1.78.1.tar.gz.part-ab",
+          "sha256": "8473c1b6cf998a6f2c19afea95db9458ca258739f86a7ad1fd6c838250c3be00"
+        },
+        {
+          "filename": "grpc-1.78.1.tar.gz.part-ac",
+          "sha256": "28d8434ca68ae3e4e4d1ec2694e620d8246e0f7e9b321b4cc5dd82b09bb0d8d2"
         }
       ],
       "sha256_reassembled": {
-        "value": "3bb18f315a09e5a14cd9d3b5b76529fd0cd8d4c52b02fee2d9f32e409e63934d",
+        "value": "99a8d16ad8aa9ced75d255e1e92247de556e91483fd0e0e73c158a76c9913871",
         "sources": [
           {
-            "name": "Self-computed from vendored tarball (2026-03-17)",
+            "name": "Self-computed from recursive clone (2026-03-29)",
             "url": "https://github.com/grpc/grpc/releases/tag/v1.78.1"
           }
         ]
@@ -55,9 +63,9 @@
   "build_requirements": {
     "windows": {
       "cmake": ">=3.16",
-      "visual_studio": "2022 Insiders",
-      "msvc": ">=19.44",
-      "script": "setup_grpc.bat"
+      "visual_studio": "2019 / 2022 / Insiders",
+      "msvc": ">=19.28",
+      "script": "setup.bat"
     }
   }
 }
