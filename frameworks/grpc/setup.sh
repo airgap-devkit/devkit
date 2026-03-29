@@ -90,19 +90,33 @@ BAT_WIN="$(cygpath -w "${BAT_FILE}")"
 echo "[INFO] Invoking setup.bat..."
 echo ""
 
-# Write a launcher bat to set working directory
-LAUNCHER="$(mktemp).bat"
-LAUNCHER_WIN="$(cygpath -w "${LAUNCHER}")"
-GRPC_DIR_WIN="$(cygpath -w "${SCRIPT_DIR}")"
-
-printf '@echo off\r\ncd /d "%s"\r\ncall "%s" --dest "%s" --version "%s"\r\n' \
-    "${GRPC_DIR_WIN}" "${BAT_WIN}" "${DEST_WIN}" "${GRPC_VERSION}" > "${LAUNCHER}"
-
-echo "[INFO] Build output will appear below. This takes 15-45 min..."
-echo ""
-cmd.exe /c "${LAUNCHER_WIN}"
-BAT_EXIT=$?
-rm -f "${LAUNCHER}"
+# Check if we are already in a VS Developer environment
+if command -v cl.exe &>/dev/null; then
+    echo "[INFO] VS Developer environment detected (cl.exe found)."
+    echo "[INFO] Running gRPC build directly..."
+    echo ""
+    BAT_WIN_ESC="${BAT_WIN//\//\\}"
+    DEST_WIN_ESC="${DEST_WIN//\//\\}"
+    cmd.exe /c ""${BAT_WIN}" --version ${GRPC_VERSION} --dest "${DEST_WIN}""
+    BAT_EXIT=$?
+else
+    echo ""
+    echo "  ============================================================"
+    echo "  gRPC requires a Visual Studio Developer environment."
+    echo "  ============================================================"
+    echo ""
+    echo "  Please run this script from a VS Developer Command Prompt:"
+    echo ""
+    echo "    1. Open: Start -> Visual Studio 2026 -> Developer Command Prompt"
+    echo "    2. Run:  bash frameworks/grpc/setup.sh --version ${GRPC_VERSION}"
+    echo ""
+    echo "  Or run the bat file directly from VS Developer Command Prompt:"
+    echo ""
+    echo "    cd C:\Users\n1mz\Desktop\airgap-cpp-devkit\frameworks\grpc"
+    echo "    setup.bat --version ${GRPC_VERSION} --dest ${DEST_WIN}"
+    echo ""
+    exit 1
+fi
 
 im_progress_stop "gRPC build complete"
 
