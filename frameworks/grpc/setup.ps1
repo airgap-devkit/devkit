@@ -10,7 +10,7 @@
 #   .\setup.ps1 -version 1.78.1 -dest "C:\Users\n1mz\AppData\Local\airgap-cpp-devkit\grpc-1.78.1"
 #
 # OPTIONS:
-#   -version <ver>   gRPC version to build (1.76.0 or 1.78.1)
+#   -version <ver>   gRPC version to build (1.78.1)
 #   -dest    <path>  Install destination (if omitted, auto-detected)
 #
 # REQUIREMENTS:
@@ -62,21 +62,18 @@ if (-not $GRPC_VERSION) {
     Write-Host "============================================================"
     Write-Host ""
     Write-Host "  Available versions:"
-    Write-Host "    [1] gRPC v1.76.0  (production-tested)"
-    Write-Host "    [2] gRPC v1.78.1  (candidate-testing)"
+    Write-Host "    [1] gRPC v1.78.1  (production-tested)"
     Write-Host ""
-    $choice = Read-Host "  Select version (1 or 2)"
+    $choice = Read-Host "  Select version (1)"
     switch ($choice) {
-        "1" { $GRPC_VERSION = "1.76.0" }
-        "2" { $GRPC_VERSION = "1.78.1" }
-        default { Die "Invalid selection. Enter 1 or 2." }
+        "1" { $GRPC_VERSION = "1.78.1" }
+        default { Die "Invalid selection. Enter 1." }
     }
 }
 
 switch ($GRPC_VERSION) {
-    "1.76.0" { $GRPC_FOLDER = "grpc-1.76.0"; $EXTRACT_ROOT = "grpc_unbuilt_v1.76.0" }
     "1.78.1" { $GRPC_FOLDER = "grpc-1.78.1"; $EXTRACT_ROOT = "grpc-1.78.1" }
-    default  { Die "Unknown version: $GRPC_VERSION. Supported: 1.76.0, 1.78.1" }
+    default  { Die "Unknown version: $GRPC_VERSION. Supported: 1.78.1" }
 }
 
 Info "Selected: gRPC v$GRPC_VERSION"
@@ -120,17 +117,13 @@ $LINK_CMAKE    = "$DEMO_DIR\cmake"
 Step "Locating Visual Studio"
 
 $VS_CANDIDATES = @(
-    # VS 2026 Insiders (v18)
     "C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\Tools\VsDevCmd.bat",
-    # VS 2022 Insiders
     "C:\Program Files\Microsoft Visual Studio\2022\Insiders\Common7\Tools\VsDevCmd.bat",
-    # VS 2022
     "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Tools\VsDevCmd.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat",
     "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat",
-    # VS 2019
     "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat",
     "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\Common7\Tools\VsDevCmd.bat",
     "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\Tools\VsDevCmd.bat",
@@ -139,10 +132,7 @@ $VS_CANDIDATES = @(
 
 $VSDEVCMD = $null
 foreach ($candidate in $VS_CANDIDATES) {
-    if (Test-Path $candidate) {
-        $VSDEVCMD = $candidate
-        break
-    }
+    if (Test-Path $candidate) { $VSDEVCMD = $candidate; break }
 }
 if (-not $VSDEVCMD) {
     Die "VsDevCmd.bat not found. Install Visual Studio (2019/2022/Insiders) with Desktop C++ workload."
@@ -151,7 +141,6 @@ Info "Found VS: $VSDEVCMD"
 
 # -----------------------------
 # Locate cmake
-# Prefer system install to avoid Git Bash cmake shadowing
 # -----------------------------
 $CMAKE_CANDIDATES = @(
     "C:\Program Files\CMake\bin\cmake.exe",

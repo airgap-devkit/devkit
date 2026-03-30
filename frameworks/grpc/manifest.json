@@ -2,30 +2,6 @@
   "_comment": "gRPC source build manifest. Contains entries for all vendored versions. SHA256 hashes are self-computed from vendored tarballs — gRPC does not publish official checksums for source archives.",
 
   "versions": {
-    "1.76.0": {
-      "release_tag": "v1.76.0",
-      "upstream_release": "https://github.com/grpc/grpc/releases/tag/v1.76.0",
-      "tarball_filename": "grpc-1.76.0.tar.gz",
-      "extract_root": "grpc_unbuilt_v1.76.0",
-      "dest_folder": "grpc-1.76.0",
-      "source_type": "flat",
-      "status": "production-tested",
-      "split_parts": [
-        {
-          "filename": "grpc-1.76.0.tar.gz.part-aa",
-          "sha256": "000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3"
-        }
-      ],
-      "sha256_reassembled": {
-        "value": "000a283359a03581c4e944a67d295ba52b760532877efbe605b4bf49a303a8d3",
-        "sources": [
-          {
-            "name": "Self-computed from vendored tarball (2026-03-17)",
-            "url": "https://github.com/grpc/grpc/releases/tag/v1.76.0"
-          }
-        ]
-      }
-    },
     "1.78.1": {
       "release_tag": "v1.78.1",
       "upstream_release": "https://github.com/grpc/grpc/releases/tag/v1.78.1",
@@ -33,7 +9,7 @@
       "extract_root": "grpc-1.78.1",
       "dest_folder": "grpc-1.78.1",
       "source_type": "flat",
-      "status": "candidate-testing",
+      "status": "production-tested",
       "split_parts": [
         {
           "filename": "grpc-1.78.1.tar.gz.part-aa",
