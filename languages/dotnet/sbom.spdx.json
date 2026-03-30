@@ -1,0 +1,52 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "airgap-cpp-devkit-languages-dotnet",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/languages/dotnet/sbom.spdx.json",
+  "creationInfo": {
+    "created": "2026-03-30T00:00:00Z",
+    "creators": [
+      "Tool: airgap-cpp-devkit",
+      "Organization: airgap-cpp-devkit"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-dotnet-sdk-windows",
+      "name": ".NET SDK (win-x64)",
+      "versionInfo": "10.0.201",
+      "supplier": "Organization: Microsoft Corporation",
+      "downloadLocation": "https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.201/dotnet-sdk-10.0.201-win-x64.zip",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "comment": "Portable .NET 10 SDK for Windows x64. Distributed as zip (extract only, no installer). Includes .NET Runtime 10.0.5, ASP.NET Core Runtime 10.0.5, C# 14 compiler, MSBuild, NuGet client, and dotnet CLI. Vendored as split parts in prebuilt-binaries/languages/dotnet/10.0.201/."
+    },
+    {
+      "SPDXID": "SPDXRef-dotnet-sdk-linux",
+      "name": ".NET SDK (linux-x64)",
+      "versionInfo": "10.0.201",
+      "supplier": "Organization: Microsoft Corporation",
+      "downloadLocation": "https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.201/dotnet-sdk-10.0.201-linux-x64.tar.gz",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "comment": "Portable .NET 10 SDK for Linux x64. Distributed as tar.gz (extract only, no installer). Includes .NET Runtime 10.0.5, ASP.NET Core Runtime 10.0.5, C# 14 compiler, MSBuild, NuGet client, and dotnet CLI. Vendored as split parts in prebuilt-binaries/languages/dotnet/10.0.201/."
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-dotnet-sdk-windows"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-dotnet-sdk-linux"
+    }
+  ]
+}

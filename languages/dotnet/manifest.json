@@ -1,0 +1,20 @@
+{
+  "_comment": ".NET SDK module manifest. Prebuilt archives are in prebuilt-binaries/languages/dotnet/10.0.201/.",
+
+  "sdk_version": "10.0.201",
+  "runtime_version": "10.0.5",
+  "upstream": "https://dotnet.microsoft.com/en-us/download/dotnet/10.0",
+  "support": "LTS -- supported until November 2028",
+
+  "platforms": {
+    "windows-x64": {
+      "archive_zip": "dotnet-sdk-10.0.201-win-x64.zip",
+      "archive_7z":  "dotnet-sdk-10.0.201-win-x64.7z",
+      "install_script": "install-prebuilt.ps1"
+    },
+    "linux-x64": {
+      "archive_targz": "dotnet-sdk-10.0.201-linux-x64.tar.gz",
+      "install_script": "setup.sh"
+    }
+  }
+}
