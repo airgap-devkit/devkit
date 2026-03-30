@@ -11,10 +11,10 @@
 #   Linux   : Not supported (requires MSVC/Windows SDK).
 #
 # USAGE:
-#   bash frameworks/grpc/setup.sh [--version 1.76.0|1.78.1] [--prefix <path>]
+#   bash frameworks/grpc/setup.sh [--version 1.78.1] [--prefix <path>]
 #
 # OPTIONS:
-#   --version <ver>   gRPC version to build (default: prompts interactively)
+#   --version <ver>   gRPC version to build (default: 1.78.1)
 #   --prefix <path>   Install to a custom path instead of auto-detected
 # =============================================================================
 
@@ -54,13 +54,11 @@ if [[ -z "${GRPC_VERSION}" ]]; then
     echo "============================================================"
     echo ""
     echo "  Available versions:"
-    echo "    [1] gRPC v1.76.0  (production-tested)"
-    echo "    [2] gRPC v1.78.1  (candidate-testing)"
+    echo "    [1] gRPC v1.78.1  (production-tested)"
     echo ""
-    read -rp "  Select version (1 or 2): " VERSION_CHOICE
+    read -rp "  Select version (1): " VERSION_CHOICE
     case "${VERSION_CHOICE}" in
-        1) GRPC_VERSION="1.76.0" ;;
-        2) GRPC_VERSION="1.78.1" ;;
+        1) GRPC_VERSION="1.78.1" ;;
         *) echo "ERROR: Invalid selection." >&2; exit 1 ;;
     esac
 fi
@@ -88,7 +86,6 @@ fi
 
 BAT_WIN="$(cygpath -w "${BAT_FILE}")"
 
-# Check if we are already in a VS Developer environment
 if command -v cl.exe &>/dev/null; then
     echo "[INFO] VS Developer environment detected (cl.exe found)."
     echo "[INFO] Invoking setup.bat -> setup.ps1..."
