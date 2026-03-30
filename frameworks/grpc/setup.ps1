@@ -2,6 +2,8 @@
 # =============================================================================
 # setup.ps1
 # gRPC air-gap source build — full pipeline including HelloWorld demo.
+# Also works with a prebuilt install (from install-prebuilt.ps1) by detecting
+# whether the dest was populated by a source build or a prebuilt extract.
 #
 # Called via: setup.sh -> setup.bat -> setup.ps1
 # Can also be run directly from Developer PowerShell:
@@ -194,10 +196,11 @@ if (Test-Path $extractPath) {
 
 # -----------------------------
 # Step 8: Copy source to dest
+# (skipped if dest already populated — e.g. from install-prebuilt.ps1)
 # -----------------------------
-Step "Copying source to install location"
+Step "Checking install location"
 if (Test-Path $DEST_GRPC) {
-    Info "gRPC folder already exists at $DEST_GRPC"
+    Info "Install directory exists at $DEST_GRPC"
 } else {
     if (-not (Test-Path $extractPath)) { Die "Source folder not found: $extractPath" }
     Info "Copying gRPC source to $DEST_GRPC ..."
@@ -218,23 +221,43 @@ foreach ($d in @($DEMO_DIR, $DEMO_HELLO, $DEMO_PROTOS)) {
 }
 
 # -----------------------------
-# Step 10: Build gRPC
-# Air-gap cmake flags:
-#   FETCHCONTENT_FULLY_DISCONNECTED=ON  -- hard-block any FetchContent download
-#   gRPC_*_PROVIDER=module              -- use bundled third_party/ for all deps
+# Step 10: Detect install type and build if needed
+#
+# Source build layout:  $DEST_GRPC\outputs\bin\grpc_cpp_plugin.exe
+# Prebuilt layout:      $DEST_GRPC\bin\grpc_cpp_plugin.exe
+#
+# If prebuilt layout detected, populate outputs\ from bin\ and lib\.
+# If neither found, run the full source build.
 # -----------------------------
 Step "Checking build status"
-$pluginExe = "$OUTPUT_DIR\bin\grpc_cpp_plugin.exe"
-$needsBuild = $true
-if (Test-Path $pluginExe) {
-    Info "Found grpc_cpp_plugin.exe."
+
+$pluginInOutputs = "$OUTPUT_DIR\bin\grpc_cpp_plugin.exe"
+$pluginInBin     = "$DEST_GRPC\bin\grpc_cpp_plugin.exe"
+
+if (Test-Path $pluginInOutputs) {
+    # Source build layout already complete
+    Info "Found grpc_cpp_plugin.exe in outputs\bin\ (source build layout)."
     $ans = Read-Host "Binaries present. Rebuild gRPC? (y/n)"
     if ($ans -notmatch '^[Yy]') {
         Info "Skipping gRPC build."
-        $needsBuild = $false
+    } else {
+        $needsBuild = $true
     }
+} elseif (Test-Path $pluginInBin) {
+    # Prebuilt layout — populate outputs\ from bin\ and lib\
+    Info "Found grpc_cpp_plugin.exe in bin\ (prebuilt layout)."
+    Info "Populating outputs\ from prebuilt install..."
+    $outBin = "$OUTPUT_DIR\bin"
+    $outLib = "$OUTPUT_DIR\lib"
+    if (-not (Test-Path $outBin)) { New-Item -ItemType Directory -Path $outBin -Force | Out-Null }
+    if (-not (Test-Path $outLib)) { New-Item -ItemType Directory -Path $outLib -Force | Out-Null }
+    & xcopy /E /I /Y "$DEST_GRPC\bin\*" "$outBin\" | Out-Null
+    & xcopy /E /I /Y "$DEST_GRPC\lib\*" "$outLib\" | Out-Null
+    Info "outputs\ populated from prebuilt."
+    $needsBuild = $false
 } else {
-    Warn "grpc_cpp_plugin.exe not found. Proceeding with build..."
+    Warn "grpc_cpp_plugin.exe not found. Proceeding with source build..."
+    $needsBuild = $true
 }
 
 if ($needsBuild) {
@@ -282,34 +305,55 @@ if errorlevel 1 exit /b 1
     Remove-Item $tmpBat -Force -ErrorAction SilentlyContinue
     Require-Exit $buildExit "gRPC build failed"
     Info "gRPC build complete."
+
+    # Populate outputs\ after source build
+    Step "Copying binaries to outputs folder"
+    $outBin = "$OUTPUT_DIR\bin"
+    $outLib = "$OUTPUT_DIR\lib"
+    if (-not (Test-Path $outBin)) { New-Item -ItemType Directory -Path $outBin -Force | Out-Null }
+    if (-not (Test-Path $outLib)) { New-Item -ItemType Directory -Path $outLib -Force | Out-Null }
+    & xcopy /E /I /Y "$DEST_GRPC\bin\*" "$outBin\" | Out-Null
+    & xcopy /E /I /Y "$DEST_GRPC\lib\*" "$outLib\" | Out-Null
+    Info "Binaries copied."
 }
 
 # -----------------------------
-# Step 11: Copy binaries to outputs
-# -----------------------------
-Step "Copying binaries to outputs folder"
-$outBin = "$OUTPUT_DIR\bin"
-$outLib = "$OUTPUT_DIR\lib"
-if (-not (Test-Path $outBin)) { New-Item -ItemType Directory -Path $outBin -Force | Out-Null }
-if (-not (Test-Path $outLib)) { New-Item -ItemType Directory -Path $outLib -Force | Out-Null }
-& xcopy /E /I /Y "$DEST_GRPC\bin\*" "$outBin\" | Out-Null
-& xcopy /E /I /Y "$DEST_GRPC\lib\*" "$outLib\" | Out-Null
-Info "Binaries copied."
-
-# -----------------------------
-# Step 12: Copy HelloWorld demo files
+# Step 11: Copy HelloWorld demo files
+# Source build has examples\ under DEST_GRPC.
+# Prebuilt install does not include examples\ — copy from the extracted src tree.
 # -----------------------------
 Step "Copying HelloWorld demo files"
-& xcopy /E /I /H /Y "$GRPC_EXAMPLES\*" "$DEMO_HELLO\" | Out-Null
-Require-Exit $LASTEXITCODE "Failed to copy HelloWorld demo files"
 
-if (-not (Test-Path "$LINK_CMAKE\common.cmake")) {
-    & xcopy /E /I /H /Y "$TARGET_CMAKE\*" "$LINK_CMAKE\" | Out-Null
+if (Test-Path $GRPC_EXAMPLES) {
+    Info "Using examples from install directory."
+    & xcopy /E /I /H /Y "$GRPC_EXAMPLES\*" "$DEMO_HELLO\" | Out-Null
+    Require-Exit $LASTEXITCODE "Failed to copy HelloWorld demo files"
+    if (-not (Test-Path "$LINK_CMAKE\common.cmake")) {
+        & xcopy /E /I /H /Y "$TARGET_CMAKE\*" "$LINK_CMAKE\" | Out-Null
+    }
+} elseif (Test-Path "$extractPath\examples\cpp\helloworld") {
+    Info "Using examples from extracted source tree."
+    & xcopy /E /I /H /Y "$extractPath\examples\cpp\helloworld\*" "$DEMO_HELLO\" | Out-Null
+    Require-Exit $LASTEXITCODE "Failed to copy HelloWorld demo files from src tree"
+    $srcCmake = "$extractPath\examples\cpp\cmake"
+    if ((Test-Path $srcCmake) -and (-not (Test-Path "$LINK_CMAKE\common.cmake"))) {
+        & xcopy /E /I /H /Y "$srcCmake\*" "$LINK_CMAKE\" | Out-Null
+    }
+    # Copy proto for prebuilt path
+    $srcProtos = "$extractPath\examples\protos"
+    if (Test-Path $srcProtos) {
+        if (-not (Test-Path "$DEST_GRPC\examples\protos")) {
+            New-Item -ItemType Directory -Path "$DEST_GRPC\examples\protos" -Force | Out-Null
+        }
+        & xcopy /E /I /Y "$srcProtos\*" "$DEST_GRPC\examples\protos\" | Out-Null
+    }
+} else {
+    Die "HelloWorld examples not found in install dir or source tree. Run setup.ps1 after extracting the source tarball."
 }
 Info "Demo files copied."
 
 # -----------------------------
-# Step 13: Patch HelloWorld CMakeLists.txt
+# Step 12: Patch HelloWorld CMakeLists.txt
 # -----------------------------
 Step "Updating HelloWorld CMakeLists.txt"
 $cmakeListsPath = "$DEMO_HELLO\CMakeLists.txt"
@@ -319,10 +363,18 @@ Set-Content $cmakeListsPath $content
 Info "CMakeLists.txt updated."
 
 # -----------------------------
-# Step 14: Generate protobuf sources
+# Step 13: Generate protobuf sources
 # -----------------------------
 Step "Generating protobuf sources"
-Copy-Item "$GRPC_PROTOS\helloworld.proto" "$DEMO_PROTOS\helloworld.proto" -Force
+
+# Resolve proto source — prefer DEST_GRPC examples, fall back to src tree
+$protoSrc = "$DEST_GRPC\examples\protos\helloworld.proto"
+if (-not (Test-Path $protoSrc)) {
+    $protoSrc = "$extractPath\examples\protos\helloworld.proto"
+}
+if (-not (Test-Path $protoSrc)) { Die "helloworld.proto not found." }
+
+Copy-Item $protoSrc "$DEMO_PROTOS\helloworld.proto" -Force
 if (-not (Test-Path $GEN_DIR)) { New-Item -ItemType Directory -Path $GEN_DIR -Force | Out-Null }
 
 $protocExe  = "$OUTPUT_DIR\bin\protoc.exe"
@@ -337,7 +389,7 @@ Require-Exit $LASTEXITCODE "Protoc generation failed"
 Info "Protobuf sources generated."
 
 # -----------------------------
-# Step 15: Build HelloWorld demo
+# Step 14: Build HelloWorld demo
 # -----------------------------
 Step "Building HelloWorld demo"
 if (Test-Path "$DEMO_HELLO\.build") {
@@ -378,7 +430,7 @@ Info "Demo built successfully."
 # -----------------------------
 Write-Host ""
 Write-Host "*********************"
-Write-Host " gRPC v$GRPC_VERSION -- Build Complete"
+Write-Host " gRPC v$GRPC_VERSION -- Complete"
 Write-Host " Install location : $DEST_GRPC"
 Write-Host " Build outputs    : $OUTPUT_DIR"
 Write-Host " Demo             : $DEMO_HELLO\.build\"
