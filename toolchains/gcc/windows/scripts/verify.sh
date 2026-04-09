@@ -4,7 +4,7 @@
 # toolchains/gcc/windows/scripts/verify.sh
 #
 # Offline SHA256 verification of split parts (from prebuilt-binaries
-# submodule) or the reassembled .7z (from vendor/).
+# submodule) or the reassembled .zip (from vendor/).
 #
 # USAGE:
 #   bash scripts/verify.sh [x86_64|i686]     # default: x86_64
@@ -59,7 +59,7 @@ echo " Arch : ${ARCH}"
 echo "============================================================"
 echo ""
 
-# If assembled .7z exists in vendor/, verify that
+# If reassembled .zip exists in vendor/, verify that
 if [[ -f "${ASSEMBLED_PATH}" ]]; then
   echo "[MODE] Reassembled archive found -- verifying .zip..."
   ACTUAL=$(sha256sum "${ASSEMBLED_PATH}" | awk '{print $1}')
