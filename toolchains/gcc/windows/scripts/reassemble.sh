@@ -4,7 +4,7 @@
 # toolchains/gcc/windows/scripts/reassemble.sh
 #
 # Verifies split parts from prebuilt-binaries submodule, reassembles them
-# into the .7z, and verifies the assembled archive SHA256.
+# into the .zip, and verifies the assembled archive SHA256.
 #
 # USAGE:
 #   bash scripts/reassemble.sh [x86_64|i686]     # default: x86_64
@@ -56,7 +56,7 @@ EXPECTED_ASSEMBLED_SHA256=$(get_reassembled_hash)
 mkdir -p "${VENDOR_DIR}"
 
 echo "============================================================"
-echo " WinLibs GCC UCRT — Reassemble"
+echo " WinLibs GCC UCRT -- Reassemble"
 echo " Arch    : ${ARCH}"
 echo " Parts   : ${PREBUILT_DIR}/"
 echo " Output  : ${ASSEMBLED_PATH}"
@@ -68,7 +68,6 @@ echo ""
 # ---------------------------------------------------------------------------
 echo "[STEP 1/3] Verifying split parts..."
 
-# Check submodule is initialized
 if [[ ! -d "${PREBUILT_DIR}" ]] || [[ -z "$(ls -A "${PREBUILT_DIR}" 2>/dev/null)" ]]; then
   echo "[ERROR] prebuilt-binaries submodule not initialized." >&2
   echo "        Run: bash scripts/setup-prebuilt-submodule.sh" >&2

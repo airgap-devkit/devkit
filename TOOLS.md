@@ -40,7 +40,7 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.78.1 | Windows | Yes (.7z 69MB) | `frameworks/grpc/` |
+| **gRPC** | 1.78.1 | Windows | Yes (.zip, 4 parts) | `frameworks/grpc/` |
 | **gRPC source bundle** | 1.78.1 | Windows | - (source build ~40 min) | `frameworks/grpc/vendor/` |
 
 gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/`, `lib/` (static), `share/` (cmake config).
@@ -53,8 +53,8 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 |------|---------|----------|-----------|----------|
 | **Python** | 3.14.4 | Windows (embeddable) | Yes (single file ~12 MB) | `languages/python/` |
 | **Python** | 3.14.4 | Linux x86_64 | Yes (tar.gz, 2 parts) | `languages/python/` |
-| **.NET SDK** | 10.0.201 | Windows x64 | Yes (.7z 148MB) | `languages/dotnet/` |
-| **.NET SDK** | 10.0.201 | Linux x64 | Yes (.tar.gz 231MB) | `languages/dotnet/` |
+| **.NET SDK** | 10.0.201 | Windows x64 | Yes (.zip, 6 parts) | `languages/dotnet/` |
+| **.NET SDK** | 10.0.201 | Linux x64 | Yes (.tar.gz, 6 parts) | `languages/dotnet/` |
 
 ---
 
@@ -104,23 +104,33 @@ and installed offline by `languages/python/setup.sh`. No internet access require
 
 ## Prebuilt Binary Formats
 
-Files above 100MB are split into parts for git compatibility.
-Files under 100MB are stored as single files.
+Files above 49MB are split into parts for compatibility with GitHub and Bitbucket.
+Files under 49MB are stored as single files.
+All .zip archives use deflate level 9 compression.
 
-| Archive | Size | Parts | Notes |
-|---------|------|-------|-------|
-| gRPC 1.78.1 Windows x64 (.7z) | 69MB | 2 | split at 50MB (legacy) |
-| gRPC 1.78.1 Windows x64 (.zip) | 162MB | 4 | split at 50MB (legacy) |
-| WinLibs GCC 15.2.0 (.7z) | 107MB | 3 | split at 50MB (legacy) |
-| WinLibs GCC 15.2.0 (.zip) | 254MB | 5 | split at 50MB (legacy) |
-| llvm-mingw 20260324 (.zip) | 187MB | 4 | split at 50MB (legacy) |
-| CMake 4.3.1 Linux tar.gz | 61MB | 1 | under 100MB -- no split |
-| CMake 4.3.1 Windows zip | 51MB | 1 | under 100MB -- no split |
-| Servy 7.8 portable .7z | 80MB | 1 | under 100MB -- no split |
-| Conan 2.27.0 Windows zip | 15MB | 1 | under 100MB -- no split |
-| Conan 2.27.0 Linux tgz | 27MB | 1 | under 100MB -- no split |
-| Python 3.14.4 Windows embed | 12MB | 1 | under 100MB -- no split |
-| Python 3.14.4 Linux standalone | 120MB | 2 | split at 99MB |
+| Archive | Size | Parts | Split at |
+|---------|------|-------|----------|
+| gRPC 1.78.1 Windows (.zip) | 170MB | 4 | 49MB |
+| WinLibs GCC 15.2.0 Windows (.zip) | 264MB | 6 | 49MB |
+| llvm-mingw 20260324 Windows (.zip) | 179MB | 4 | 49MB |
+| llvm-mingw 20260324 Linux (.tar.xz) | 82MB | 2 | 50MB |
+| .NET SDK 10.0.201 Windows (.zip) | 283MB | 6 | 49MB |
+| .NET SDK 10.0.201 Linux (.tar.gz) | 231MB | 6 | 45MB |
+| Python 3.14.4 Linux (.tar.gz) | 120MB | 2 | 99MB |
+| Clang LLVM 22.1.2 Linux slim (.tar.xz) | 124MB | 3 | 50MB |
+| clang-tidy Linux | 95MB | 2 | 50MB |
+| Clang 20.1.8 RHEL8 RPMs (.tar) | 101MB | 2 | 50MB |
+| gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
+| CMake 4.3.1 Linux (.tar.gz) | 61MB | 1 | -- single file |
+| CMake 4.3.1 Windows (.zip) | 51MB | 1 | -- single file |
+| CMake 4.3.1 source (.tar.gz) | 13MB | 1 | -- single file |
+| Servy 7.8 Windows (.7z) | 80MB | 1 | -- single file |
+| Conan 2.27.0 Windows (.zip) | 15MB | 1 | -- single file |
+| Conan 2.27.0 Linux (.tgz) | 27MB | 1 | -- single file |
+| Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
+| 7-Zip 26.00 Windows installer (.exe) | 1.6MB | 1 | -- single file |
+| 7-Zip 26.00 Windows extra (.7z) | 1.6MB | 1 | -- single file |
+| 7-Zip 26.00 Linux (.tar.xz) | 1.5MB | 1 | -- single file |
 
 ---
 
