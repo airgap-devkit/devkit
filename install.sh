@@ -7,17 +7,19 @@
 # Installs all tools in the correct order and wires PATH into ~/.bashrc.
 #
 # REQUIRED tools (installed automatically):
-#   - toolchains/clang  (clang-format + clang-tidy)
-#   - cmake       4.3.0
-#   - python      3.14.3  (portable interpreter)
+#   - toolchains/clang  (clang-format + clang-tidy 22.1.2)
+#   - cmake       4.3.1
+#   - python      3.14.4  (portable interpreter)
 #   - lcov        2.4  (Linux only)
 #   - style-formatter  (pre-commit hook)
 #
 # OPTIONAL tools (prompted):
-#   - 7zip               (Windows + Linux, admin + user)
+#   - 7zip               26.00  (Windows + Linux, admin + user)
+#   - servy              7.8    (Windows only)
+#   - conan              2.27.0 (Windows + Linux, no Python required)
 #   - dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
-#   - frameworks/grpc  (Windows only, requires Visual Studio)
+#   - frameworks/grpc    (Windows only, requires Visual Studio)
 #
 # USAGE:
 #   bash install.sh [--prefix <path>] [--rebuild] [--yes]
@@ -27,7 +29,6 @@
 #   --rebuild         Force reinstall of all tools
 #   --yes             Non-interactive: use defaults, skip confirmation screen
 # =============================================================================
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -62,24 +63,17 @@ case "$(uname -s)" in
 esac
 
 # ---------------------------------------------------------------------------
-# Source install-mode library (for box helpers + im_progress_*)
+# Source install-mode library
 # ---------------------------------------------------------------------------
 source "${REPO_ROOT}/scripts/install-mode.sh"
 
 # ---------------------------------------------------------------------------
-# Box helpers (local — install-mode not fully init'd yet)
+# Plain ASCII display helpers
 # ---------------------------------------------------------------------------
-_W=98
-_box_top()  { local l=""; local i; for((i=0;i<_W;i++)); do l+="═"; done; printf '╔%s╗\n' "${l}"; }
-_box_mid()  { local l=""; local i; for((i=0;i<_W;i++)); do l+="═"; done; printf '╠%s╣\n' "${l}"; }
-_box_bot()  { local l=""; local i; for((i=0;i<_W;i++)); do l+="═"; done; printf '╚%s╝\n' "${l}"; }
-_box_line() {
-    local str="$1"
-    if (( ${#str} > _W )); then str="${str:0:$(( _W - 3 ))}..."; fi
-    local pad=$(( _W - ${#str} ))
-    printf '║%s%*s║\n' "${str}" "${pad}" ""
-}
-_box_blank() { printf '║%*s║\n' "${_W}" ""; }
+_sep()    { printf '%s\n' "--------------------------------------------------------------------------------"; }
+_sep2()   { printf '%s\n' "================================================================================"; }
+_header() { _sep2; printf '  %s\n' "$1"; _sep2; }
+_section(){ _sep;  printf '  %s\n' "$1"; _sep; }
 
 # ---------------------------------------------------------------------------
 # Determine install prefix candidates
@@ -113,39 +107,35 @@ USER_PREFIX="$(_get_user_prefix)"
 # CONFIRMATION SCREEN
 # ---------------------------------------------------------------------------
 if [[ "${AUTO_YES}" == "false" ]]; then
-
     echo ""
-    _box_top
-    _box_line "  airgap-cpp-devkit — Installation Wizard"
-    _box_mid
-    _box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
-    _box_blank
-    _box_line "  REQUIRED (installed automatically):"
-    _box_line "    [1] toolchains/clang         clang-format + clang-tidy 22.1.2"
-    _box_line "    [2] cmake              4.3.0"
-    _box_line "    [3] python             3.14.3 (portable interpreter)"
+    _header "  airgap-cpp-devkit -- Installation Wizard"
+    echo ""
+    echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
+    echo ""
+    _section "  REQUIRED (installed automatically)"
+    echo "    [1] toolchains/clang         clang-format + clang-tidy 22.1.2"
+    echo "    [2] cmake                    4.3.1"
+    echo "    [3] python                   3.14.4 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
-    _box_line "    [4] lcov               2.4 (Linux only)"
+    echo "    [4] lcov                     2.4 (Linux only)"
     fi
-    _box_line "    [5] style-formatter    pre-commit hook"
-    _box_blank
-    _box_line "  OPTIONAL (you will be prompted):"
-    _box_line "    [6] 7zip               26.00 (Windows + Linux, admin + user)"
-    _box_line "    [7] servy              7.3 (Windows service manager, Windows only)"
-    _box_line "    [8] dev-tools/vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
+    echo "    [5] style-formatter          pre-commit hook"
+    echo ""
+    _section "  OPTIONAL (you will be prompted)"
+    echo "    [6] 7zip                     26.00 (Windows + Linux, admin + user)"
+    echo "    [7] servy                    7.8 (Windows service manager, Windows only)"
+    echo "    [8] conan                    2.27.0 (C/C++ package manager, Windows + Linux)"
+    echo "    [9] dev-tools/vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
     if [[ "${OS}" == "windows" ]]; then
-    _box_line "    [8] winlibs-gcc-ucrt   GCC 15.2.0 + MinGW-w64"
-    _box_line "    [9] frameworks/grpc  gRPC C++ (requires Visual Studio)"
+    echo "   [10] winlibs-gcc-ucrt         GCC 15.2.0 + MinGW-w64"
+    echo "   [11] frameworks/grpc          gRPC C++ (requires Visual Studio)"
     fi
-    _box_blank
-    _box_mid
-    _box_line "  INSTALL MODE"
-    _box_blank
-    _box_line "  [A] System-wide (admin)   -> ${SYS_PREFIX}"
-    _box_line "  [U] Current user only     -> ${USER_PREFIX}"
-    _box_line "  [C] Custom prefix         -> specify your own path"
-    _box_blank
-    _box_bot
+    echo ""
+    _section "  INSTALL MODE"
+    echo ""
+    echo "  [A] System-wide (admin)   ->  ${SYS_PREFIX}"
+    echo "  [U] Current user only     ->  ${USER_PREFIX}"
+    echo "  [C] Custom prefix         ->  specify your own path"
     echo ""
 
     # --- Install mode choice ---
@@ -174,23 +164,28 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             *) echo "  [!!] Invalid choice. Enter A, U, or C." ;;
         esac
     done
-
     echo ""
 
     # --- Optional tools ---
     INSTALL_7ZIP=false
+    INSTALL_SERVY=false
+    INSTALL_CONAN=false
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
-    GRPC_VERSION="1.76.0"
+    GRPC_VERSION="1.78.1"
 
     printf "  Install 7zip 26.00? (archive tool, Windows + Linux) [y/N]: "
     read -r reply
     [[ "${reply^^}" == "Y" ]] && INSTALL_7ZIP=true
 
-    printf "  Install servy 7.3? (Windows service manager, Windows only) [y/N]: "
+    printf "  Install servy 7.8? (Windows service manager, Windows only) [y/N]: "
     read -r reply
     [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
+
+    printf "  Install conan 2.27.0? (C/C++ package manager, Windows + Linux) [y/N]: "
+    read -r reply
+    [[ "${reply^^}" == "Y" ]] && INSTALL_CONAN=true
 
     printf "  Install dev-tools/vscode-extensions? (requires 'code' on PATH) [y/N]: "
     read -r reply
@@ -207,13 +202,11 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             INSTALL_GRPC=true
             echo ""
             echo "  gRPC version:"
-            echo "    [1] 1.76.0  (production-tested, default)"
-            echo "    [2] 1.78.1  (latest candidate)"
-            printf "  Choose [1/2, default=1]: "
+            echo "    [1] 1.78.1  (default)"
+            printf "  Choose [1, default=1]: "
             read -r ver_choice
             case "${ver_choice}" in
-                2) GRPC_VERSION="1.78.1" ;;
-                *) GRPC_VERSION="1.76.0" ;;
+                *) GRPC_VERSION="1.78.1" ;;
             esac
             echo "  [OK] gRPC version: ${GRPC_VERSION}"
         fi
@@ -222,21 +215,22 @@ if [[ "${AUTO_YES}" == "false" ]]; then
 
     # --- Final confirmation ---
     echo ""
-    _box_top
-    _box_line "  Ready to install — please confirm"
-    _box_mid
-    _box_line "  Install prefix : ${INSTALL_PREFIX_OVERRIDE}"
-    _box_line "  Rebuild        : ${REBUILD}"
-    _box_blank
-    _box_line "  Tools to install:"
-    _box_line "    [OK] toolchains/clang, cmake, python, style-formatter"
-    [[ "${OS}" == "linux" ]] && _box_line "    [OK] lcov"
-    [[ "${INSTALL_7ZIP}" == "true" ]]     && _box_line "    [OK] 7zip 26.00"
-    [[ "${INSTALL_SERVY}" == "true" ]]    && _box_line "    [OK] servy 7.3 (Windows only)"
-    [[ "${INSTALL_VSCODE}" == "true" ]]   && _box_line "    [OK] dev-tools/vscode-extensions"
-    [[ "${INSTALL_WINLIBS}" == "true" ]]  && _box_line "    [OK] winlibs-gcc-ucrt"
-    [[ "${INSTALL_GRPC}" == "true" ]]     && _box_line "    [OK] frameworks/grpc ${GRPC_VERSION}"
-    _box_bot
+    _header "  Ready to install -- please confirm"
+    echo ""
+    echo "  Install prefix : ${INSTALL_PREFIX_OVERRIDE}"
+    echo "  Rebuild        : ${REBUILD}"
+    echo ""
+    echo "  Tools to install:"
+    echo "    [OK] toolchains/clang, cmake 4.3.1, python 3.14.4, style-formatter"
+    [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.4"
+    [[ "${INSTALL_7ZIP}"    == "true" ]]  && echo "    [OK] 7zip 26.00"
+    [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.8 (Windows only)"
+    [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.27.0"
+    [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] dev-tools/vscode-extensions"
+    [[ "${INSTALL_WINLIBS}" == "true" ]]  && echo "    [OK] winlibs-gcc-ucrt"
+    [[ "${INSTALL_GRPC}"    == "true" ]]  && echo "    [OK] frameworks/grpc ${GRPC_VERSION}"
+    echo ""
+    _sep2
     echo ""
     printf "  Press Enter to begin installation, or Ctrl+C to cancel..."
     read -r
@@ -250,10 +244,12 @@ else
     fi
     INSTALL_7ZIP=false
     INSTALL_SERVY=false
+    INSTALL_CONAN=false
     INSTALL_VSCODE=false
     INSTALL_WINLIBS=false
     INSTALL_GRPC=false
-    GRPC_VERSION="1.76.0"
+    GRPC_VERSION="1.78.1"
+
     echo ""
     echo "  [--yes] Non-interactive mode. Installing to: ${INSTALL_PREFIX_OVERRIDE}"
     echo ""
@@ -270,7 +266,9 @@ _run_bootstrap_winlibs() {
     local label="$1" script="$2"
     local tool_prefix="${INSTALL_PREFIX_OVERRIDE}/${label}"
     echo ""
-    echo "  -- ${label} ------------------------------------------------------"
+    _sep
+    echo "  ${label}"
+    _sep
     local rebuild_arg=()
     [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
     if bash "${script}" "x86_64" --prefix "${tool_prefix}" "${rebuild_arg[@]}"; then
@@ -278,7 +276,7 @@ _run_bootstrap_winlibs() {
     else
         FAILED_TOOLS+=("${label}")
         echo ""
-        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+        echo "  [!!] ${label} FAILED -- continuing with remaining tools."
     fi
 }
 
@@ -286,7 +284,9 @@ _run_bootstrap_no_prefix() {
     local label="$1" script="$2"
     shift 2
     echo ""
-    echo "  -- ${label} ------------------------------------------------------"
+    _sep
+    echo "  ${label}"
+    _sep
     local rebuild_arg=()
     [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
     if bash "${script}" "${rebuild_arg[@]}"; then
@@ -294,7 +294,7 @@ _run_bootstrap_no_prefix() {
     else
         FAILED_TOOLS+=("${label}")
         echo ""
-        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+        echo "  [!!] ${label} FAILED -- continuing with remaining tools."
     fi
 }
 
@@ -302,13 +302,12 @@ _run_bootstrap() {
     local label="$1" script="$2"
     shift 2
     local extra_args=("$@")
-
     echo ""
-    echo "  ── ${label} ──────────────────────────────────────────────────────"
-
+    _sep
+    echo "  ${label}"
+    _sep
     local rebuild_arg=()
     [[ "${REBUILD}" == "true" ]] && rebuild_arg=("--rebuild")
-
     local tool_prefix="${INSTALL_PREFIX_OVERRIDE}/${label}"
     if bash "${script}" \
         --prefix "${tool_prefix}" \
@@ -318,7 +317,7 @@ _run_bootstrap() {
     else
         FAILED_TOOLS+=("${label}")
         echo ""
-        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+        echo "  [!!] ${label} FAILED -- continuing with remaining tools."
     fi
 }
 
@@ -326,13 +325,15 @@ _run_setup() {
     local label="$1" script="$2"
     shift 2
     echo ""
-    echo "  ── ${label} ──────────────────────────────────────────────────────"
+    _sep
+    echo "  ${label}"
+    _sep
     if bash "${script}" "$@"; then
         INSTALLED_TOOLS+=("${label}")
     else
         FAILED_TOOLS+=("${label}")
         echo ""
-        echo "  [!!] ${label} FAILED — continuing with remaining tools."
+        echo "  [!!] ${label} FAILED -- continuing with remaining tools."
     fi
 }
 
@@ -340,17 +341,15 @@ _run_setup() {
 # Banner
 # ---------------------------------------------------------------------------
 echo ""
-_box_top
-_box_line "  airgap-cpp-devkit — Installing"
-_box_mid
-_box_line "  Platform : ${OS}   Prefix : ${INSTALL_PREFIX_OVERRIDE}"
-_box_bot
+_header "  airgap-cpp-devkit -- Installing"
+echo ""
+echo "  Platform : ${OS}   Prefix : ${INSTALL_PREFIX_OVERRIDE}"
 echo ""
 
 # ---------------------------------------------------------------------------
 # Step 1: prebuilt-binaries submodule
 # ---------------------------------------------------------------------------
-echo "  [1/9] Checking prebuilt-binaries submodule..."
+echo "  [1/11] Checking prebuilt-binaries submodule..."
 if ! git -C "${REPO_ROOT}" submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
     im_progress_start "Initialising prebuilt-binaries submodule"
     git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt-binaries
@@ -363,7 +362,7 @@ fi
 # Step 2: toolchains/clang
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/9] Installing toolchains/clang (required)..."
+echo "  [2/11] Installing toolchains/clang (required)..."
 _run_bootstrap "toolchains/clang" \
     "${REPO_ROOT}/toolchains/clang/source-build/setup.sh"
 
@@ -371,29 +370,29 @@ _run_bootstrap "toolchains/clang" \
 # Step 3: cmake
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [3/9] Installing cmake (required)..."
+echo "  [3/11] Installing cmake 4.3.1 (required)..."
 _run_bootstrap "cmake" \
-    "${REPO_ROOT}/cmake/bootstrap.sh"
+    "${REPO_ROOT}/build-tools/cmake/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 4: python
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [4/9] Installing python (required)..."
+echo "  [4/11] Installing python 3.14.4 (required)..."
 _run_bootstrap "python" \
-    "${REPO_ROOT}/python/bootstrap.sh"
+    "${REPO_ROOT}/languages/python/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 5: lcov (Linux only)
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]]; then
     echo ""
-    echo "  [5/9] Installing lcov (required on Linux)..."
+    echo "  [5/11] Installing lcov 2.4 (required on Linux)..."
     _run_bootstrap "lcov" \
         "${REPO_ROOT}/build-tools/lcov/setup.sh"
 else
     echo ""
-    echo "  [5/9] lcov — skipped (Linux only)"
+    echo "  [5/11] lcov -- skipped (Linux only)"
     SKIPPED_TOOLS+=("lcov (Linux only)")
 fi
 
@@ -401,15 +400,15 @@ fi
 # Step 6: style-formatter
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [6/9] Installing style-formatter (required)..."
+echo "  [6/11] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
     "${REPO_ROOT}/toolchains/clang/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
-# Step 7: 7zip (optional, both platforms)
+# Step 7: 7zip (optional)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [7/10] 7-Zip 26.00 (optional)..."
+echo "  [7/11] 7-Zip 26.00 (optional)..."
 if [[ "${INSTALL_7ZIP}" == "true" ]]; then
     _run_setup "7zip" "${REPO_ROOT}/dev-tools/7zip/setup.sh"
 else
@@ -418,10 +417,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 8: servy (optional, Windows only — exits cleanly on Linux)
+# Step 8: servy (optional, Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [8/10] Servy 7.3 (optional, Windows only)..."
+echo "  [8/11] Servy 7.8 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
     _run_setup "servy" "${REPO_ROOT}/dev-tools/servy/setup.sh"
 else
@@ -430,10 +429,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 9: dev-tools/vscode-extensions (optional, both platforms)
+# Step 9: conan (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [9/10] VS Code extensions (optional)..."
+echo "  [9/11] Conan 2.27.0 (optional)..."
+if [[ "${INSTALL_CONAN}" == "true" ]]; then
+    _run_setup "conan" "${REPO_ROOT}/dev-tools/conan/setup.sh"
+else
+    echo "  [--]  Skipped: conan"
+    SKIPPED_TOOLS+=("conan")
+fi
+
+# ---------------------------------------------------------------------------
+# Step 10: dev-tools/vscode-extensions (optional)
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [10/11] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
         "${REPO_ROOT}/dev-tools/vscode-extensions/setup.sh"
@@ -443,11 +454,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 10: optional platform tools
+# Step 11: optional platform tools (Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [10/10] Optional platform tools..."
-
+echo "  [11/11] Optional platform tools..."
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
         _run_bootstrap_winlibs "winlibs-gcc-ucrt" \
@@ -466,8 +476,8 @@ if [[ "${OS}" == "windows" ]]; then
         SKIPPED_TOOLS+=("frameworks/grpc")
     fi
 else
-    echo "  [--]  winlibs-gcc-ucrt  — skipped (Windows only)"
-    echo "  [--]  frameworks/grpc — skipped (Windows only)"
+    echo "  [--]  winlibs-gcc-ucrt  -- skipped (Windows only)"
+    echo "  [--]  frameworks/grpc  -- skipped (Windows only)"
     SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "frameworks/grpc (Windows only)")
 fi
 
@@ -476,7 +486,6 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "  Wiring env.sh into ~/.bashrc..."
-
 ENV_DIR="${INSTALL_PREFIX_OVERRIDE}"
 ENV_FILE="${ENV_DIR}/env.sh"
 BASHRC="${HOME}/.bashrc"
@@ -487,52 +496,54 @@ if [[ -f "${ENV_FILE}" ]]; then
         echo "  [OK]  env.sh already wired into ${BASHRC}"
     else
         echo "" >> "${BASHRC}"
-        echo "# airgap-cpp-devkit — added by install.sh" >> "${BASHRC}"
+        echo "# airgap-cpp-devkit -- added by install.sh" >> "${BASHRC}"
         echo "${SOURCE_LINE}" >> "${BASHRC}"
         echo "  [OK]  Added to ${BASHRC}: ${SOURCE_LINE}"
     fi
 else
     echo "  [!!]  env.sh not found at ${ENV_FILE}"
-    echo "        PATH not wired — source manually after install completes."
+    echo "        PATH not wired -- source manually after install completes."
 fi
 
 # ---------------------------------------------------------------------------
 # Final summary
 # ---------------------------------------------------------------------------
 echo ""
-_box_top
-_box_line "  airgap-cpp-devkit — Installation Complete"
-_box_mid
-_box_line "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
-_box_mid
+_header "  airgap-cpp-devkit -- Installation Complete"
+echo ""
+echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
 
 if [[ ${#INSTALLED_TOOLS[@]} -gt 0 ]]; then
-    _box_line "  Installed:"
+    echo "  Installed:"
     for t in "${INSTALLED_TOOLS[@]}"; do
-        _box_line "    [OK]  ${t}"
+        echo "    [OK]  ${t}"
     done
+    echo ""
 fi
 
 if [[ ${#SKIPPED_TOOLS[@]} -gt 0 ]]; then
-    _box_line "  Skipped:"
+    echo "  Skipped:"
     for t in "${SKIPPED_TOOLS[@]}"; do
-        _box_line "    [--]  ${t}"
+        echo "    [--]  ${t}"
     done
+    echo ""
 fi
 
 if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
-    _box_line "  FAILED:"
+    echo "  FAILED:"
     for t in "${FAILED_TOOLS[@]}"; do
-        _box_line "    [!!]  ${t}"
+        echo "    [!!]  ${t}"
     done
+    echo ""
 fi
 
-_box_mid
-_box_line "  Prefix  : ${INSTALL_PREFIX_OVERRIDE}"
-[[ -f "${ENV_FILE}" ]] && _box_line "  env.sh  : ${ENV_FILE}"
-_box_bot
-
+_sep2
 echo ""
+echo "  Prefix  : ${INSTALL_PREFIX_OVERRIDE}"
+[[ -f "${ENV_FILE}" ]] && echo "  env.sh  : ${ENV_FILE}"
+echo ""
+
 if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
     echo "  [!!] Some tools failed. Check logs in:"
     case "${OS}" in

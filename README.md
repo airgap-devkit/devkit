@@ -9,41 +9,53 @@ Tools install to system-wide or per-user paths depending on available privileges
 
 ---
 
-## Deployment Scenarios
-
-This devkit supports two deployment scenarios depending on what your
-air-gapped network permits.
-
-### Base Case -- Pre-built binaries allowed
-
-The fastest path. Pre-built binaries are available via the
-`prebuilt-binaries` submodule. No compiler, no Visual Studio, no CMake
-required for most tools.
+## Quick Start
 
 ```bash
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
-bash toolchains/clang/source-build/setup.sh
-bash toolchains/clang/style-formatter/setup.sh
+bash install.sh
 ```
+
+`install.sh` is the single entry point. It detects your platform, asks which
+optional tools to include, asks where to install, and runs everything in the
+correct order. Required tools are installed automatically; optional tools are
+prompted interactively.
+
+---
+
+## Deployment Scenarios
+
+### Base Case -- Pre-built binaries allowed
+
+Pre-built binaries are available via the `prebuilt-binaries` submodule.
+No compiler, no Visual Studio, no CMake required for most tools.
+
+```bash
+git clone <this-repo-url>
+cd airgap-cpp-devkit
+git submodule update --init --recursive
+bash install.sh
+```
+
+`install.sh` will detect the submodule and use prebuilt binaries automatically.
+For toolchains that need source builds (e.g. clang on Linux), the script handles
+those steps transparently.
 
 ### Worst Case -- Binaries not permitted, source only
 
-If your network prohibits pre-compiled binaries, skip the submodule and
-build everything from the vendored source archives.
+If your network prohibits pre-compiled binaries, skip the submodule entirely.
 
 ```bash
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
-bash toolchains/clang/source-build/setup.sh --build-from-source
-bash toolchains/clang/style-formatter/setup.sh
+bash install.sh
 ```
 
-Each tool's bootstrap script detects which scenario applies and responds
-accordingly. See [scripts/setup-prebuilt-submodule.sh](scripts/setup-prebuilt-submodule.sh)
-for the interactive submodule setup helper.
+`install.sh` detects that the submodule is absent and falls back to building
+all tools from vendored source archives automatically.
 
 ---
 
@@ -63,7 +75,7 @@ to the screen. An install receipt (`INSTALL_RECEIPT.txt`) and a timestamped
 log file are always written regardless of install mode.
 
 To install system-wide on Windows, right-click Git Bash and select
-"Run as administrator" before running any bootstrap script.
+"Run as administrator" before running `install.sh`.
 
 ---
 
@@ -90,8 +102,7 @@ To install system-wide on Windows, right-click Git Bash and select
 ## Optional Tools
 
 All tools outside of `toolchains/clang/style-formatter/` and `dev-tools/git-bundle/` are
-fully independent and optional. You can use any subset without affecting
-the others.
+fully independent and optional. You can use any subset without affecting the others.
 
 **`languages/python/`** installs a portable Python 3.14.4 that lives alongside any
 existing system Python. It does not modify your PATH until you explicitly
@@ -243,8 +254,8 @@ cd airgap-cpp-devkit
 # Base case -- initialize prebuilt-binaries submodule (if binaries are permitted)
 bash scripts/setup-prebuilt-submodule.sh
 
-# Install the formatter (fast, ~5 seconds)
-bash toolchains/clang/style-formatter/setup.sh
+# Run the full installer
+bash install.sh
 ```
 
 ### Prerequisites
@@ -259,14 +270,21 @@ See each tool's README for source-build prerequisites.
 
 ### Install methods
 
-**Method 1 -- pip/venv for clang-format (recommended, ~5 seconds)**
+**Method 1 -- Full install via install.sh (recommended)**
+```bash
+bash install.sh
+```
+Interactive wizard. Detects platform, prompts for optional tools, installs
+everything in the correct order. Run this first.
+
+**Method 2 -- pip/venv for clang-format only (~5 seconds)**
 ```bash
 bash toolchains/clang/style-formatter/setup.sh
 ```
 Installs `clang-format` from a vendored `.whl` file into a local Python venv.
 No network access. No compiler. No admin rights required (installs in-repo).
 
-**Method 2 -- clang-format + clang-tidy from vendored binaries (base case)**
+**Method 3 -- clang-format + clang-tidy from vendored binaries (base case)**
 ```bash
 bash scripts/setup-prebuilt-submodule.sh
 bash toolchains/clang/source-build/setup.sh
@@ -274,7 +292,7 @@ bash toolchains/clang/source-build/setup.sh
 Verifies and installs pre-built binaries from the `prebuilt-binaries`
 submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
 
-**Method 3 -- Build from LLVM source (worst case / policy requirement)**
+**Method 4 -- Build from LLVM source (worst case / policy requirement)**
 ```bash
 bash toolchains/clang/source-build/setup.sh --build-from-source
 ```
@@ -283,7 +301,7 @@ source tarball (~30-120 minutes). Use when pre-built binaries are not
 permitted or Python is unavailable.
 Requires: Visual Studio 2022 (Windows) or GCC 8+ (Linux). CMake 3.14+.
 
-**Method 4 -- CMake 4.3.1**
+**Method 5 -- CMake 4.3.1**
 ```bash
 bash build-tools/cmake/setup.sh
 # or build from source:
@@ -292,7 +310,7 @@ bash build-tools/cmake/setup.sh --build-from-source
 Installs CMake 4.3.1 to the devkit path. Required for RHEL 8 environments
 where the system CMake is too old for modern C++ projects.
 
-**Method 5 -- Portable Python 3.14.4**
+**Method 6 -- Portable Python 3.14.4**
 ```bash
 bash languages/python/setup.sh
 source languages/python/scripts/env-setup.sh
@@ -302,7 +320,7 @@ Does not affect system Python until `env-setup.sh` is sourced.
 Also installs 10 vendored pip packages offline (numpy, pandas, plotly, streamlit,
 requests, PyYAML, Jinja2, click, rich, pytest).
 
-**Method 6 -- Portable .NET 10 SDK 10.0.201**
+**Method 7 -- Portable .NET 10 SDK 10.0.201**
 ```bash
 # Windows (Developer PowerShell):
 cd languages\dotnet
@@ -316,14 +334,14 @@ changes, no elevation required for user install. Includes C# 14 compiler,
 .NET Runtime, ASP.NET Core Runtime, MSBuild, NuGet client, and dotnet CLI.
 Supported until November 2028.
 
-**Method 7 -- VS Code extensions (offline)**
+**Method 8 -- VS Code extensions (offline)**
 ```bash
 bash dev-tools/vscode-extensions/setup.sh
 ```
 Installs C/C++, C++ TestMate, and Python extensions into VS Code offline.
 Requires VS Code installed and `code` on PATH.
 
-**Method 8 -- GCC toolchain for Windows**
+**Method 9 -- GCC toolchain for Windows**
 ```bash
 cd toolchains/gcc/windows
 bash setup.sh x86_64
@@ -332,14 +350,14 @@ source scripts/env-setup.sh x86_64
 Installs GCC 15.2.0 + MinGW-w64 13.0.0 UCRT. Only needed if you require
 GCC to compile C++ projects on Windows.
 
-**Method 9 -- 7-Zip 26.00 (Windows + Linux)**
+**Method 10 -- 7-Zip 26.00 (Windows + Linux)**
 ```bash
 bash dev-tools/7zip/setup.sh
 ```
 Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
 drop-in with no elevation required.
 
-**Method 10 -- Servy 7.8 (Windows service manager)**
+**Method 11 -- Servy 7.8 (Windows service manager)**
 ```bash
 bash dev-tools/servy/setup.sh
 ```
@@ -347,14 +365,14 @@ Installs Servy 7.8 portable. Turns any executable into a native Windows
 service with health checks, log rotation, and restart policies.
 Requires 7-Zip first. Windows only.
 
-**Method 11 -- Conan 2.27.0 (C/C++ package manager)**
+**Method 12 -- Conan 2.27.0 (C/C++ package manager)**
 ```bash
 bash dev-tools/conan/setup.sh
 ```
 Installs Conan 2.27.0 self-contained executable. No Python required.
 Windows and Linux. Pairs with CMake for dependency management.
 
-**Method 12 -- gRPC v1.78.1 for Windows (prebuilt)**
+**Method 13 -- gRPC v1.78.1 for Windows (prebuilt)**
 ```powershell
 cd frameworks\grpc
 .\install-prebuilt.ps1 -version 1.78.1
@@ -363,7 +381,7 @@ cd frameworks\grpc
 Extracts prebuilt gRPC from `prebuilt-binaries/frameworks/grpc/windows/1.78.1/`
 (69MB .7z -> 1.6GB install). No compiler or Visual Studio required for install.
 
-**Method 13 -- gRPC v1.78.1 for Windows (source build)**
+**Method 14 -- gRPC v1.78.1 for Windows (source build)**
 ```powershell
 cd frameworks\grpc
 .\setup.ps1 -version 1.78.1
@@ -372,7 +390,7 @@ Builds gRPC from the vendored recursive source bundle (~40 minutes).
 Requires: Visual Studio 2019/2022/Insiders with Desktop C++ workload,
 CMake, Git Bash. All cmake deps sourced from `third_party/` -- no network access.
 
-**Method 14 -- lcov code coverage (RHEL 8 / Linux)**
+**Method 15 -- lcov code coverage (RHEL 8 / Linux)**
 ```bash
 bash build-tools/lcov/setup.sh
 source build-tools/lcov/scripts/env-setup.sh
@@ -392,7 +410,7 @@ No internet access, no CPAN, no EPEL required.
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point per tool | `bash setup.sh` or `.\setup.ps1` -- nothing else required |
+| Single entry point per tool | `bash install.sh` at root, or `bash setup.sh` per tool |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives and binaries |
 
 ---
@@ -404,7 +422,7 @@ airgap-cpp-devkit/
 +-- README.md                              <- you are here
 +-- TOOLS.md                               <- single-page tool inventory
 +-- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
-+-- install.sh                             <- top-level orchestrator
++-- install.sh                             <- top-level orchestrator (start here)
 +-- uninstall.sh                           <- removes all installed tools
 +-- .gitmodules                            <- prebuilt-binaries submodule pointer
 |
@@ -416,7 +434,7 @@ airgap-cpp-devkit/
 +-- prebuilt-binaries/                     <- SUBMODULE (separate repo, optional)
 |   +-- build-tools/cmake/                 <- CMake 4.3.1 (Windows .zip, Linux .tar.gz, source .tar.gz)
 |   +-- dev-tools/7zip/                    <- 7-Zip 26.00
-|   +-- dev-tools/servy-7.8/               <- Servy 7.8 (single file, ~80MB)
+|   +-- dev-tools/servy/                   <- Servy 7.8 (single file ~80MB)
 |   +-- dev-tools/conan/                   <- Conan 2.27.0 (Windows .zip, Linux .tgz)
 |   +-- frameworks/grpc/windows/1.78.1/    <- gRPC prebuilt (.7z 69MB + .zip 162MB)
 |   +-- languages/dotnet/10.0.201/         <- .NET 10 SDK (.7z 148MB + .zip 290MB, Linux .tar.gz 231MB)
