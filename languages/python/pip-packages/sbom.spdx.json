@@ -1,0 +1,280 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2026-04-08T00:00:00Z",
+    "creators": [
+      "Organization: airgap-cpp-devkit",
+      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+    ],
+    "comment": "Generated SBOM for vendored pip packages in languages/python/pip-packages/."
+  },
+  "name": "airgap-cpp-devkit-python-pip-packages",
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://airgap-cpp-devkit.internal/languages/python/pip-packages/sbom.spdx.json",
+  "documentDescribes": [
+    "SPDXRef-pip-packages-subproject"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-pip-packages-subproject",
+      "name": "python-pip-packages",
+      "versionInfo": "2026-04-08",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Collection of vendored pip packages for offline installation by languages/python/setup.sh."
+    },
+    {
+      "SPDXID": "SPDXRef-numpy",
+      "name": "numpy",
+      "versionInfo": "2.4.4",
+      "supplier": "Organization: NumPy Developers",
+      "downloadLocation": "https://pypi.org/project/numpy/2.4.4/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright (c) NumPy Developers",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/numpy@2.4.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pandas",
+      "name": "pandas",
+      "versionInfo": "3.0.2",
+      "supplier": "Organization: pandas Development Team",
+      "downloadLocation": "https://pypi.org/project/pandas/3.0.2/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright (c) pandas Development Team",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pandas@3.0.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-plotly",
+      "name": "plotly",
+      "versionInfo": "6.6.0",
+      "supplier": "Organization: Plotly, Inc.",
+      "downloadLocation": "https://pypi.org/project/plotly/6.6.0/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) Plotly, Inc.",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/plotly@6.6.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-streamlit",
+      "name": "streamlit",
+      "versionInfo": "1.56.0",
+      "supplier": "Organization: Streamlit Inc.",
+      "downloadLocation": "https://pypi.org/project/streamlit/1.56.0/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) Streamlit Inc.",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/streamlit@1.56.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-requests",
+      "name": "requests",
+      "versionInfo": "2.32.3",
+      "supplier": "Person: Kenneth Reitz",
+      "downloadLocation": "https://pypi.org/project/requests/2.32.3/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) Kenneth Reitz",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/requests@2.32.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pyyaml",
+      "name": "PyYAML",
+      "versionInfo": "6.0.2",
+      "supplier": "Person: Kirill Simonov",
+      "downloadLocation": "https://pypi.org/project/PyYAML/6.0.2/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) Kirill Simonov",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/PyYAML@6.0.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-jinja2",
+      "name": "Jinja2",
+      "versionInfo": "3.1.5",
+      "supplier": "Organization: Pallets",
+      "downloadLocation": "https://pypi.org/project/Jinja2/3.1.5/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright (c) Pallets",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/Jinja2@3.1.5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-click",
+      "name": "click",
+      "versionInfo": "8.1.8",
+      "supplier": "Organization: Pallets",
+      "downloadLocation": "https://pypi.org/project/click/8.1.8/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "Copyright (c) Pallets",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/click@8.1.8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-rich",
+      "name": "rich",
+      "versionInfo": "14.0.0",
+      "supplier": "Person: Will McGugan",
+      "downloadLocation": "https://pypi.org/project/rich/14.0.0/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) Will McGugan",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/rich@14.0.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-pytest",
+      "name": "pytest",
+      "versionInfo": "8.3.5",
+      "supplier": "Organization: pytest contributors",
+      "downloadLocation": "https://pypi.org/project/pytest/8.3.5/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) Holger Krekel and contributors",
+      "primaryPackagePurpose": "LIBRARY",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pytest@8.3.5"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-pip-packages-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-numpy"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-pandas"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-plotly"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-streamlit"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-requests"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-pyyaml"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-jinja2"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-click"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-rich"
+    },
+    {
+      "spdxElementId": "SPDXRef-pip-packages-subproject",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-pytest"
+    }
+  ]
+}

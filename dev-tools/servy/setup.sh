@@ -3,7 +3,7 @@
 # =============================================================================
 # dev-tools/servy/setup.sh
 #
-# Installs Servy 7.3 — Windows service manager (Windows only).
+# Installs Servy 7.8 — Windows service manager (Windows only).
 # Supports admin (system-wide) and user (no-elevation) install modes.
 #
 # USAGE:
@@ -25,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
-VERSION="7.3"
+VERSION="7.8"
 PREFIX_OVERRIDE=""
 
 while [[ $# -gt 0 ]]; do
@@ -62,8 +62,8 @@ echo " Install mode: ${INSTALL_MODE}"
 echo "============================================================"
 echo ""
 
-# Step 1: Verify parts
-im_progress_start "Verifying vendor parts"
+# Step 1: Verify archive
+im_progress_start "Verifying vendor archive"
 bash "${SCRIPTS_DIR}/verify.sh"
 im_progress_stop "Verification complete"
 echo ""
@@ -96,7 +96,7 @@ install_mode_print_footer "success" \
   "version:${VERSION}"
 
 echo "  Verify installation:"
-echo "    servy-cli.exe --version --quiet"
+echo "    servy-cli.exe --version"
 echo ""
 echo "  Quick start:"
 echo "    servy-cli.exe install --name=\"MyApp\" --path=\"C:\\MyApp\\MyApp.exe\" --startupType=\"Automatic\""

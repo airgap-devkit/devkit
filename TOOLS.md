@@ -14,15 +14,15 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **clang-format** | 22.1.2 | Windows + Linux | Yes Yes | `toolchains/clang/source-build/` |
-| **clang-tidy** | 22.1.2 | Windows + Linux | Yes Yes | `toolchains/clang/source-build/` |
+| **clang-format** | 22.1.2 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
+| **clang-tidy** | 22.1.2 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
 | **LLVM source** | 22.1.2 | Windows + Linux | - (source only) | `toolchains/clang/source-build/llvm-src/` |
-| **llvm-mingw** | 20260324 | Windows + Linux | Yes Yes | `prebuilt-binaries/toolchains/clang/mingw/` |
-| **Clang RPMs** | 20.1.8 | RHEL 8 | Yes Yes | `prebuilt-binaries/toolchains/clang/rhel8/` |
-| **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes Yes | `toolchains/gcc/windows/` |
-| **gcc-toolset** | 15 | RHEL 8 | Yes Yes | `prebuilt-binaries/toolchains/gcc/linux/` |
-| **GCC cross (x86_64-bionic)** | 15 | Linux | Yes Yes | `toolchains/gcc/linux/cross/` |
-| **GCC native (RHEL 8)** | 15 | RHEL 8 | Yes Yes | `toolchains/gcc/linux/native/` |
+| **llvm-mingw** | 20260324 | Windows + Linux | Yes | `prebuilt-binaries/toolchains/clang/mingw/` |
+| **Clang RPMs** | 20.1.8 | RHEL 8 | Yes | `prebuilt-binaries/toolchains/clang/rhel8/` |
+| **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `toolchains/gcc/windows/` |
+| **gcc-toolset** | 15 | RHEL 8 | Yes | `prebuilt-binaries/toolchains/gcc/linux/` |
+| **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `toolchains/gcc/linux/cross/` |
+| **GCC native (RHEL 8)** | 15 | RHEL 8 | Yes | `toolchains/gcc/linux/native/` |
 
 ---
 
@@ -30,9 +30,9 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **CMake** | 4.3.0 | Windows + Linux | Yes Yes | `build-tools/cmake/` |
-| **Ninja** | 1.13.2 | Windows + Linux | Yes Yes | `prebuilt-binaries/toolchains/clang/source-build/` |
-| **lcov** | 2.4 | Linux / RHEL 8 | Yes Yes (vendored tarball) | `build-tools/lcov/` |
+| **CMake** | 4.3.1 | Windows + Linux | Yes | `build-tools/cmake/` |
+| **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt-binaries/toolchains/clang/source-build/` |
+| **lcov** | 2.4 | Linux / RHEL 8 | Yes (vendored tarball) | `build-tools/lcov/` |
 
 ---
 
@@ -40,7 +40,7 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.78.1 | Windows | Yes Yes (.7z 69MB) | `frameworks/grpc/` |
+| **gRPC** | 1.78.1 | Windows | Yes (.7z 69MB) | `frameworks/grpc/` |
 | **gRPC source bundle** | 1.78.1 | Windows | - (source build ~40 min) | `frameworks/grpc/vendor/` |
 
 gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/`, `lib/` (static), `share/` (cmake config).
@@ -51,8 +51,8 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **Python** | 3.14.3 | Windows (embeddable) | Yes Yes (.7z 8.9MB) | `languages/python/` |
-| **Python** | 3.14.3 | Linux x86_64 | Yes Yes (tar.gz, 3 parts) | `languages/python/` |
+| **Python** | 3.14.4 | Windows (embeddable) | Yes (single file ~12 MB) | `languages/python/` |
+| **Python** | 3.14.4 | Linux x86_64 | Yes (tar.gz, 2 parts) | `languages/python/` |
 | **.NET SDK** | 10.0.201 | Windows x64 | Yes (.7z 148MB) | `languages/dotnet/` |
 | **.NET SDK** | 10.0.201 | Linux x64 | Yes (.tar.gz 231MB) | `languages/dotnet/` |
 
@@ -62,11 +62,12 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **7-Zip** | 26.00 | Windows + Linux | Yes Yes | `dev-tools/7zip/` |
-| **Servy** | 7.3 | Windows | Yes Yes (.7z, 2 parts) | `dev-tools/servy/` |
-| **VS Code extensions** | Various | Windows + Linux | Yes Yes (.vsix) | `dev-tools/vscode-extensions/` |
+| **7-Zip** | 26.00 | Windows + Linux | Yes | `dev-tools/7zip/` |
+| **Servy** | 7.8 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
+| **Conan** | 2.27.0 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
+| **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
 | **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `dev-tools/git-bundle/` |
-| **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes Yes (via pip wheel) | `toolchains/clang/style-formatter/` |
+| **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes (via pip wheel) | `toolchains/clang/style-formatter/` |
 
 ---
 
@@ -81,19 +82,45 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 ---
 
+## Python Pip Packages
+
+All packages are vendored as `.whl` files in `languages/python/pip-packages/`
+and installed offline by `languages/python/setup.sh`. No internet access required.
+
+| Package | Version | License | Purpose |
+|---------|---------|---------|---------|
+| **numpy** | 2.4.4 | BSD-3-Clause | Numerical computing -- arrays, linear algebra, FFT |
+| **pandas** | 3.0.2 | BSD-3-Clause | Data analysis -- DataFrames, CSV/Excel/SQL I/O |
+| **plotly** | 6.6.0 | MIT | Interactive visualizations -- charts, dashboards |
+| **streamlit** | 1.56.0 | Apache-2.0 | Data app framework -- web UIs in pure Python |
+| **requests** | 2.32.3 | Apache-2.0 | HTTP client -- REST APIs, file downloads |
+| **PyYAML** | 6.0.2 | MIT | YAML parsing -- config files, CI definitions |
+| **Jinja2** | 3.1.5 | BSD-3-Clause | Templating -- used by Conan, CMake, code gen tools |
+| **click** | 8.1.8 | BSD-3-Clause | CLI framework -- write devkit helper scripts |
+| **rich** | 14.0.0 | MIT | Terminal output -- colored tables, progress bars |
+| **pytest** | 8.3.5 | MIT | Test runner -- for Python scripts in the devkit |
+
+---
+
 ## Prebuilt Binary Formats
 
-All large archives are split into `<=50MB` parts for git compatibility.
-Both `.zip` and `.7z` (ultra compression) are provided where applicable.
-Install scripts auto-select `.7z` when 7-Zip is available.
+Files above 100MB are split into parts for git compatibility.
+Files under 100MB are stored as single files.
 
-| Archive | .zip size | .7z size | Savings |
-|---------|-----------|----------|---------|
-| gRPC 1.78.1 Windows x64 | 162MB | 69MB | 57% |
-| WinLibs GCC 15.2.0 | 254MB | 102MB | 60% |
-| llvm-mingw 20260324 Windows | 178MB | 74MB | 58% |
-| CMake 4.3.0 Windows | 51MB | 20MB | 61% |
-| Python 3.14.3 Windows embed | 14MB | 9MB | 36% |
+| Archive | Size | Parts | Notes |
+|---------|------|-------|-------|
+| gRPC 1.78.1 Windows x64 (.7z) | 69MB | 2 | split at 50MB (legacy) |
+| gRPC 1.78.1 Windows x64 (.zip) | 162MB | 4 | split at 50MB (legacy) |
+| WinLibs GCC 15.2.0 (.7z) | 107MB | 3 | split at 50MB (legacy) |
+| WinLibs GCC 15.2.0 (.zip) | 254MB | 5 | split at 50MB (legacy) |
+| llvm-mingw 20260324 (.zip) | 187MB | 4 | split at 50MB (legacy) |
+| CMake 4.3.1 Linux tar.gz | 61MB | 1 | under 100MB -- no split |
+| CMake 4.3.1 Windows zip | 51MB | 1 | under 100MB -- no split |
+| Servy 7.8 portable .7z | 80MB | 1 | under 100MB -- no split |
+| Conan 2.27.0 Windows zip | 15MB | 1 | under 100MB -- no split |
+| Conan 2.27.0 Linux tgz | 27MB | 1 | under 100MB -- no split |
+| Python 3.14.4 Windows embed | 12MB | 1 | under 100MB -- no split |
+| Python 3.14.4 Linux standalone | 120MB | 2 | split at 99MB |
 
 ---
 
@@ -106,12 +133,14 @@ Install scripts auto-select `.7z` when 7-Zip is available.
 | GCC + MinGW-w64 | Yes | - | Windows native toolchain |
 | gcc-toolset 15 | - | Yes | RHEL 8 RPMs |
 | GCC cross/native | - | Yes | Linux only |
-| CMake 4.3.0 | Yes | Yes | Prebuilt for both |
+| CMake 4.3.1 | Yes | Yes | Prebuilt for both |
 | Ninja | Yes | Yes | Prebuilt for both |
 | gRPC 1.78.1 | Yes | - | Windows MSVC build only |
-| Python 3.14.3 | Yes | Yes | Different packages per platform |
+| Python 3.14.4 | Yes | Yes | Different packages per platform |
+| .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
 | 7-Zip 26.00 | Yes | Yes | Admin + user install |
-| Servy 7.3 | Yes | - | Windows only, graceful no-op on Linux |
+| Servy 7.8 | Yes | - | Windows only, graceful no-op on Linux |
+| Conan 2.27.0 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
 | git-bundle tool | Yes | Yes | Pure Python, no deps |
 | LLVM style formatter | Yes | Yes | Git pre-commit hook |
@@ -128,11 +157,14 @@ bash toolchains/clang/style-formatter/setup.sh
 # clang-format + clang-tidy prebuilt
 bash toolchains/clang/source-build/setup.sh
 
-# CMake 4.3.0
+# CMake 4.3.1
 bash build-tools/cmake/setup.sh
 
-# Python 3.14.3
+# Python 3.14.4 + vendored pip packages
 bash languages/python/setup.sh
+
+# Conan 2.27.0
+bash dev-tools/conan/setup.sh
 
 # GCC 15.2.0 for Windows
 bash toolchains/gcc/windows/setup.sh
@@ -140,7 +172,7 @@ bash toolchains/gcc/windows/setup.sh
 # 7-Zip 26.00
 bash dev-tools/7zip/setup.sh
 
-# Servy 7.3 (Windows only)
+# Servy 7.8 (Windows only)
 bash dev-tools/servy/setup.sh
 
 # gRPC 1.78.1 - prebuilt (Developer PowerShell)

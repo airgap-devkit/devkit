@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-03-30T00:00:00Z",
+    "created": "2026-04-08T00:00:00Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -69,7 +69,7 @@
       "spdxDocument": "https://airgap-cpp-devkit.internal/dev-tools/servy/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "79d61759c05c0addbba82562ea583aa148a18371"
+        "checksumValue": "0718c5a4b2088cb4f29478dd7e8b1dedd179a240"
       }
     },
     {
@@ -77,7 +77,7 @@
       "spdxDocument": "https://airgap-cpp-devkit.internal/languages/python/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
+        "checksumValue": "70ddea042c68cea1fdbc7547604e222932dfc20a"
       }
     },
     {
@@ -94,6 +94,30 @@
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-build-tools-cmake",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/build-tools/cmake/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "aacb14da13898f9621ad6c062febea870dbfb7cb"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-conan",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/dev-tools/conan/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "61b9c25b4df8899f7d0191931c711f9e026b82ee"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-languages-python-pip-packages",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/languages/python/pip-packages/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "23e8a6345c133e4b4f08cb9c6a54529a39872d0b"
       }
     }
   ],
@@ -192,7 +216,7 @@
     {
       "SPDXID": "SPDXRef-subproject-servy",
       "name": "prebuilt-servy",
-      "versionInfo": "7.3",
+      "versionInfo": "7.8",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -200,12 +224,12 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. Servy 7.3 Windows service manager -- portable prebuilt for Windows x64 only. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
+      "comment": "Optional standalone subproject. Servy 7.8 Windows service manager -- portable prebuilt for Windows x64 only. Single file under 100MB. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-languages-python",
       "name": "languages/python",
-      "versionInfo": "3.14.3",
+      "versionInfo": "3.14.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -213,7 +237,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Portable Python 3.14.3 -- Windows embeddable zip + .7z ultra (8.9MB); Linux python-build-standalone tar.gz (3 split parts). No installer, no PATH modification until env-setup.sh is sourced. See DocumentRef-languages-python for full component SBOM."
+      "comment": "Optional subproject. Portable Python 3.14.4 -- Windows embeddable zip (single file ~12MB); Linux python-build-standalone tar.gz (2 split parts, ~120MB). No installer, no PATH modification until env-setup.sh is sourced. Includes 10 vendored pip packages. See DocumentRef-languages-python for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-languages-dotnet",
@@ -240,6 +264,45 @@
       "copyrightText": "Copyright 2015 gRPC authors.",
       "primaryPackagePurpose": "LIBRARY",
       "comment": "Optional standalone subproject. gRPC v1.78.1 for air-gapped Windows C++ development. Two install paths: prebuilt extract (69MB .7z, instant) or source build from vendored recursive bundle (127MB, ~40 min, MSVC required). Full cmake --target install output: bin/, include/, lib/, share/. HelloWorld demo built and verified end-to-end. See DocumentRef-frameworks-grpc for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-build-tools-cmake",
+      "name": "build-tools/cmake",
+      "versionInfo": "4.3.1",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64. Both files under 100MB -- no split required. Also includes source tarball for Linux source builds. See DocumentRef-build-tools-cmake for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-dev-tools-conan",
+      "name": "dev-tools/conan",
+      "versionInfo": "2.27.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. Conan 2.27.0 C/C++ package manager. Self-contained executables for Windows x64 and Linux x86_64 -- no Python required. Both files under 100MB -- no split required. See DocumentRef-dev-tools-conan for full component SBOM."
+    },
+    {
+      "SPDXID": "SPDXRef-subproject-python-pip-packages",
+      "name": "languages/python/pip-packages",
+      "versionInfo": "2026-04-08",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Vendored pip packages for offline installation: numpy 2.4.4, pandas 3.0.2, plotly 6.6.0, streamlit 1.56.0, requests 2.32.3, PyYAML 6.0.2, Jinja2 3.1.5, click 8.1.8, rich 14.0.0, pytest 8.3.5. See DocumentRef-languages-python-pip-packages for full component SBOM."
     }
   ],
   "relationships": [
@@ -299,6 +362,21 @@
       "relatedSpdxElement": "SPDXRef-subproject-frameworks-grpc"
     },
     {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-build-tools-cmake"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-dev-tools-conan"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-python-pip-packages"
+    },
+    {
       "spdxElementId": "SPDXRef-subproject-toolchains-clang-source-build",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-toolchains-clang-source-build:SPDXRef-toolchains-clang-source-build"
@@ -347,6 +425,21 @@
       "spdxElementId": "SPDXRef-subproject-frameworks-grpc",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-frameworks-grpc:SPDXRef-frameworks-grpc"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-build-tools-cmake",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-build-tools-cmake:SPDXRef-cmake-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-dev-tools-conan",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-dev-tools-conan:SPDXRef-conan-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-python-pip-packages",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-languages-python-pip-packages:SPDXRef-pip-packages-subproject"
     }
   ]
 }
