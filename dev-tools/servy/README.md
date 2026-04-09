@@ -1,6 +1,6 @@
-# Servy 7.3 -- Prebuilt Module
+# Servy 7.8 -- Prebuilt Module
 
-Vendors [Servy 7.3](https://github.com/aelassas/servy) for air-gapped Windows environments.
+Vendors [Servy 7.8](https://github.com/aelassas/servy) for air-gapped Windows environments.
 Servy turns any executable into a native Windows service -- a full-featured alternative to
 NSSM, WinSW, and FireDaemon Pro.
 
@@ -8,14 +8,13 @@ NSSM, WinSW, and FireDaemon Pro.
 
 ## Vendored Assets
 
-Binaries are stored as split parts in `prebuilt-binaries/servy/`:
+Binary is stored as a single file in `prebuilt-binaries/dev-tools/servy-7.8/` (under 100MB):
 
 | File | Size | Description |
 |------|------|-------------|
-| `servy-7.3-x64-portable.7z.part-aa` | ~50 MB | Split part 1 of 2 |
-| `servy-7.3-x64-portable.7z.part-ab` | ~30 MB | Split part 2 of 2 |
+| `servy-7.8-x64-portable.7z` | ~80 MB | Single file -- no split required |
 
-Reassembled archive SHA256: `e7767b2903affc189cbf0308f4df57b87f7f73b798155d5e2574732cd7e657d6`
+Archive SHA256: `e0133ed93f9c4ba44dc2731777a27be1385ca1e0cc626ce5d600a39e2d632613`
 
 ## What Gets Installed
 
@@ -25,6 +24,7 @@ Reassembled archive SHA256: `e7767b2903affc189cbf0308f4df57b87f7f73b798155d5e257
 | `Servy.Manager.exe` | Real-time monitoring of all installed Servy services |
 | `servy-cli.exe` | CLI -- scriptable service management for CI/CD and automation |
 | `Servy.psm1` | PowerShell module -- place alongside `servy-cli.exe` |
+| `Servy.psd1` | PowerShell module manifest -- required for module import |
 | `taskschd/` | Task Scheduler helpers for failure email/notification alerts |
 
 ## Install Matrix
@@ -83,8 +83,8 @@ Install-ServyService -Name "MyApp" -Path "C:\MyApp\MyApp.exe" -StartupType Autom
 
 ## Upstream
 
-- Version: 7.3 (2026-03-26)
+- Version: 7.8 (2026-04-04)
 - Author: Akram El Assas
 - License: MIT
 - Source: https://github.com/aelassas/servy
-- Release: https://github.com/aelassas/servy/releases/tag/v7.3
+- Release: https://github.com/aelassas/servy/releases/tag/v7.8

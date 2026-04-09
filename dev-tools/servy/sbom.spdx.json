@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-03-27T00:00:00Z",
+    "created": "2026-04-08T00:00:00Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -19,7 +19,7 @@
     {
       "SPDXID": "SPDXRef-servy-subproject",
       "name": "servy",
-      "versionInfo": "7.3",
+      "versionInfo": "7.8",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -27,14 +27,14 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Top-level subproject. Vendors Servy 7.3 portable prebuilt for Windows x64. Windows-only tool -- no Linux component. Supports admin and user install modes."
+      "comment": "Top-level subproject. Vendors Servy 7.8 portable prebuilt for Windows x64. Windows-only tool -- no Linux component. Supports admin and user install modes. Single file under 100MB -- no split required."
     },
     {
       "SPDXID": "SPDXRef-servy-upstream",
       "name": "Servy",
-      "versionInfo": "7.3",
+      "versionInfo": "7.8",
       "supplier": "Person: Akram El Assas",
-      "downloadLocation": "https://github.com/aelassas/servy/releases/tag/v7.3",
+      "downloadLocation": "https://github.com/aelassas/servy/releases/tag/v7.8",
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
@@ -44,48 +44,29 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:github/aelassas/servy@v7.3"
+          "referenceLocator": "pkg:github/aelassas/servy@v7.8"
         }
       ],
-      "comment": "Servy -- Windows service manager. Self-contained .NET 8.0 application. Supports Windows 10/11 and Windows Server x64. Includes GUI (Servy.exe), Manager (Servy.Manager.exe), CLI (servy-cli.exe), and PowerShell module (Servy.psm1). Release date: 2026-03-26."
+      "comment": "Servy -- Windows service manager. Self-contained .NET 10.0 application. Supports Windows 10/11 and Windows Server x64. Includes GUI (Servy.exe), Manager (Servy.Manager.exe), CLI (servy-cli.exe), PowerShell module (Servy.psm1), and module manifest (Servy.psd1). Release date: 2026-04-04."
     },
     {
-      "SPDXID": "SPDXRef-servy-part-aa",
-      "name": "servy-7.3-x64-portable.7z.part-aa",
-      "versionInfo": "7.3",
+      "SPDXID": "SPDXRef-servy-portable-7z",
+      "name": "servy-7.8-x64-portable.7z",
+      "versionInfo": "7.8",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "NOASSERTION",
       "filesAnalyzed": false,
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "023f5a59f3346b7552261cdc273b156fa10df55330b138be20ef4209d929b1ba"
+          "checksumValue": "e0133ed93f9c4ba44dc2731777a27be1385ca1e0cc626ce5d600a39e2d632613"
         }
       ],
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "ARCHIVE",
-      "comment": "Split part 1 of 2 of servy-7.3-x64-portable.7z (~50 MB). Committed to prebuilt-binaries submodule."
-    },
-    {
-      "SPDXID": "SPDXRef-servy-part-ab",
-      "name": "servy-7.3-x64-portable.7z.part-ab",
-      "versionInfo": "7.3",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "NOASSERTION",
-      "filesAnalyzed": false,
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "8b392b9a3a8bcb32b05f6ecc6526ea85d0ea6c9556826a5249c268b7237c5930"
-        }
-      ],
-      "licenseConcluded": "MIT",
-      "licenseDeclared": "MIT",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "ARCHIVE",
-      "comment": "Split part 2 of 2 of servy-7.3-x64-portable.7z (~30 MB). Committed to prebuilt-binaries submodule."
+      "comment": "Single-file portable archive (~80 MB). Under 100MB threshold -- no split. Committed to prebuilt-binaries submodule at prebuilt-binaries/dev-tools/servy-7.8/."
     }
   ],
   "relationships": [
@@ -102,22 +83,12 @@
     {
       "spdxElementId": "SPDXRef-servy-subproject",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-servy-part-aa"
-    },
-    {
-      "spdxElementId": "SPDXRef-servy-subproject",
-      "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-servy-part-ab"
+      "relatedSpdxElement": "SPDXRef-servy-portable-7z"
     },
     {
       "spdxElementId": "SPDXRef-servy-upstream",
       "relationshipType": "GENERATED_FROM",
-      "relatedSpdxElement": "SPDXRef-servy-part-aa"
-    },
-    {
-      "spdxElementId": "SPDXRef-servy-upstream",
-      "relationshipType": "GENERATED_FROM",
-      "relatedSpdxElement": "SPDXRef-servy-part-ab"
+      "relatedSpdxElement": "SPDXRef-servy-portable-7z"
     }
   ]
 }

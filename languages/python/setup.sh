@@ -1,277 +1,281 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# python/bootstrap.sh
+# languages/python/setup.sh
 #
-# Verifies, reassembles (Linux only), and installs a portable Python 3.14.3
-# interpreter to the appropriate system-wide or per-user path.
-# If Python is already on PATH, the devkit Python is installed alongside it.
-# Use 'source python/scripts/env-setup.sh' to activate the devkit Python.
+# Installs portable Python 3.14.4 for air-gapped environments.
+# Also installs vendored pip packages from languages/python/pip-packages/.
 #
 # USAGE:
-#   bash python/bootstrap.sh [--verify] [--dry-run] [--prefix <path>]
+#   bash languages/python/setup.sh [OPTIONS]
 #
 # OPTIONS:
-#   --verify          Verify SHA256 checksums only — no installation
-#   --dry-run         Show what would be installed without installing
-#   --prefix <path>   Install to a custom path instead of auto-detected
+#   --prefix <path>   Override install prefix
+#   --skip-pip        Skip pip package installation
+#   --rebuild         Force reinstall even if already present
+#   -h | --help       Print this help
+#
+# PLATFORMS:
+#   Windows 11  (Git Bash / MINGW64) -- embeddable zip
+#   RHEL 8 / Linux x86_64            -- standalone tar.gz (reassembled from parts)
 # =============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# ---------------------------------------------------------------------------
-# Source shared install-mode library
-# ---------------------------------------------------------------------------
-source "${REPO_ROOT}/scripts/install-mode.sh"
-
+PYTHON_VERSION="3.14.4"
 TOOL_NAME="python"
-PYTHON_VERSION="3.14.3"
-
-# ---------------------------------------------------------------------------
-# Argument parsing
-# ---------------------------------------------------------------------------
-VERIFY_ONLY=false
-DRY_RUN=false
+SKIP_PIP=false
+REBUILD=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --verify)            VERIFY_ONLY=true; shift ;;
-    --dry-run)           DRY_RUN=true; shift ;;
-    --prefix)            INSTALL_PREFIX_OVERRIDE="$2"; shift 2 ;;
-    --help)
-      echo "Usage: bash python/bootstrap.sh [--verify] [--dry-run] [--prefix <path>]"
-      echo ""
-      echo "  (no args)         Verify, reassemble (Linux), and install Python ${PYTHON_VERSION}"
-      echo "  --verify          Verify SHA256 checksums only — no installation"
-      echo "  --dry-run         Show what would be installed without installing"
-      echo "  --prefix <path>   Install to a custom path"
-      exit 0
-      ;;
-    *) shift ;;
+    --skip-pip) SKIP_PIP=true; shift ;;
+    --rebuild)  REBUILD=true;  shift ;;
+    --prefix)   export INSTALL_PREFIX_OVERRIDE="$2"; shift 2 ;;
+    -h|--help)
+      sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
+      exit 0 ;;
+    *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
 
 # ---------------------------------------------------------------------------
-# Initialise install mode (sets INSTALL_PREFIX, INSTALL_LOG_FILE, etc.)
+# Detect platform
 # ---------------------------------------------------------------------------
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+  Linux*)                OS="linux"   ;;
+  *) echo "ERROR: Unsupported platform." >&2; exit 1 ;;
+esac
+
+source "${REPO_ROOT}/scripts/install-mode.sh"
 install_mode_init "${TOOL_NAME}" "${PYTHON_VERSION}"
 install_log_capture_start
 
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/languages/python"
+VENDOR_DIR="${SCRIPT_DIR}/vendor"
+PIP_PKG_DIR="${SCRIPT_DIR}/pip-packages"
+
 # ---------------------------------------------------------------------------
-# Detect platform
+# Check for existing install
 # ---------------------------------------------------------------------------
-detect_platform() {
-  case "$(uname -s)" in
-    Linux*)             echo "linux" ;;
-    MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
-    *)
-      echo "[ERROR] Unsupported platform: $(uname -s)" >&2
-      exit 1
+if [[ -f "${INSTALL_RECEIPT}" && "${REBUILD}" == "false" ]]; then
+  existing_ver="$(grep "^Version" "${INSTALL_RECEIPT}" 2>/dev/null | awk '{print $3}' || echo "")"
+  if [[ "${existing_ver}" == "${PYTHON_VERSION}" ]]; then
+    echo "  [OK]  Python ${PYTHON_VERSION} already installed at ${INSTALL_PREFIX}"
+    echo "        Use --rebuild to force reinstall."
+    exit 0
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Install Python interpreter
+# ---------------------------------------------------------------------------
+_install_python() {
+  mkdir -p "${INSTALL_PREFIX}"
+
+  case "${OS}" in
+    windows)
+      local archive="${PREBUILT_DIR}/python-${PYTHON_VERSION}-embed-amd64.zip"
+      local expected_sha="cda80a9b1e75c0f1b4f9872ca1b417f0d19bce32facc811aea9180e70fad5fb9"
+
+      if [[ ! -f "${archive}" ]]; then
+        echo "ERROR: Windows embeddable archive not found: ${archive}" >&2
+        exit 1
+      fi
+
+      im_progress_start "Verifying python-${PYTHON_VERSION}-embed-amd64.zip"
+      actual_sha="$(sha256sum "${archive}" | awk '{print $1}')"
+      if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+        echo "ERROR: SHA256 mismatch" >&2
+        echo "  Expected: ${expected_sha}" >&2
+        echo "  Actual  : ${actual_sha}" >&2
+        exit 1
+      fi
+      im_progress_stop "Verified"
+
+      im_progress_start "Extracting Python ${PYTHON_VERSION} (Windows embeddable)"
+      if command -v 7z &>/dev/null; then
+        7z x "${archive}" -o"${INSTALL_PREFIX}" -y > /dev/null
+      elif command -v unzip &>/dev/null; then
+        unzip -q "${archive}" -d "${INSTALL_PREFIX}"
+      else
+        echo "ERROR: Need 7z or unzip." >&2; exit 1
+      fi
+      im_progress_stop "Extracted"
+
+      # Enable site-packages in embeddable Python
+      local pth_file
+      pth_file="$(find "${INSTALL_PREFIX}" -maxdepth 1 -name "python3*._pth" | head -1)"
+      if [[ -n "${pth_file}" ]]; then
+        sed -i 's/#import site/import site/' "${pth_file}"
+        echo "  [OK]  Enabled site-packages in $(basename "${pth_file}")"
+      fi
+
+      # Bootstrap pip via vendored get-pip.py if present
+      local get_pip="${VENDOR_DIR}/get-pip.py"
+      if [[ -f "${get_pip}" ]]; then
+        im_progress_start "Bootstrapping pip"
+        "${INSTALL_PREFIX}/python.exe" "${get_pip}" \
+          --no-index --find-links="${PIP_PKG_DIR}" --quiet 2>/dev/null || true
+        im_progress_stop "pip bootstrapped"
+      fi
+      ;;
+
+    linux)
+      local part_aa="${PREBUILT_DIR}/cpython-${PYTHON_VERSION}+20260408-x86_64-unknown-linux-gnu-install_only.tar.gz.part-aa"
+      local part_ab="${PREBUILT_DIR}/cpython-${PYTHON_VERSION}+20260408-x86_64-unknown-linux-gnu-install_only.tar.gz.part-ab"
+      local expected_sha="2431e22d39c0dee2c4d785250e2974bea863a61951a2e7edab88a14657a39d73"
+
+      if [[ ! -f "${part_aa}" || ! -f "${part_ab}" ]]; then
+        echo "ERROR: Linux standalone parts not found in ${PREBUILT_DIR}" >&2
+        echo "       Expected: cpython-${PYTHON_VERSION}+20260408-x86_64-unknown-linux-gnu-install_only.tar.gz.part-{aa,ab}" >&2
+        exit 1
+      fi
+
+      local tmp_archive
+      tmp_archive="$(mktemp /tmp/cpython-XXXXXX.tar.gz)"
+      trap "rm -f '${tmp_archive}'" EXIT
+
+      im_progress_start "Reassembling Python ${PYTHON_VERSION} Linux standalone"
+      cat "${part_aa}" "${part_ab}" > "${tmp_archive}"
+      im_progress_stop "Reassembled"
+
+      im_progress_start "Verifying reassembled archive"
+      actual_sha="$(sha256sum "${tmp_archive}" | awk '{print $1}')"
+      if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+        echo "ERROR: SHA256 mismatch after reassembly" >&2
+        echo "  Expected: ${expected_sha}" >&2
+        echo "  Actual  : ${actual_sha}" >&2
+        exit 1
+      fi
+      im_progress_stop "Verified"
+
+      im_progress_start "Extracting Python ${PYTHON_VERSION} (Linux standalone)"
+      tar -xzf "${tmp_archive}" --strip-components=1 -C "${INSTALL_PREFIX}"
+      im_progress_stop "Extracted"
       ;;
   esac
 }
 
-PLATFORM="$(detect_platform)"
-VENDOR_DIR="${SCRIPT_DIR}/vendor"
+# ---------------------------------------------------------------------------
+# Locate python binary
+# ---------------------------------------------------------------------------
+_python_bin() {
+  case "${OS}" in
+    windows) echo "${INSTALL_PREFIX}/python.exe" ;;
+    linux)   echo "${INSTALL_PREFIX}/bin/python3" ;;
+  esac
+}
 
 # ---------------------------------------------------------------------------
-# Detect any existing system Python and inform the user
+# Install vendored pip packages
 # ---------------------------------------------------------------------------
-detect_system_python() {
-  local found=""
-  # Check for python3 first, then python
-  for cmd in python3 python python3.14; do
-    if command -v "${cmd}" &>/dev/null; then
-      local ver
-      ver="$("${cmd}" --version 2>&1 || true)"
-      found="${found}  ${cmd} → ${ver} ($(command -v "${cmd}"))\n"
+_install_pip_packages() {
+  if [[ ! -d "${PIP_PKG_DIR}" ]]; then
+    echo "  [--]  pip-packages/ not found -- skipping pip installs."
+    return 0
+  fi
+
+  local whl_count
+  whl_count="$(find "${PIP_PKG_DIR}" -name "*.whl" | wc -l)"
+  if [[ "${whl_count}" -eq 0 ]]; then
+    echo "  [--]  No .whl files in pip-packages/ -- skipping."
+    return 0
+  fi
+
+  local python_bin
+  python_bin="$(_python_bin)"
+
+  if [[ ! -f "${python_bin}" ]]; then
+    echo "  [!!]  Python binary not found -- skipping pip." >&2
+    return 0
+  fi
+
+  echo ""
+  echo "  Installing vendored pip packages..."
+  echo ""
+
+  local packages=(
+    "numpy"
+    "pandas"
+    "plotly"
+    "streamlit"
+    "requests"
+    "PyYAML"
+    "Jinja2"
+    "click"
+    "rich"
+    "pytest"
+  )
+
+  local installed=0 failed=0
+
+  for pkg in "${packages[@]}"; do
+    local whl_file
+    whl_file="$(find "${PIP_PKG_DIR}" -iname "${pkg}-*.whl" | head -1)"
+    if [[ -z "${whl_file}" ]]; then
+      printf "  [!!]  %-20s not found in pip-packages/ -- skipped\n" "${pkg}"
+      (( failed++ )) || true
+      continue
+    fi
+    printf "  [....] %-20s" "${pkg}"
+    if "${python_bin}" -m pip install \
+        --quiet --no-index \
+        --find-links="${PIP_PKG_DIR}" \
+        "${whl_file}" 2>/dev/null; then
+      printf "  [OK]\n"
+      (( installed++ )) || true
+    else
+      printf "  [!!] FAILED\n"
+      (( failed++ )) || true
     fi
   done
 
-  if [[ -n "${found}" ]]; then
-    echo "[INFO] Existing Python found on PATH:"
-    printf "${found}"
-    echo "[INFO] The devkit Python will be installed alongside."
-    echo "[INFO] It will NOT override your system Python unless you run:"
-    echo "[INFO]   source python/scripts/env-setup.sh"
-    echo ""
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# Platform-specific filenames and hashes
-# ---------------------------------------------------------------------------
-if [[ "${PLATFORM}" == "linux" ]]; then
-  TARBALL="cpython-3.14.3+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz"
-  PART_AA="${TARBALL}.part-aa"
-  PART_AB="${TARBALL}.part-ab"
-  EXPECTED_SHA_AA="5a59d87c70f7dd15a31c668d34558fd7add43df7484b013c4648a5194796b406"
-  EXPECTED_SHA_AB="12f5f6d8af2ee1fa6946b1732e6733ddd504d729ca4a70cda76e7be3439985ff"
-  EXPECTED_SHA_FULL="d4c6712210b69540ab4ed51825b99388b200e4f90ca4e53fbb5a67c2467feb48"
-else
-  ZIP_FILE="python-3.14.3-embed-amd64.zip"
-  EXPECTED_SHA_ZIP="ad4961a479dedbeb7c7d113253f8db1b1935586b73c27488712beec4f2c894e6"
-fi
-
-# ---------------------------------------------------------------------------
-# SHA256 verification helper
-# ---------------------------------------------------------------------------
-verify_sha256() {
-  local file="$1"
-  local expected="$2"
-  local label="$3"
-
-  if [[ ! -f "${file}" ]]; then
-    echo "[ERROR] Missing file: ${file}"
-    exit 1
-  fi
-
-  local actual
-  actual="$(sha256sum "${file}" | awk '{print $1}')"
-
-  if [[ "${actual}" == "${expected}" ]]; then
-    echo "[OK]   SHA256 verified: ${label}"
-  else
-    echo "[ERROR] SHA256 mismatch: ${label}"
-    echo "        Expected: ${expected}"
-    echo "        Actual:   ${actual}"
-    exit 1
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# Linux: verify parts
-# ---------------------------------------------------------------------------
-verify_linux() {
-  echo "[INFO] Verifying split parts..."
-  verify_sha256 "${VENDOR_DIR}/${PART_AA}" "${EXPECTED_SHA_AA}" "${PART_AA}"
-  verify_sha256 "${VENDOR_DIR}/${PART_AB}" "${EXPECTED_SHA_AB}" "${PART_AB}"
-}
-
-# ---------------------------------------------------------------------------
-# Linux: reassemble tarball from parts
-# ---------------------------------------------------------------------------
-reassemble_linux() {
-  local tarball_path="${VENDOR_DIR}/${TARBALL}"
-
-  if [[ -f "${tarball_path}" ]]; then
-    echo "[INFO] Tarball already exists — verifying..."
-    verify_sha256 "${tarball_path}" "${EXPECTED_SHA_FULL}" "${TARBALL}"
-    return
-  fi
-
-  im_progress_start "Reassembling tarball from parts"
-  cat "${VENDOR_DIR}/${PART_AA}" \
-      "${VENDOR_DIR}/${PART_AB}" \
-      > "${tarball_path}"
-  im_progress_stop "Tarball reassembled"
-
-  verify_sha256 "${tarball_path}" "${EXPECTED_SHA_FULL}" "${TARBALL}"
-}
-
-# ---------------------------------------------------------------------------
-# Windows: verify zip
-# ---------------------------------------------------------------------------
-verify_windows() {
-  echo "[INFO] Verifying embeddable package..."
-  verify_sha256 "${VENDOR_DIR}/${ZIP_FILE}" "${EXPECTED_SHA_ZIP}" "${ZIP_FILE}"
-}
-
-# ---------------------------------------------------------------------------
-# Install — Linux
-# ---------------------------------------------------------------------------
-install_linux() {
-  local tarball_path="${VENDOR_DIR}/${TARBALL}"
-
-  echo "[INFO] Installing Python ${PYTHON_VERSION} to: ${INSTALL_PREFIX}"
-  mkdir -p "${INSTALL_PREFIX}"
-
-  im_progress_start "Extracting Python ${PYTHON_VERSION}"
-  tar -xzf "${tarball_path}" -C "${INSTALL_PREFIX}" --strip-components=1
-  im_progress_stop "Extraction complete"
-
-  local python_bin="${INSTALL_PREFIX}/bin/python3.14"
-  if [[ ! -f "${python_bin}" ]]; then
-    echo "[ERROR] Installation failed — binary not found: ${python_bin}"
-    exit 1
-  fi
-
-  local installed_version
-  installed_version="$("${python_bin}" --version 2>&1)"
-  echo "[OK]   Installed: ${installed_version}"
-
-  install_receipt_write "success" "python3.14:${python_bin}"
-  install_mode_print_footer "success" "python3.14:${python_bin}"
-
-  echo "To activate Python in your current shell:"
-  echo "  source python/scripts/env-setup.sh"
-}
-
-# ---------------------------------------------------------------------------
-# Install — Windows
-# ---------------------------------------------------------------------------
-install_windows() {
-  local zip_path="${VENDOR_DIR}/${ZIP_FILE}"
-
-  echo "[INFO] Installing Python ${PYTHON_VERSION} to: ${INSTALL_PREFIX}"
-  mkdir -p "${INSTALL_PREFIX}"
-
-  im_progress_start "Extracting Python ${PYTHON_VERSION}"
-  unzip -q -o "${zip_path}" -d "${INSTALL_PREFIX}"
-  im_progress_stop "Extraction complete"
-
-  local python_bin="${INSTALL_PREFIX}/python.exe"
-  if [[ ! -f "${python_bin}" ]]; then
-    echo "[ERROR] Installation failed — python.exe not found: ${python_bin}"
-    exit 1
-  fi
-
-  local installed_version
-  installed_version="$("${python_bin}" --version 2>&1)"
-  echo "[OK]   Installed: ${installed_version}"
-
-  install_receipt_write "success" "python.exe:${python_bin}"
-  install_mode_print_footer "success" "python.exe:${python_bin}"
-
-  echo "To activate Python in your current shell:"
-  echo "  source python/scripts/env-setup.sh"
+  echo ""
+  echo "  pip packages: ${installed} installed, ${failed} failed/skipped"
 }
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-detect_system_python
+echo ""
+echo "============================================================"
+echo " Python ${PYTHON_VERSION} — Setup"
+echo " Portable interpreter + vendored pip packages"
+echo " Platform    : ${OS}"
+echo " Install mode: ${INSTALL_MODE}"
+echo "============================================================"
+echo ""
 
-if [[ "${PLATFORM}" == "linux" ]]; then
-  verify_linux
+_install_python
 
-  if [[ "${VERIFY_ONLY}" == true ]]; then
-    echo "[OK]   Verification complete — no installation performed."
-    exit 0
-  fi
-
-  if [[ "${DRY_RUN}" == true ]]; then
-    echo "[DRY-RUN] Would reassemble tarball and install to: ${INSTALL_PREFIX}"
-    exit 0
-  fi
-
-  reassemble_linux
-  install_linux
-
-else
-  verify_windows
-
-  if [[ "${VERIFY_ONLY}" == true ]]; then
-    echo "[OK]   Verification complete — no installation performed."
-    exit 0
-  fi
-
-  if [[ "${DRY_RUN}" == true ]]; then
-    echo "[DRY-RUN] Would install to: ${INSTALL_PREFIX}"
-    exit 0
-  fi
-
-  install_windows
+python_bin="$(_python_bin)"
+if [[ ! -f "${python_bin}" ]]; then
+  echo "ERROR: Python binary not found after install: ${python_bin}" >&2
+  exit 1
 fi
+
+ver="$("${python_bin}" --version 2>&1)"
+echo "  [OK]  ${ver}"
+
+mkdir -p "${INSTALL_BIN_DIR}"
+
+if [[ "${SKIP_PIP}" == "false" ]]; then
+  _install_pip_packages
+fi
+
+case "${OS}" in
+  windows) install_env_register "${INSTALL_PREFIX}" ;;
+  linux)   install_env_register "${INSTALL_PREFIX}/bin" ;;
+esac
+
+install_receipt_write "success" "python:${python_bin}"
+install_mode_print_footer "success" "python:${python_bin}"
+
+echo ""
+echo "  To activate:"
+echo "    source languages/python/scripts/env-setup.sh"
+echo ""
