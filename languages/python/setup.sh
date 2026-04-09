@@ -55,7 +55,6 @@ install_mode_init "${TOOL_NAME}" "${PYTHON_VERSION}"
 install_log_capture_start
 
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/languages/python"
-VENDOR_DIR="${SCRIPT_DIR}/vendor"
 PIP_PKG_DIR="${SCRIPT_DIR}/pip-packages"
 
 # ---------------------------------------------------------------------------
@@ -87,22 +86,24 @@ _install_python() {
       fi
 
       im_progress_start "Verifying python-${PYTHON_VERSION}-embed-amd64.zip"
+      local actual_sha
       actual_sha="$(sha256sum "${archive}" | awk '{print $1}')"
       if [[ "${actual_sha}" != "${expected_sha}" ]]; then
         echo "ERROR: SHA256 mismatch" >&2
         echo "  Expected: ${expected_sha}" >&2
         echo "  Actual  : ${actual_sha}" >&2
+        im_progress_stop "Verification failed"
         exit 1
       fi
       im_progress_stop "Verified"
 
       im_progress_start "Extracting Python ${PYTHON_VERSION} (Windows embeddable)"
-      if command -v 7z &>/dev/null; then
-        7z x "${archive}" -o"${INSTALL_PREFIX}" -y > /dev/null
-      elif command -v unzip &>/dev/null; then
+      if command -v unzip &>/dev/null; then
         unzip -q "${archive}" -d "${INSTALL_PREFIX}"
+      elif command -v 7z &>/dev/null; then
+        7z x "${archive}" -o"${INSTALL_PREFIX}" -y > /dev/null
       else
-        echo "ERROR: Need 7z or unzip." >&2; exit 1
+        echo "ERROR: Need unzip or 7z to extract." >&2; exit 1
       fi
       im_progress_stop "Extracted"
 
@@ -113,20 +114,12 @@ _install_python() {
         sed -i 's/#import site/import site/' "${pth_file}"
         echo "  [OK]  Enabled site-packages in $(basename "${pth_file}")"
       fi
-
-      # Bootstrap pip via vendored get-pip.py if present
-      local get_pip="${VENDOR_DIR}/get-pip.py"
-      if [[ -f "${get_pip}" ]]; then
-        im_progress_start "Bootstrapping pip"
-        "${INSTALL_PREFIX}/python.exe" "${get_pip}" \
-          --no-index --find-links="${PIP_PKG_DIR}" --quiet 2>/dev/null || true
-        im_progress_stop "pip bootstrapped"
-      fi
       ;;
 
     linux)
       local part_aa="${PREBUILT_DIR}/cpython-${PYTHON_VERSION}+20260408-x86_64-unknown-linux-gnu-install_only.tar.gz.part-aa"
       local part_ab="${PREBUILT_DIR}/cpython-${PYTHON_VERSION}+20260408-x86_64-unknown-linux-gnu-install_only.tar.gz.part-ab"
+      # SHA256 of the reassembled archive
       local expected_sha="2431e22d39c0dee2c4d785250e2974bea863a61951a2e7edab88a14657a39d73"
 
       if [[ ! -f "${part_aa}" || ! -f "${part_ab}" ]]; then
@@ -144,11 +137,13 @@ _install_python() {
       im_progress_stop "Reassembled"
 
       im_progress_start "Verifying reassembled archive"
+      local actual_sha
       actual_sha="$(sha256sum "${tmp_archive}" | awk '{print $1}')"
       if [[ "${actual_sha}" != "${expected_sha}" ]]; then
         echo "ERROR: SHA256 mismatch after reassembly" >&2
         echo "  Expected: ${expected_sha}" >&2
         echo "  Actual  : ${actual_sha}" >&2
+        im_progress_stop "Verification failed"
         exit 1
       fi
       im_progress_stop "Verified"
@@ -195,47 +190,73 @@ _install_pip_packages() {
   fi
 
   echo ""
-  echo "  Installing vendored pip packages..."
+  echo "  Installing vendored pip packages (${whl_count} wheels found)..."
   echo ""
 
+  # Full package list -- pip resolves .whl files from find-links directory
   local packages=(
+    # Data science core
     "numpy"
     "pandas"
+    "scipy"
+    "scikit-learn"
+    "matplotlib"
+    # Visualization
     "plotly"
+    "pillow"
+    # Web application
     "streamlit"
+    # Database
+    "sqlalchemy"
+    # HTTP
     "requests"
+    # Data formats and serialization
     "PyYAML"
+    "pydantic"
+    "openpyxl"
+    # Templating and configuration
     "Jinja2"
+    "python-dotenv"
+    # CLI and developer tools
     "click"
     "rich"
+    "loguru"
+    # Testing
     "pytest"
   )
 
-  local installed=0 failed=0
+  local installed=0 failed=0 skipped=0
 
   for pkg in "${packages[@]}"; do
+    # Find any matching wheel (handle both hyphen and underscore in name)
+    local pkg_underscore="${pkg//-/_}"
     local whl_file
-    whl_file="$(find "${PIP_PKG_DIR}" -iname "${pkg}-*.whl" | head -1)"
+    whl_file="$(find "${PIP_PKG_DIR}" \
+      \( -iname "${pkg}-*.whl" -o -iname "${pkg_underscore}-*.whl" \) \
+      2>/dev/null | head -1 || true)"
+
     if [[ -z "${whl_file}" ]]; then
-      printf "  [!!]  %-20s not found in pip-packages/ -- skipped\n" "${pkg}"
-      (( failed++ )) || true
+      printf "  [--]  %-22s not found in pip-packages/ -- skipped\n" "${pkg}"
+      (( skipped++ )) || true
       continue
     fi
-    printf "  [....] %-20s" "${pkg}"
+
+    printf "  [....] %-22s" "${pkg}"
     if "${python_bin}" -m pip install \
         --quiet --no-index \
         --find-links="${PIP_PKG_DIR}" \
-        "${whl_file}" 2>/dev/null; then
+        "${pkg}" 2>/dev/null; then
       printf "  [OK]\n"
       (( installed++ )) || true
     else
-      printf "  [!!] FAILED\n"
+      printf "  [!!] FAILED\n" >&2
       (( failed++ )) || true
     fi
   done
 
   echo ""
-  echo "  pip packages: ${installed} installed, ${failed} failed/skipped"
+  echo "  Results: ${installed} installed, ${skipped} skipped (wheel not present), ${failed} failed"
+  echo "  Note: sqlite3 is Python stdlib -- no wheel required."
 }
 
 # ---------------------------------------------------------------------------
@@ -243,7 +264,7 @@ _install_pip_packages() {
 # ---------------------------------------------------------------------------
 echo ""
 echo "============================================================"
-echo " Python ${PYTHON_VERSION} — Setup"
+echo " Python ${PYTHON_VERSION} -- Setup"
 echo " Portable interpreter + vendored pip packages"
 echo " Platform    : ${OS}"
 echo " Install mode: ${INSTALL_MODE}"
