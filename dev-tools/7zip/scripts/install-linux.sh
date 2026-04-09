@@ -12,7 +12,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/7zip"
+VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/dev-tools/7zip"
 
 MODE="${1:-user}"
 PREFIX_OVERRIDE="${2:-}"
@@ -33,10 +33,8 @@ echo "[7zip] Install dir  : ${INSTALL_DIR}"
 echo "[7zip] Source       : ${TARBALL}"
 echo ""
 
-# Create destination if needed
 mkdir -p "${INSTALL_DIR}"
 
-# Extract only the 7zz binary from the tarball
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "${TMPDIR}"' EXIT
 
@@ -48,23 +46,20 @@ if [[ ! -f "${TMPDIR}/7zz" ]]; then
   exit 1
 fi
 
-# Install
 chmod +x "${TMPDIR}/7zz"
 cp "${TMPDIR}/7zz" "${INSTALL_DIR}/7zz"
 
 echo "[7zip] Installed: ${INSTALL_DIR}/7zz"
 echo ""
 
-# Verify
 INSTALLED="${INSTALL_DIR}/7zz"
 VER="$("${INSTALLED}" i 2>&1 | grep -i "7-Zip" | head -1 || true)"
 if [[ -n "${VER}" ]]; then
   echo "[7zip] Verified : ${VER}"
 else
-  echo "[7zip] Verified : $(${INSTALLED} 2>&1 | head -1 || true)"
+  echo "[7zip] Verified : $("${INSTALLED}" 2>&1 | head -1 || true)"
 fi
 
-# PATH hint for user installs
 if [[ "${MODE}" == "user" ]]; then
   echo ""
   echo "[7zip] NOTE: Ensure ${INSTALL_DIR} is in your PATH."

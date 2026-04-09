@@ -18,20 +18,20 @@
 #     install_mode_init "<tool-name>" "<tool-version>"
 #
 #   Then use the exported variables:
-#     INSTALL_MODE       — "admin", "user", or "custom"
-#     INSTALL_PREFIX     — root install directory
-#     INSTALL_BIN_DIR    — where binaries go
-#     INSTALL_LOG_FILE   — full path to the timestamped log file
-#     INSTALL_RECEIPT    — full path to the install receipt file
+#     INSTALL_MODE       -- "admin", "user", or "custom"
+#     INSTALL_PREFIX     -- root install directory
+#     INSTALL_BIN_DIR    -- where binaries go
+#     INSTALL_LOG_FILE   -- full path to the timestamped log file
+#     INSTALL_RECEIPT    -- full path to the install receipt file
 #
 #   Helpers:
-#     install_mode_print_header    — print the mode banner
-#     install_mode_print_footer    — print the result banner
-#     install_receipt_write        — write the receipt file
-#     install_log_capture_start    — tee all output to log file
-#     install_env_register         — register bin dir in shared env.sh
-#     im_progress_start <msg>      — start elapsed-time ticker
-#     im_progress_stop  <msg>      — stop ticker, print final status
+#     install_mode_print_header    -- print the mode banner
+#     install_mode_print_footer    -- print the result banner
+#     install_receipt_write        -- write the receipt file
+#     install_log_capture_start    -- tee all output to log file
+#     install_env_register         -- register bin dir in shared env.sh
+#     im_progress_start <msg>      -- start elapsed-time ticker
+#     im_progress_stop  <msg>      -- stop ticker, print final status
 #
 # INSTALL PATHS:
 #   Admin  Linux   : /opt/airgap-cpp-devkit/<tool>/
@@ -44,12 +44,8 @@
 #   Windows : %TEMP%\airgap-cpp-devkit\logs\
 #   Linux   : /var/log/airgap-cpp-devkit/  (falls back to ~/airgap-cpp-devkit-logs/)
 # =============================================================================
-
-[[ -n "${_INSTALL_MODE_LOADED:-}" ]] && { _IM_BOX_WIDTH=98; return 0; } 2>/dev/null || true
+[[ -n "${_INSTALL_MODE_LOADED:-}" ]] && { return 0; } 2>/dev/null || true
 _INSTALL_MODE_LOADED=1
-
-# Box inner width (visual columns between the border chars)
-_IM_BOX_WIDTH=98
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -98,51 +94,19 @@ _im_temp_dir() {
 }
 
 # ---------------------------------------------------------------------------
-# _im_box_line <string>
-#
-# Prints a single box content row: ║<content padded to _IM_BOX_WIDTH cols>║
-#
-# All characters are ASCII so byte count == visual column count.
-# Strings longer than _IM_BOX_WIDTH are truncated with "...".
+# Plain ASCII separators (used in header/footer)
 # ---------------------------------------------------------------------------
-_im_box_line() {
-    local str="$1"
-    local width="${_IM_BOX_WIDTH}"
-
-    # Truncate if needed (pure ASCII — byte len == visual len)
-    if (( ${#str} > width )); then
-        str="${str:0:$(( width - 3 ))}..."
-    fi
-
-    # Pad to exact width
-    local pad=$(( width - ${#str} ))
-    local padding
-    padding="$(printf '%*s' "${pad}" '')"
-    printf '║%s%s║\n' "${str}" "${padding}"
-}
-
-_im_box_rule() {
-    # Prints a full-width horizontal rule using the given char (default ═)
-    local char="${1:-═}"
-    local line=""
-    local i
-    for (( i=0; i<_IM_BOX_WIDTH; i++ )); do line+="${char}"; done
-    printf '║%s║\n' "${line}"
-}
-
-_im_box_top()    { local l=""; local i; for((i=0;i<_IM_BOX_WIDTH;i++)); do l+="═"; done; printf '╔%s╗\n' "${l}"; }
-_im_box_mid()    { local l=""; local i; for((i=0;i<_IM_BOX_WIDTH;i++)); do l+="═"; done; printf '╠%s╣\n' "${l}"; }
-_im_box_bottom() { local l=""; local i; for((i=0;i<_IM_BOX_WIDTH;i++)); do l+="═"; done; printf '╚%s╝\n' "${l}"; }
+_im_sep()  { printf '%s\n' "------------------------------------------------------------"; }
+_im_sep2() { printf '%s\n' "============================================================"; }
 
 # ---------------------------------------------------------------------------
-# install_mode_init <tool_name> <tool_version> [--prefix <path>]
+# install_mode_init <tool_name> <tool_version>
 # ---------------------------------------------------------------------------
 install_mode_init() {
     local tool_name="${1:-unknown}"
     local tool_version="${2:-unknown}"
     shift 2 || true
 
-    # Parse optional --prefix
     local prefix_override="${INSTALL_PREFIX_OVERRIDE:-}"
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -153,6 +117,7 @@ install_mode_init() {
 
     local os
     os="$(_im_os)"
+
     local timestamp
     timestamp="$(date +"%Y%m%d-%H%M%S")"
 
@@ -164,10 +129,6 @@ install_mode_init() {
             sys_prefix="${pf}/airgap-cpp-devkit/${tool_name}"
             user_prefix="$(_im_localappdata)/airgap-cpp-devkit/${tool_name}"
             ;;
-        linux|macos)
-            sys_prefix="/opt/airgap-cpp-devkit/${tool_name}"
-            user_prefix="${HOME}/.local/share/airgap-cpp-devkit/${tool_name}"
-            ;;
         *)
             sys_prefix="/opt/airgap-cpp-devkit/${tool_name}"
             user_prefix="${HOME}/.local/share/airgap-cpp-devkit/${tool_name}"
@@ -175,7 +136,6 @@ install_mode_init() {
     esac
 
     if [[ -n "${prefix_override}" ]]; then
-        # If the override matches a known path, show the correct mode label
         if [[ "${prefix_override}" == "${sys_prefix}" ]] && _im_can_write_system "${sys_prefix}"; then
             export INSTALL_MODE="admin"
         elif [[ "${prefix_override}" == "${user_prefix}" ]]; then
@@ -203,17 +163,15 @@ install_mode_init() {
         windows)
             log_base="$(_im_temp_dir)/airgap-cpp-devkit/logs"
             ;;
-        linux|macos)
+        *)
             if _im_can_write_system "/var/log/airgap-cpp-devkit"; then
                 log_base="/var/log/airgap-cpp-devkit"
             else
                 log_base="${HOME}/airgap-cpp-devkit-logs"
             fi
             ;;
-        *)
-            log_base="${HOME}/airgap-cpp-devkit-logs"
-            ;;
     esac
+
     mkdir -p "${log_base}" 2>/dev/null || true
     export INSTALL_LOG_DIR="${log_base}"
     export INSTALL_LOG_FILE="${log_base}/${tool_name}-${timestamp}.log"
@@ -241,21 +199,21 @@ install_mode_print_header() {
             ;;
         *)
             mode_label="CURRENT USER ONLY  (no admin rights detected)"
-            scope_label="THIS user only — other users will NOT have access"
+            scope_label="THIS user only"
             mode_icon="[!!]"
             ;;
     esac
 
     echo ""
-    _im_box_top
-    _im_box_line "  airgap-cpp-devkit — Install Mode"
-    _im_box_mid
-    _im_box_line "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
-    _im_box_line "  Mode        : ${mode_icon}  ${mode_label}"
-    _im_box_line "  Install dir : ${INSTALL_PREFIX}"
-    _im_box_line "  Available to: ${scope_label}"
-    _im_box_line "  Log file    : ${INSTALL_LOG_FILE}"
-    _im_box_bottom
+    _im_sep2
+    echo "  airgap-cpp-devkit -- Install Mode"
+    _im_sep2
+    echo "  Tool        : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
+    echo "  Mode        : ${mode_icon}  ${mode_label}"
+    echo "  Install dir : ${INSTALL_PREFIX}"
+    echo "  Available to: ${scope_label}"
+    echo "  Log file    : ${INSTALL_LOG_FILE}"
+    _im_sep2
     echo ""
 
     if [[ "${INSTALL_MODE}" == "user" ]]; then
@@ -289,24 +247,24 @@ install_mode_print_footer() {
     fi
 
     echo ""
-    _im_box_top
-    _im_box_line "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} — ${status_label}"
-    _im_box_mid
-    _im_box_line "  Install mode : ${INSTALL_MODE}"
-    _im_box_line "  Install path : ${INSTALL_PREFIX}"
+    _im_sep2
+    echo "  ${status_icon}  ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION} -- ${status_label}"
+    _im_sep
+    echo "  Install mode : ${INSTALL_MODE}"
+    echo "  Install path : ${INSTALL_PREFIX}"
     for pair in "$@"; do
         local label="${pair%%:*}"
         local path="${pair#*:}"
-        _im_box_line "  ${label} : ${path}"
+        echo "  ${label} : ${path}"
     done
-    _im_box_mid
-    _im_box_line "  Log     : ${INSTALL_LOG_FILE}"
-    _im_box_line "  Receipt : ${INSTALL_RECEIPT}"
-    _im_box_bottom
+    _im_sep
+    echo "  Log     : ${INSTALL_LOG_FILE}"
+    echo "  Receipt : ${INSTALL_RECEIPT}"
+    _im_sep2
     echo ""
 
     if [[ "${INSTALL_MODE}" == "user" ]]; then
-        echo "  [!!] Installed to user path — NOT available to other users."
+        echo "  [!!] Installed to user path -- NOT available to other users."
         echo "       Re-run as admin/root to install system-wide."
         echo ""
     fi
@@ -320,10 +278,9 @@ install_receipt_write() {
     shift || true
 
     mkdir -p "${INSTALL_PREFIX}" 2>/dev/null || true
-
     {
-        echo "airgap-cpp-devkit — Install Receipt"
-        echo "===================================="
+        echo "airgap-cpp-devkit -- Install Receipt"
+        echo "====================================="
         echo ""
         echo "Tool         : ${INSTALL_TOOL_NAME}"
         echo "Version      : ${INSTALL_TOOL_VERSION}"
@@ -352,16 +309,10 @@ install_receipt_write() {
             done
         fi
         echo ""
-        echo "Available to all users : $([[ "${INSTALL_MODE}" == "admin" ]] && echo "YES" || echo "NO — current user only")"
-        echo ""
-        if [[ "${INSTALL_MODE}" == "user" ]]; then
-            echo "WARNING: This installation is only accessible to the current user."
-            echo "         To make available system-wide, re-run as admin/root."
-        fi
+        echo "Available to all users : $([[ "${INSTALL_MODE}" == "admin" ]] && echo "YES" || echo "NO -- current user only")"
     } > "${INSTALL_RECEIPT}" 2>/dev/null || {
         echo "[install-mode] WARNING: Could not write receipt to ${INSTALL_RECEIPT}" >&2
     }
-
     echo "[install-mode] Receipt written: ${INSTALL_RECEIPT}"
 }
 
@@ -370,22 +321,19 @@ install_receipt_write() {
 # ---------------------------------------------------------------------------
 install_log_capture_start() {
     mkdir -p "${INSTALL_LOG_DIR}" 2>/dev/null || true
-
     {
-        echo "airgap-cpp-devkit — Install Log"
-        echo "================================"
+        echo "airgap-cpp-devkit -- Install Log"
+        echo "================================="
         echo "Tool      : ${INSTALL_TOOL_NAME} ${INSTALL_TOOL_VERSION}"
         echo "Mode      : ${INSTALL_MODE}"
         echo "Prefix    : ${INSTALL_PREFIX}"
         echo "Date      : $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
         echo "User      : $(whoami 2>/dev/null || echo unknown)"
         echo "Hostname  : $(hostname 2>/dev/null || echo unknown)"
-        echo "================================"
+        echo "================================="
         echo ""
     } >> "${INSTALL_LOG_FILE}" 2>/dev/null || true
-
     exec > >(tee -a "${INSTALL_LOG_FILE}") 2>&1
-
     echo "[install-mode] Logging to: ${INSTALL_LOG_FILE}"
     echo ""
 }
@@ -393,17 +341,36 @@ install_log_capture_start() {
 # ---------------------------------------------------------------------------
 # im_progress_start <message>
 #
-# Prints a spinner line that updates in-place every second with elapsed time.
-# Call im_progress_stop when the operation finishes.
+# Prints a spinner that updates in-place every second with elapsed time.
+# Registers an EXIT trap to guarantee the spinner is killed even if the
+# calling script exits with an error (set -e / set -euo pipefail).
+# Call im_progress_stop when the operation finishes normally.
 # ---------------------------------------------------------------------------
 _IM_PROGRESS_PID=""
 _IM_PROGRESS_START_TIME=""
 
+_im_progress_cleanup() {
+    if [[ -n "${_IM_PROGRESS_PID:-}" ]]; then
+        kill "${_IM_PROGRESS_PID}" 2>/dev/null || true
+        wait "${_IM_PROGRESS_PID}" 2>/dev/null || true
+        _IM_PROGRESS_PID=""
+        # Clear the spinner line
+        printf "\r%-80s\r" " " > /dev/tty 2>/dev/null || true
+    fi
+}
+
+# Register cleanup on EXIT so spinner always dies with the script
+trap '_im_progress_cleanup' EXIT
+
 im_progress_start() {
     local msg="${1:-Working}"
+
+    # Kill any previous spinner that wasn't stopped cleanly
+    _im_progress_cleanup
+
     _IM_PROGRESS_START_TIME="$(date +%s)"
+
     if { true > /dev/tty; } 2>/dev/null; then
-        _IM_TTY_OK=true
         local spin='|/-\'
         printf "  [....] %s" "${msg}" > /dev/tty
         (
@@ -424,7 +391,6 @@ im_progress_start() {
         _IM_PROGRESS_PID=$!
         disown "${_IM_PROGRESS_PID}" 2>/dev/null || true
     else
-        _IM_TTY_OK=false
         _IM_PROGRESS_PID=""
         echo "  [....] ${msg}..."
     fi
@@ -437,23 +403,23 @@ im_progress_stop() {
     elapsed=$(( now - ${_IM_PROGRESS_START_TIME:-$(date +%s)} ))
     mins=$(( elapsed / 60 ))
     secs=$(( elapsed % 60 ))
+
     if [[ -n "${_IM_PROGRESS_PID:-}" ]]; then
         kill "${_IM_PROGRESS_PID}" 2>/dev/null || true
         wait "${_IM_PROGRESS_PID}" 2>/dev/null || true
         _IM_PROGRESS_PID=""
-        printf "\r%-120s\r" " " > /dev/tty
-        printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}" > /dev/tty
+        printf "\r%-80s\r" " " > /dev/tty 2>/dev/null || true
+        printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}" > /dev/tty 2>/dev/null || \
+        printf "  [OK]  %s  (%02d:%02d)\n" "${final_msg}" "${mins}" "${secs}"
     else
         echo "  [OK]  ${final_msg}  ($(printf '%02d:%02d' ${mins} ${secs}))"
     fi
+
     _IM_PROGRESS_START_TIME=""
-    _IM_TTY_OK=false
 }
 
+# ---------------------------------------------------------------------------
 # install_env_register <bin_dir>
-#
-# Appends bin_dir to the shared env.sh (one level above tool install dir).
-# The install.sh orchestrator wires this file into ~/.bashrc once.
 # ---------------------------------------------------------------------------
 install_env_register() {
     local bin_dir="$1"
@@ -465,8 +431,8 @@ install_env_register() {
 
     if [[ ! -f "${env_file}" ]]; then
         {
-            echo "# airgap-cpp-devkit — PATH environment"
-            echo "# Auto-generated by install-mode.sh — do not edit manually."
+            echo "# airgap-cpp-devkit -- PATH environment"
+            echo "# Auto-generated by install-mode.sh -- do not edit manually."
             echo "# Source this file from ~/.bashrc to put all tools on PATH:"
             echo "#   source \"${env_file}\""
             echo ""

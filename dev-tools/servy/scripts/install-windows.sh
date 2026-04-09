@@ -8,10 +8,6 @@
 #
 # USAGE:
 #   bash install-windows.sh <install_mode> [prefix_override]
-#
-# ARGS:
-#   install_mode     "admin" or "user"
-#   prefix_override  optional custom install path
 # =============================================================================
 set -euo pipefail
 
@@ -21,7 +17,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 INSTALL_MODE="${1:-user}"
 PREFIX_OVERRIDE="${2:-}"
 VERSION="7.8"
-PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/dev-tools/servy-7.8"
+PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/dev-tools/servy"
 ARCHIVE="${PREBUILT_DIR}/servy-7.8-x64-portable.7z"
 
 # ---------------------------------------------------------------------------
