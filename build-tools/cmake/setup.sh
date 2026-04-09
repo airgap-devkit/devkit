@@ -1,42 +1,33 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# cmake/bootstrap.sh
+# build-tools/cmake/setup.sh
 #
-# PURPOSE: Install CMake 4.3.0 from vendored prebuilt binaries (default),
+# PURPOSE: Install CMake 4.3.1 from vendored prebuilt binaries (default),
 #          or build from vendored source (--build-from-source).
 #
 # USAGE:
-#   bash cmake/bootstrap.sh                    # prebuilt (default)
-#   bash cmake/bootstrap.sh --build-from-source
-#   bash cmake/bootstrap.sh --rebuild          # force re-install
-#   bash cmake/bootstrap.sh --prefix /custom/path
+#   bash build-tools/cmake/setup.sh                    # prebuilt (default)
+#   bash build-tools/cmake/setup.sh --build-from-source
+#   bash build-tools/cmake/setup.sh --rebuild          # force re-install
+#   bash build-tools/cmake/setup.sh --prefix /custom/path
 # =============================================================================
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PREBUILT_DIR="${REPO_ROOT}/prebuilt-binaries/build-tools/cmake"
-CMAKE_VERSION="4.3.0"
 
+CMAKE_VERSION="4.3.1"
 BUILD_FROM_SOURCE=false
 REBUILD=false
 PREFIX_OVERRIDE=""
 
-for arg in "$@"; do
-    case "${arg}" in
-        --build-from-source) BUILD_FROM_SOURCE=true ;;
-        --rebuild)           REBUILD=true ;;
-        --prefix)            shift; PREFIX_OVERRIDE="$1" ;;
-        *) ;;
-    esac
-done
-
-# Re-parse for --prefix since positional shift doesn't work in for loop
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --prefix) PREFIX_OVERRIDE="$2"; shift 2 ;;
+        --build-from-source) BUILD_FROM_SOURCE=true; shift ;;
+        --rebuild)           REBUILD=true; shift ;;
+        --prefix)            PREFIX_OVERRIDE="$2"; shift 2 ;;
         *) shift ;;
     esac
 done
@@ -55,6 +46,9 @@ esac
 CMAKE_BIN="${INSTALL_BIN_DIR}/cmake"
 [[ "${PLATFORM}" == "windows" ]] && CMAKE_BIN="${INSTALL_BIN_DIR}/cmake.exe"
 
+# ---------------------------------------------------------------------------
+# Already installed check
+# ---------------------------------------------------------------------------
 if [[ -f "${CMAKE_BIN}" ]] && [[ "${REBUILD}" == "false" ]]; then
     INSTALLED_VER=$("${CMAKE_BIN}" --version 2>/dev/null | head -1 | awk '{print $3}' || echo "unknown")
     echo "[INFO] CMake already installed at ${CMAKE_BIN} (${INSTALLED_VER})"
@@ -69,6 +63,9 @@ if [[ ! -d "${PREBUILT_DIR}" ]]; then
     exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# SHA256 helper
+# ---------------------------------------------------------------------------
 _verify_sha256() {
     local file="$1" expected="$2"
     if [[ ! -f "${file}" ]]; then
@@ -85,6 +82,9 @@ _verify_sha256() {
     echo "[OK]   SHA256 verified: $(basename "${file}")"
 }
 
+# ---------------------------------------------------------------------------
+# Zip extractor helper
+# ---------------------------------------------------------------------------
 _extract_zip() {
     local zip_file="$1" dest_dir="$2"
     mkdir -p "${dest_dir}"
@@ -99,26 +99,22 @@ _extract_zip() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Prebuilt install
+# ---------------------------------------------------------------------------
 if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
 
     WORK_DIR="$(mktemp -d)"
     trap 'rm -rf "${WORK_DIR}"' EXIT
 
     if [[ "${PLATFORM}" == "linux" ]]; then
-        PART_AA="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz.part-aa"
-        PART_AB="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz.part-ab"
-        ASSEMBLED="${WORK_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz"
+        ARCHIVE="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz"
 
-        echo "[INFO] Verifying parts..."
-        _verify_sha256 "${PART_AA}" "57d532fe7e398e16c16b07a01313a74cf71b03b9ddb39493f337e3598d7838e5"
-        _verify_sha256 "${PART_AB}" "0fe83ca763e44f555794cce952c7a6bc7484841a8ecff4de23a43f2e863dd738"
-
-        im_progress_start "Reassembling archive"
-        cat "${PART_AA}" "${PART_AB}" > "${ASSEMBLED}"
-        im_progress_stop "Archive reassembled"
+        echo "[INFO] Verifying archive..."
+        _verify_sha256 "${ARCHIVE}" "208d76804009cbe8ec9aea0aa052c857c6e59bd289b43b9941c99324dc78b1d8"
 
         im_progress_start "Extracting cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz"
-        tar -xzf "${ASSEMBLED}" -C "${WORK_DIR}"
+        tar -xzf "${ARCHIVE}" -C "${WORK_DIR}"
         im_progress_stop "Extraction complete"
 
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-linux-x86_64"
@@ -129,23 +125,17 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
         im_progress_stop "Installation complete"
 
     elif [[ "${PLATFORM}" == "windows" ]]; then
-        PART_AA="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64.zip.part-aa"
-        PART_AB="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64.zip.part-ab"
-        ASSEMBLED="${WORK_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64.zip"
+        ARCHIVE="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64.zip"
 
-        echo "[INFO] Verifying parts..."
-        _verify_sha256 "${PART_AA}" "4ac8f0d10b7d771e28fa5ecba9f5683756b6327ebfdbd66c552f430c3655ba59"
-        _verify_sha256 "${PART_AB}" "bf4abc210d2c83ce6542de3158cbd8239e09c24605718095b68d1f1c1094a113"
-
-        im_progress_start "Reassembling archive"
-        cat "${PART_AA}" "${PART_AB}" > "${ASSEMBLED}"
-        im_progress_stop "Archive reassembled"
+        echo "[INFO] Verifying archive..."
+        _verify_sha256 "${ARCHIVE}" "03a610be931546474e46a442d171ef10532f4fc847de9cf76b7a8065bbef6a23"
 
         im_progress_start "Extracting cmake-${CMAKE_VERSION}-windows-x86_64.zip"
-        _extract_zip "${ASSEMBLED}" "${WORK_DIR}"
+        _extract_zip "${ARCHIVE}" "${WORK_DIR}"
         im_progress_stop "Extraction complete"
 
         EXTRACTED_DIR="${WORK_DIR}/cmake-${CMAKE_VERSION}-windows-x86_64"
+
         if [[ ! -d "${EXTRACTED_DIR}" ]]; then
             echo "[ERROR] Expected extracted directory not found: ${EXTRACTED_DIR}"
             ls "${WORK_DIR}"
@@ -160,11 +150,14 @@ if [[ "${BUILD_FROM_SOURCE}" == "false" ]]; then
 
     BUILD_TYPE="prebuilt"
 
+# ---------------------------------------------------------------------------
+# Source build
+# ---------------------------------------------------------------------------
 else
-
     SOURCE_TARBALL="${PREBUILT_DIR}/cmake-${CMAKE_VERSION}.tar.gz"
+
     echo "[INFO] Verifying source tarball..."
-    _verify_sha256 "${SOURCE_TARBALL}" "f51b3c729f85d8dde46a92c071d2826ea6afb77d850f46894125de7cc51baa77"
+    _verify_sha256 "${SOURCE_TARBALL}" "0798f4be7a1a406a419ac32db90c2956936fecbf50db3057d7af47d69a2d7edb"
 
     if ! command -v g++ &>/dev/null && ! command -v c++ &>/dev/null; then
         echo "[ERROR] No C++ compiler found."
@@ -204,23 +197,24 @@ else
     BUILD_TYPE="source"
 fi
 
+# ---------------------------------------------------------------------------
+# Verify
+# ---------------------------------------------------------------------------
 echo ""
 echo "[INFO] Verifying installation..."
+
 if ! "${CMAKE_BIN}" --version &>/dev/null; then
     echo "[ERROR] cmake binary not functional after install."
     exit 1
 fi
+
 INSTALLED_VER=$("${CMAKE_BIN}" --version | head -1 | awk '{print $3}')
 
-install_receipt_write "success" \
-    "cmake:${CMAKE_BIN}"
-
+install_receipt_write "success" "cmake:${CMAKE_BIN}"
 echo "Build type   : ${BUILD_TYPE}" >> "${INSTALL_RECEIPT}"
 
 install_env_register "${INSTALL_BIN_DIR}"
-
-install_mode_print_footer "success" \
-    "cmake:${CMAKE_BIN}"
+install_mode_print_footer "success" "cmake:${CMAKE_BIN}"
 
 echo "  cmake ${INSTALLED_VER} installed successfully."
 echo ""

@@ -10,11 +10,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/7zip"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
+VENDOR_DIR="${REPO_ROOT}/prebuilt-binaries/dev-tools/7zip"
 
 OS="linux"
 case "$(uname -s)" in
@@ -29,7 +26,7 @@ verify_file() {
   local label="$3"
 
   if [[ ! -f "${filepath}" ]]; then
-    echo -e "  ${RED}MISSING${NC}  ${label}"
+    echo "  MISSING  ${label}"
     echo "           Expected at: ${filepath}" >&2
     fail=1
     return
@@ -39,9 +36,9 @@ verify_file() {
   actual="$(sha256sum "${filepath}" | awk '{print $1}')"
 
   if [[ "${actual}" == "${expected}" ]]; then
-    echo -e "  ${GREEN}OK${NC}       ${label}"
+    echo "  OK       ${label}"
   else
-    echo -e "  ${RED}MISMATCH${NC} ${label}"
+    echo "  MISMATCH ${label}"
     echo "           Expected : ${expected}" >&2
     echo "           Got      : ${actual}" >&2
     fail=1
@@ -56,7 +53,6 @@ if [[ "${OS}" == "windows" ]]; then
     "${VENDOR_DIR}/7z2600-x64.exe" \
     "6fe18d5b3080e39678cabfa6cef12cfb25086377389b803a36a3c43236a8a82c" \
     "7z2600-x64.exe (Windows installer)"
-
   verify_file \
     "${VENDOR_DIR}/7z2600-extra.7z" \
     "1cc38a9e3777ce0e4bbf84475672888a581d400633b0448fd973a7a6aa56cfdc" \
@@ -69,9 +65,10 @@ else
 fi
 
 echo ""
+
 if [[ "${fail}" -ne 0 ]]; then
   echo "ERROR: One or more vendor assets failed verification." >&2
-  echo "       Re-download the missing/corrupt files into dev-tools/7zip/vendor/" >&2
+  echo "       Expected files in: prebuilt-binaries/dev-tools/7zip/" >&2
   exit 1
 fi
 
