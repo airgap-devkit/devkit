@@ -15,13 +15,35 @@ Tools install to system-wide or per-user paths depending on available privileges
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
+bash launch.sh
+```
+
+`launch.sh` is the single entry point. It finds Python on your machine,
+launches the **DevKit Manager** web UI at `http://127.0.0.1:8080`, and opens
+it in your default browser automatically.
+
+### What to do once the browser opens
+
+1. Review the **dashboard** — each tool shows installed / not-installed status.
+2. Pick a **profile** to install a curated set in one click:
+   - **C++ Developer** — clang, cmake, python, conan, VS Code extensions, sqlite, 7zip
+   - **DevOps** — cmake, python, conan, sqlite, 7zip
+   - **Minimal** — required tools only (clang, cmake, python, style-formatter)
+   - **Full** — everything
+3. Or click **Install** on individual tools as needed.
+4. Watch the live output stream in the terminal panel on the right.
+
+### No Python? Use the CLI fallback
+
+`launch.sh` detects missing Python automatically and offers to fall back.
+You can also force it directly:
+
+```bash
 bash install.sh
 ```
 
-`install.sh` is the single entry point. It detects your platform, asks which
-optional tools to include, asks where to install, and runs everything in the
-correct order. Required tools are installed automatically; optional tools are
-prompted interactively.
+`install.sh` is a fully interactive wizard — same tools, same profiles,
+no browser required. See [CLI Installer](#cli-installer) below.
 
 ---
 
@@ -36,12 +58,13 @@ No compiler, no Visual Studio, no CMake required for most tools.
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
-bash install.sh
+bash launch.sh          # preferred: opens DevKit Manager in browser
+# or: bash install.sh   # CLI fallback
 ```
 
-`install.sh` will detect the submodule and use prebuilt binaries automatically.
-For toolchains that need source builds (e.g. clang on Linux), the script handles
-those steps transparently.
+The launcher (and `install.sh`) detect the submodule and use prebuilt
+binaries automatically. For toolchains that need source builds (e.g. clang
+on Linux), the scripts handle those steps transparently.
 
 ### Worst Case -- Binaries not permitted, source only
 
@@ -51,11 +74,12 @@ If your network prohibits pre-compiled binaries, skip the submodule entirely.
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
-bash install.sh
+bash launch.sh          # preferred: opens DevKit Manager in browser
+# or: bash install.sh   # CLI fallback
 ```
 
-`install.sh` detects that the submodule is absent and falls back to building
-all tools from vendored source archives automatically.
+Both the DevKit Manager and `install.sh` detect that the submodule is absent
+and fall back to building all tools from vendored source archives automatically.
 
 ---
 
@@ -87,6 +111,7 @@ To install system-wide on Windows, right-click Git Bash and select
 | [`toolchains/clang/source-build/`](toolchains/clang/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
 | [`build-tools/cmake/`](build-tools/cmake/README.md) | CMake 4.3.1 -- build from source or install pre-built; RHEL 8 + Windows | No |
 | [`dev-tools/git-bundle/`](dev-tools/git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
+| [`dev-tools/devkit-ui/`](dev-tools/devkit-ui/README.md) | Web-based package manager GUI for installing and managing devkit tools (FastAPI + HTMX) | No |
 | [`build-tools/lcov/`](build-tools/lcov/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
 | [`languages/python/`](languages/python/README.md) | Portable Python 3.14.4 interpreter -- Windows embeddable + Linux standalone | No |
 | [`languages/dotnet/`](languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.201 -- Windows + Linux, no installer required | No |
@@ -151,6 +176,21 @@ Two paths are available: install from prebuilt in seconds using
 using `setup.ps1` (~40 minutes, MSVC required). Both paths produce an
 identical install layout. A HelloWorld demo (greeter server + client) is
 built and launched automatically to verify the installation end-to-end.
+
+**`dev-tools/devkit-ui/`** is the preferred way to install and manage devkit tools.
+Started automatically by `bash launch.sh`. Provides a visual dashboard of all tools
+with installed/not-installed status, one-click install and rebuild per tool,
+profile-based batch installs, and a log browser with inline viewer.
+Requires Python 3.8+ (system Python). Dependencies (FastAPI, uvicorn, HTMX) are
+auto-installed on first launch; in air-gapped environments pre-download wheels to
+`dev-tools/devkit-ui/vendor/` and the launcher uses them automatically.
+
+```bash
+bash launch.sh                     # preferred: auto-finds Python, opens UI
+bash launch.sh --port 9090         # custom port
+bash launch.sh --no-browser        # server only, no auto-open
+bash launch.sh --cli               # skip UI, use install.sh instead
+```
 
 **`build-tools/lcov/`** provides code coverage reporting for C++ projects
 compiled with GCC's `-fprofile-arcs -ftest-coverage` flags. Vendors lcov
@@ -254,28 +294,54 @@ cd airgap-cpp-devkit
 # Base case -- initialize prebuilt-binaries submodule (if binaries are permitted)
 bash scripts/setup-prebuilt-submodule.sh
 
-# Run the full installer
-bash install.sh
+# Launch DevKit Manager (preferred)
+bash launch.sh
 ```
 
 ### Prerequisites
 
 | Platform | Requirements |
 |----------|-------------|
-| Windows 11 | Git Bash (MINGW64) |
-| RHEL 8 | Bash 4.x |
+| Windows 11 | Git Bash (MINGW64), Python 3.8+ |
+| RHEL 8 | Bash 4.x, Python 3.8+ |
+
+Python is required for the DevKit Manager. It is pre-installed on all supported
+platforms. The CLI fallback (`install.sh`) requires only Bash.
 
 No compiler, no Visual Studio, no CMake required for the standard install.
 See each tool's README for source-build prerequisites.
 
 ### Install methods
 
-**Method 1 -- Full install via install.sh (recommended)**
+**Preferred -- DevKit Manager (web UI)**
+```bash
+bash launch.sh
+```
+Detects Python, starts a local server, opens `http://127.0.0.1:8080` in your
+browser. Use the profile buttons for one-click batch installs, or install tools
+individually. Live output streams to the terminal. Fallback to `install.sh`
+if Python is unavailable.
+
+```bash
+bash launch.sh --port 9090        # custom port
+bash launch.sh --host 0.0.0.0     # LAN / remote access
+bash launch.sh --no-browser       # headless mode
+bash launch.sh --cli              # force CLI installer
+```
+
+---
+
+**CLI Installer**
+
+All methods below are also accessible from the DevKit Manager UI.
+Use these for scripting, CI, or when Python is unavailable.
+
+**Method 1 -- Full install via install.sh**
 ```bash
 bash install.sh
 ```
 Interactive wizard. Detects platform, prompts for optional tools, installs
-everything in the correct order. Run this first.
+everything in the correct order.
 
 **Method 2 -- pip/venv for clang-format only (~5 seconds)**
 ```bash
@@ -422,7 +488,8 @@ airgap-cpp-devkit/
 +-- README.md                              <- you are here
 +-- TOOLS.md                               <- single-page tool inventory
 +-- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
-+-- install.sh                             <- top-level orchestrator (start here)
++-- launch.sh                              <- PRIMARY entry point (devkit-ui or CLI fallback)
++-- install.sh                             <- CLI installer / fallback (no Python required)
 +-- uninstall.sh                           <- removes all installed tools
 +-- .gitmodules                            <- prebuilt-binaries submodule pointer
 |
@@ -454,6 +521,7 @@ airgap-cpp-devkit/
 |   +-- servy/                             <- Servy 7.8 scripts + manifests
 |   +-- conan/                             <- Conan 2.27.0 scripts + manifests
 |   +-- vscode-extensions/                 <- offline VS Code extensions
+|   +-- devkit-ui/                         <- web-based package manager (FastAPI + HTMX)
 |
 +-- frameworks/
 |   +-- grpc/                              <- gRPC v1.78.1 (Windows)
