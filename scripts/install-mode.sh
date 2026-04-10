@@ -174,7 +174,8 @@ install_mode_init() {
 
     mkdir -p "${log_base}" 2>/dev/null || true
     export INSTALL_LOG_DIR="${log_base}"
-    export INSTALL_LOG_FILE="${log_base}/${tool_name}/${tool_name}-${timestamp}.log"
+    local log_tool_dir="${tool_name////-}"
+    export INSTALL_LOG_FILE="${log_base}/${log_tool_dir}/${log_tool_dir}-${timestamp}.log"
     mkdir -p "$(dirname "${INSTALL_LOG_FILE}")" 2>/dev/null || true
     export INSTALL_RECEIPT="${INSTALL_PREFIX}/INSTALL_RECEIPT.txt"
 
