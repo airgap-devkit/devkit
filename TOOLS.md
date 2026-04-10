@@ -66,6 +66,8 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **Servy** | 7.8 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
 | **Conan** | 2.27.0 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
+| **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `dev-tools/sqlite/` |
+| **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `dev-tools/matlab/` |
 | **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `dev-tools/git-bundle/` |
 | **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes (via pip wheel) | `toolchains/clang/style-formatter/` |
 
@@ -86,19 +88,59 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 All packages are vendored as `.whl` files in `languages/python/pip-packages/`
 and installed offline by `languages/python/setup.sh`. No internet access required.
+Platform-specific wheels are provided for both Windows (win_amd64) and Linux (manylinux).
+
+### Core packages
 
 | Package | Version | License | Purpose |
 |---------|---------|---------|---------|
 | **numpy** | 2.4.4 | BSD-3-Clause | Numerical computing -- arrays, linear algebra, FFT |
 | **pandas** | 3.0.2 | BSD-3-Clause | Data analysis -- DataFrames, CSV/Excel/SQL I/O |
-| **plotly** | 6.6.0 | MIT | Interactive visualizations -- charts, dashboards |
+| **scipy** | 1.17.1 (Win) / 1.16.3 (Linux) | BSD-3-Clause | Scientific computing -- stats, signal processing |
+| **scikit-learn** | 1.8.0 | BSD-3-Clause | Machine learning |
+| **matplotlib** | 3.10.8 | PSF | Plotting -- charts, figures |
+| **plotly** | 6.7.0 | MIT | Interactive visualizations -- charts, dashboards |
+| **pillow** | 12.2.0 | HPND | Image processing |
 | **streamlit** | 1.56.0 | Apache-2.0 | Data app framework -- web UIs in pure Python |
-| **requests** | 2.32.3 | Apache-2.0 | HTTP client -- REST APIs, file downloads |
-| **PyYAML** | 6.0.2 | MIT | YAML parsing -- config files, CI definitions |
-| **Jinja2** | 3.1.5 | BSD-3-Clause | Templating -- used by Conan, CMake, code gen tools |
-| **click** | 8.1.8 | BSD-3-Clause | CLI framework -- write devkit helper scripts |
-| **rich** | 14.0.0 | MIT | Terminal output -- colored tables, progress bars |
-| **pytest** | 8.3.5 | MIT | Test runner -- for Python scripts in the devkit |
+| **sqlalchemy** | 2.0.49 | MIT | Database ORM -- SQL abstraction layer |
+| **requests** | 2.33.1 | Apache-2.0 | HTTP client -- REST APIs, file downloads |
+| **PyYAML** | 6.0.3 | MIT | YAML parsing -- config files, CI definitions |
+| **pydantic** | 2.12.5 | MIT | Data validation -- type-safe models |
+| **openpyxl** | 3.1.5 | MIT | Excel I/O -- read/write .xlsx files |
+| **Jinja2** | 3.1.6 | BSD-3-Clause | Templating -- used by Conan, CMake, code gen tools |
+| **python-dotenv** | 1.2.2 | BSD-3-Clause | .env file loading |
+| **click** | 8.3.2 | BSD-3-Clause | CLI framework -- write devkit helper scripts |
+| **rich** | 14.3.3 | MIT | Terminal output -- colored tables, progress bars |
+| **loguru** | 0.7.3 | MIT | Logging -- drop-in replacement for stdlib logging |
+| **win32-setctime** | 1.2.0 | MIT | Windows file creation time (loguru dep, Windows only) |
+| **pytest** | 9.0.3 | MIT | Test runner -- for Python scripts in the devkit |
+
+### Transitive dependencies (auto-installed)
+
+altair, annotated-types, attrs, blinker, cachetools, certifi, charset-normalizer,
+colorama, contourpy, cycler, et-xmlfile, fonttools, gitdb, gitpython, greenlet,
+idna, iniconfig, joblib, jsonschema, jsonschema-specifications, kiwisolver,
+markdown-it-py, markupsafe, mdurl, narwhals, packaging, pluggy, protobuf, pyarrow,
+pydantic-core, pydeck, pygments, pyparsing, python-dateutil, referencing, rpds-py,
+six, smmap, tenacity, threadpoolctl, toml, tornado, typing-extensions,
+typing-inspection, tzdata, urllib3, watchdog
+
+---
+
+## SQLite Notes
+
+On **Windows** and modern Linux: prebuilt CLI binary from sqlite.org (version 3.53.0).
+On **RHEL 8**: system RPM (sqlite-3.26.0) installed via `rpm -i` — the sqlite.org
+prebuilt requires GLIBC 2.29+ which RHEL 8 does not provide (ships GLIBC 2.28).
+
+---
+
+## MATLAB Notes
+
+`dev-tools/matlab/` provides **verification only** — it checks that MATLAB is
+installed and that required toolboxes (Database Toolbox, MATLAB Compiler) are
+licensed. It does not install MATLAB. If MATLAB is not installed the script exits
+cleanly with a skip message.
 
 ---
 
@@ -123,11 +165,13 @@ All .zip archives use deflate level 9 compression.
 | gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
 | CMake 4.3.1 Linux (.tar.gz) | 61MB | 1 | -- single file |
 | CMake 4.3.1 Windows (.zip) | 51MB | 1 | -- single file |
-| CMake 4.3.1 source (.tar.gz) | 13MB | 1 | -- single file |
 | Servy 7.8 Windows (.7z) | 80MB | 1 | -- single file |
 | Conan 2.27.0 Windows (.zip) | 15MB | 1 | -- single file |
 | Conan 2.27.0 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
+| SQLite 3.53.0 Windows CLI (.zip) | 6.2MB | 1 | -- single file |
+| SQLite 3.53.0 Linux CLI (.zip) | 4.1MB | 1 | -- single file |
+| SQLite 3.26.0 RHEL 8 (.rpm) | 668KB | 1 | -- single file |
 | 7-Zip 26.00 Windows installer (.exe) | 1.6MB | 1 | -- single file |
 | 7-Zip 26.00 Windows extra (.7z) | 1.6MB | 1 | -- single file |
 | 7-Zip 26.00 Linux (.tar.xz) | 1.5MB | 1 | -- single file |
@@ -152,47 +196,57 @@ All .zip archives use deflate level 9 compression.
 | Servy 7.8 | Yes | - | Windows only, graceful no-op on Linux |
 | Conan 2.27.0 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
+| SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
+| MATLAB verification | Yes | Yes | Checks existing install only |
 | git-bundle tool | Yes | Yes | Pure Python, no deps |
 | LLVM style formatter | Yes | Yes | Git pre-commit hook |
 | lcov 2.4 | - | Yes | Linux/RHEL 8 only |
 
 ---
 
+## Install Profiles
+
+Use `--profile <name>` with `install.sh` to pre-select tools without prompts:
+
+| Profile | Tools selected |
+|---------|---------------|
+| `cpp-dev` | conan, vscode-extensions, sqlite, 7zip |
+| `devops` | conan, sqlite, 7zip |
+| `minimal` | required tools only (clang, cmake, python, style-formatter) |
+| `full` | all optional tools |
+
+```bash
+# Non-interactive install for C++ developers
+bash install.sh --yes --profile cpp-dev
+
+# Non-interactive minimal install
+bash install.sh --yes --profile minimal
+```
+
+---
+
 ## Quick Install Reference
 
 ```bash
-# Formatter + style enforcement (fastest, ~5 seconds)
-bash toolchains/clang/style-formatter/setup.sh
+# Full interactive install (recommended for first-time setup)
+bash install.sh
 
-# clang-format + clang-tidy prebuilt
-bash toolchains/clang/source-build/setup.sh
+# Non-interactive with profile
+bash install.sh --yes --profile cpp-dev
 
-# CMake 4.3.1
-bash build-tools/cmake/setup.sh
-
-# Python 3.14.4 + vendored pip packages
-bash languages/python/setup.sh
-
-# Conan 2.27.0
-bash dev-tools/conan/setup.sh
-
-# GCC 15.2.0 for Windows
-bash toolchains/gcc/windows/setup.sh
-
-# 7-Zip 26.00
-bash dev-tools/7zip/setup.sh
-
-# Servy 7.8 (Windows only)
-bash dev-tools/servy/setup.sh
-
-# gRPC 1.78.1 - prebuilt (Developer PowerShell)
-cd frameworks\grpc && .\install-prebuilt.ps1 -version 1.78.1
-
-# gRPC 1.78.1 - source build (~40 min, Developer PowerShell)
-cd frameworks\grpc && .\setup.ps1 -version 1.78.1
-
-# lcov 2.4 (Linux/RHEL 8 only)
-bash build-tools/lcov/setup.sh
+# Individual tool installs
+bash toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
+bash toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
+bash build-tools/cmake/setup.sh                # CMake 4.3.1
+bash build-tools/lcov/setup.sh                 # lcov 2.4 (Linux only)
+bash languages/python/setup.sh                 # Python 3.14.4 + pip packages
+bash dev-tools/conan/setup.sh                  # Conan 2.27.0
+bash dev-tools/7zip/setup.sh                   # 7-Zip 26.00
+bash dev-tools/servy/setup.sh                  # Servy 7.8 (Windows only)
+bash dev-tools/sqlite/setup.sh                 # SQLite CLI
+bash dev-tools/matlab/setup.sh                 # MATLAB verification
+bash dev-tools/vscode-extensions/setup.sh      # VS Code extensions
+bash toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows only)
 ```
 
 ---
