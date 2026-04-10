@@ -50,7 +50,7 @@ mkdir -p "${INSTALL_DIR}"
 if command -v 7z &>/dev/null; then
   7z x "${ARCHIVE}" -o"${INSTALL_DIR}" -y > /dev/null
 elif command -v unzip &>/dev/null; then
-  unzip -q "${ARCHIVE}" -d "${INSTALL_DIR}"
+  unzip -q -o "${ARCHIVE}" -d "${INSTALL_DIR}"
 else
   echo "ERROR: Need 7z or unzip. Install dev-tools/7zip first." >&2
   exit 1

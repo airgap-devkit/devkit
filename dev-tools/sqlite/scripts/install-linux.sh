@@ -106,7 +106,7 @@ else
   trap 'rm -rf "${TMPDIR}"' EXIT
 
   if command -v unzip &>/dev/null; then
-    unzip -q "${ARCHIVE}" -d "${TMPDIR}"
+    unzip -q -o "${ARCHIVE}" -d "${TMPDIR}"
   else
     echo "ERROR: unzip not found. Install it with: sudo dnf install unzip" >&2
     exit 1
