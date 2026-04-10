@@ -251,9 +251,22 @@ _install_pip_packages() {
 
     printf "  [....] %-22s" "${pkg_name}"
 
-    # streamlit on Linux: watchdog has no Linux wheel but is optional (hot-reload only)
-    # Install with --no-deps then pip resolves remaining deps from find-links
+    # streamlit on Linux: watchdog has no Linux wheel (hot-reload only, not required)
+    # Install streamlit + all its deps except watchdog explicitly
     if [[ "${pkg_name}" == "streamlit" && "${OS}" == "linux" ]]; then
+      local streamlit_deps=(
+        "altair" "blinker" "cachetools" "click" "gitpython"
+        "Jinja2" "numpy" "packaging" "pandas" "pillow"
+        "plotly" "protobuf" "pyarrow" "pydeck" "requests"
+        "rich" "tenacity" "toml" "tornado" "typing-extensions"
+      )
+      local sdep_ok=true
+      for sdep in "${streamlit_deps[@]}"; do
+        "${python_bin}" -m pip install \
+            --quiet --no-index \
+            --find-links="${PIP_PKG_DIR}" \
+            "${sdep}" 2>/dev/null || true
+      done
       if "${python_bin}" -m pip install \
           --quiet --no-index \
           --find-links="${PIP_PKG_DIR}" \
