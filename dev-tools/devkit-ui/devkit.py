@@ -43,7 +43,13 @@ OS = _os()
 # ---------------------------------------------------------------------------
 def _pip_install(packages: list, python_bin: str):
     print("[devkit] Installing dependencies...")
-    base_cmd = [python_bin, "-m", "pip", "install", "--quiet", "--no-warn-script-location"] + packages
+    pip_flags = [
+        "--quiet",
+        "--no-warn-script-location",
+        "--disable-pip-version-check",
+        "--root-user-action=ignore",
+    ]
+    base_cmd = [python_bin, "-m", "pip", "install"] + pip_flags + packages
     # Try local vendor dir first (air-gap)
     vendor_dir = LAUNCHER_DIR / "vendor"
     if vendor_dir.exists():
@@ -53,7 +59,7 @@ def _pip_install(packages: list, python_bin: str):
     result = subprocess.run(cmd)
     if result.returncode != 0:
         # Retry without no-index (network available)
-        cmd2 = [python_bin, "-m", "pip", "install", "--quiet", "--no-warn-script-location"] + packages
+        cmd2 = [python_bin, "-m", "pip", "install"] + pip_flags + packages
         subprocess.run(cmd2, check=True)
 
 
@@ -65,7 +71,6 @@ def _ensure_deps():
         return sys.executable
     except ImportError:
         pass
-    print("[devkit] Installing dependencies...")
     _pip_install(REQUIREMENTS, sys.executable)
     return sys.executable
 
