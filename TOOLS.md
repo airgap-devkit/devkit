@@ -69,7 +69,30 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `dev-tools/sqlite/` |
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `dev-tools/matlab/` |
 | **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `dev-tools/git-bundle/` |
+| **devkit-ui** | - | Windows + Linux | - (Python web app) | `dev-tools/devkit-ui/` |
 | **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes (via pip wheel) | `toolchains/clang/style-formatter/` |
+
+---
+
+## DevKit UI Notes
+
+`dev-tools/devkit-ui/` is the **preferred** way to install and manage devkit tools.
+The root-level `launch.sh` script finds Python automatically and starts it — no manual
+setup required. On first run it bootstraps its own Python dependencies (FastAPI,
+uvicorn, jinja2, aiofiles) then opens `http://127.0.0.1:8080` in your browser.
+
+**Entry point:** `bash launch.sh` (not `python devkit.py` directly).
+
+**Features:** dashboard grid showing installed/not-installed status per tool, one-click
+Install / Rebuild, profile-based batch installs (cpp-dev / devops / minimal / full),
+and an inline log browser.
+
+**Fallback:** if Python 3.8+ is not on PATH, `launch.sh` automatically falls back to
+`install.sh`. Force the fallback at any time with `bash launch.sh --cli`.
+
+**Air-gap:** pre-download wheels to `dev-tools/devkit-ui/vendor/` and the launcher
+uses them instead of PyPI. All other devkit tools remain fully CLI-installable via
+`install.sh` regardless of whether devkit-ui is used.
 
 ---
 
@@ -200,6 +223,7 @@ All .zip archives use deflate level 9 compression.
 | MATLAB verification | Yes | Yes | Checks existing install only |
 | git-bundle tool | Yes | Yes | Pure Python, no deps |
 | LLVM style formatter | Yes | Yes | Git pre-commit hook |
+| devkit-ui | Yes | Yes | Python 3.8+, auto-installs FastAPI + uvicorn |
 | lcov 2.4 | - | Yes | Linux/RHEL 8 only |
 
 ---
@@ -228,13 +252,18 @@ bash install.sh --yes --profile minimal
 ## Quick Install Reference
 
 ```bash
-# Full interactive install (recommended for first-time setup)
-bash install.sh
+# PREFERRED: launch the DevKit Manager web UI
+bash launch.sh                                  # opens http://127.0.0.1:8080
+bash launch.sh --port 9090                      # custom port
+bash launch.sh --host 0.0.0.0                   # LAN / remote access
+bash launch.sh --no-browser                     # server only
+bash launch.sh --cli                            # force CLI installer (install.sh)
 
-# Non-interactive with profile
-bash install.sh --yes --profile cpp-dev
+# CLI fallback (no Python required)
+bash install.sh                                 # full interactive wizard
+bash install.sh --yes --profile cpp-dev         # non-interactive with profile
 
-# Individual tool installs
+# Individual tool installs (also available from the web UI)
 bash toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
 bash toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
 bash build-tools/cmake/setup.sh                # CMake 4.3.1

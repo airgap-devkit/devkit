@@ -119,6 +119,14 @@
         "algorithm": "SHA1",
         "checksumValue": "23e8a6345c133e4b4f08cb9c6a54529a39872d0b"
       }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-devkit-ui",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/dev-tools/devkit-ui/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
     }
   ],
   "packages": [
@@ -292,6 +300,19 @@
       "comment": "Optional subproject. Conan 2.27.0 C/C++ package manager. Self-contained executables for Windows x64 and Linux x86_64 -- no Python required. Both files under 100MB -- no split required. See DocumentRef-dev-tools-conan for full component SBOM."
     },
     {
+      "SPDXID": "SPDXRef-subproject-dev-tools-devkit-ui",
+      "name": "dev-tools/devkit-ui",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Optional subproject. Web-based package manager GUI for airgap-cpp-devkit. Built with FastAPI + HTMX. Launch with: python dev-tools/devkit-ui/devkit.py. Provides a dashboard of all tools with install status, one-click install/rebuild, profile-based batch installs, and a log browser. Python 3.8+ required. Dependencies (fastapi>=0.110.0, uvicorn>=0.27.0, python-multipart, jinja2, aiofiles) are auto-installed on first launch; pre-download to vendor/ for air-gapped use. HTMX (~14KB) is vendored in app/static/. See DocumentRef-dev-tools-devkit-ui for full component SBOM."
+    },
+    {
       "SPDXID": "SPDXRef-subproject-python-pip-packages",
       "name": "languages/python/pip-packages",
       "versionInfo": "2026-04-08",
@@ -374,6 +395,11 @@
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-subproject-dev-tools-devkit-ui"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-subproject-python-pip-packages"
     },
     {
@@ -435,6 +461,11 @@
       "spdxElementId": "SPDXRef-subproject-dev-tools-conan",
       "relationshipType": "DESCRIBED_BY",
       "relatedSpdxElement": "DocumentRef-dev-tools-conan:SPDXRef-conan-subproject"
+    },
+    {
+      "spdxElementId": "SPDXRef-subproject-dev-tools-devkit-ui",
+      "relationshipType": "DESCRIBED_BY",
+      "relatedSpdxElement": "DocumentRef-dev-tools-devkit-ui:SPDXRef-devkit-ui-subproject"
     },
     {
       "spdxElementId": "SPDXRef-subproject-python-pip-packages",

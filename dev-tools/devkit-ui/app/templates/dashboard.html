@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevKit Manager</title>
+  <script src="/static/htmx.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --bg3: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text2: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --purple: #bc8cff;
+      --orange: #ffa657;
+      --radius: 8px;
+      --font: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      padding: 0 16px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .sidebar-logo h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+    .sidebar-logo .version {
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+    .sidebar-logo .badge {
+      display: inline-block;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10px;
+      color: var(--accent);
+      margin-top: 6px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      cursor: pointer;
+      color: var(--text2);
+      text-decoration: none;
+      transition: all 0.1s;
+      font-size: 12px;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: var(--bg3);
+      color: var(--text);
+    }
+    .nav-item .icon { width: 16px; text-align: center; }
+    .nav-section {
+      padding: 12px 16px 4px;
+      font-size: 10px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .sidebar-stats {
+      margin: 12px 10px 0;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+      font-size: 11px;
+      color: var(--text2);
+    }
+    .stat-row .val { color: var(--text); font-weight: 600; }
+
+    /* Main content */
+    .main { padding: 24px; overflow-y: auto; }
+
+    /* Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .page-title { font-size: 18px; font-weight: 600; }
+    .page-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .header-actions { display: flex; gap: 8px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 12px;
+      transition: all 0.1s;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--bg3); border-color: var(--accent); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #0d1117; font-weight: 600; }
+    .btn-primary:hover { background: #79c0ff; border-color: #79c0ff; }
+    .btn-success { background: var(--green); border-color: var(--green); color: #0d1117; font-weight: 600; }
+    .btn-success:hover { opacity: 0.9; }
+    .btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+      margin: 6px 0;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title { font-size: 13px; font-weight: 600; }
+    .card-body { padding: 16px; }
+
+    /* Status badges */
+    .badge-installed {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(63,185,80,0.15); color: var(--green);
+      border: 1px solid rgba(63,185,80,0.3);
+      padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 600;
+    }
+    .badge-not-installed {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(139,148,158,0.1); color: var(--text2);
+      border: 1px solid var(--border);
+      padding: 2px 7px; border-radius: 20px; font-size: 10px;
+    }
+    .badge-unavailable {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(248,81,73,0.1); color: var(--red);
+      border: 1px solid rgba(248,81,73,0.3);
+      padding: 2px 7px; border-radius: 20px; font-size: 10px;
+    }
+    .badge-category {
+      background: var(--bg3); color: var(--text2);
+      border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 4px; font-size: 10px;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .dot-green { background: var(--green); }
+    .dot-gray  { background: var(--text2); }
+    .dot-red   { background: var(--red); }
+
+    /* Tool grid */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .tool-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      transition: border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--accent); }
+    .tool-card.installed { border-left: 3px solid var(--green); }
+    .tool-card.not-available { opacity: 0.5; }
+    .tool-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .tool-name { font-size: 13px; font-weight: 600; }
+    .tool-version { font-size: 10px; color: var(--text2); margin-top: 2px; }
+    .tool-desc { font-size: 11px; color: var(--text2); margin-bottom: 10px; line-height: 1.5; }
+    .tool-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .tool-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .tool-date { font-size: 10px; color: var(--text2); }
+    .tool-actions { display: flex; gap: 6px; }
+
+    /* Profiles */
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .profile-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .profile-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .profile-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .profile-desc { font-size: 11px; color: var(--text2); margin-bottom: 10px; }
+    .profile-tools { font-size: 10px; color: var(--text2); }
+    .profile-tools span {
+      display: inline-block;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin: 2px 2px 0 0;
+    }
+
+    /* Terminal / output */
+    .terminal {
+      background: #010409;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-family: var(--font);
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .terminal-line { display: block; }
+    .terminal-line.ok   { color: var(--green); }
+    .terminal-line.err  { color: var(--red); }
+    .terminal-line.info { color: var(--accent); }
+    .terminal-line.warn { color: var(--yellow); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 640px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 14px; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; color: var(--text2);
+      cursor: pointer; font-size: 18px; padding: 0 4px;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 16px; overflow-y: auto; flex: 1; }
+    .modal-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* Section headers */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* Info grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .info-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .info-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-value { font-size: 14px; font-weight: 600; margin-top: 4px; }
+    .info-value.green { color: var(--green); }
+    .info-value.accent { color: var(--accent); }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-btn {
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text2);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 11px;
+      transition: all 0.1s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88,166,255,0.1);
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 12px;
+      min-width: 240px;
+      animation: slideIn 0.2s ease;
+    }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error   { border-left: 3px solid var(--red); }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+    /* Platform tag */
+    .platform-win  { color: var(--accent); }
+    .platform-linux { color: var(--green); }
+    .platform-both { color: var(--text2); }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HTMX indicators */
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline-block; }
+    .htmx-request.htmx-indicator { display: inline-block; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1>⚙ DevKit Manager</h1>
+      <div class="version">airgap-cpp-devkit</div>
+      <div class="badge">{{ os | upper }} · {{ hostname }}</div>
+    </div>
+
+    <div class="nav-section">Navigation</div>
+    <a class="nav-item active" href="/">
+      <span class="icon">◈</span> Dashboard
+    </a>
+    <a class="nav-item" href="/logs">
+      <span class="icon">⊞</span> Logs
+    </a>
+
+    <div class="nav-section">Profiles</div>
+    {% for pid, profile in profiles.items() %}
+    <a class="nav-item" href="#" onclick="showProfileModal('{{ pid }}'); return false;">
+      <span class="icon">▷</span> {{ profile.name }}
+    </a>
+    {% endfor %}
+
+    <div class="sidebar-stats">
+      <div class="stat-row">
+        <span>Installed</span>
+        <span class="val" style="color:var(--green)">{{ installed_count }}</span>
+      </div>
+      <div class="stat-row">
+        <span>Available</span>
+        <span class="val" style="color:var(--accent)">{{ available_count }}</span>
+      </div>
+      <div class="stat-row">
+        <span>Total Tools</span>
+        <span class="val">{{ total_count }}</span>
+      </div>
+      <div class="progress-bar" style="margin-top:8px">
+        <div class="progress-bar-fill" style="width:{{ (installed_count / available_count * 100) | int if available_count > 0 else 0 }}%"></div>
+      </div>
+    </div>
+
+    <div style="padding: 16px 12px 0; font-size: 10px; color: var(--text2); line-height: 1.6;">
+      Prefix:<br>
+      <span style="color:var(--text); word-break:break-all;">{{ prefix }}</span>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Tool Dashboard</div>
+        <div class="page-subtitle">Manage your airgap-cpp-devkit installations</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="refreshAll()">↺ Refresh</button>
+        <button class="btn btn-primary" onclick="showProfileModal('cpp-dev')">▷ Install Profile</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">Installed</div>
+        <div class="info-value green">{{ installed_count }} / {{ available_count }}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Platform</div>
+        <div class="info-value accent">{{ os | upper }}</div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterTools(this, 'all')">All</button>
+      <button class="filter-btn" onclick="filterTools(this, 'installed')">Installed</button>
+      <button class="filter-btn" onclick="filterTools(this, 'not-installed')">Not Installed</button>
+      {% set cats = [] %}
+      {% for t in tools %}{% if t.category not in cats %}{% set _ = cats.append(t.category) %}{% endif %}{% endfor %}
+      {% for cat in cats %}
+      <button class="filter-btn" onclick="filterTools(this, '{{ cat }}')">{{ cat }}</button>
+      {% endfor %}
+    </div>
+
+    <!-- Tools by category -->
+    {% for category, cat_tools in categories.items() %}
+    <div class="section-header" style="margin-bottom:10px">
+      <div class="section-title">{{ category }}</div>
+      <div style="font-size:11px;color:var(--text2)">
+        {{ cat_tools | selectattr('installed') | list | length }} /
+        {{ cat_tools | selectattr('available') | list | length }} installed
+      </div>
+    </div>
+    <div class="tool-grid" style="margin-bottom:28px">
+      {% for tool in cat_tools %}
+      <div class="tool-card {% if tool.installed %}installed{% endif %} {% if not tool.available %}not-available{% endif %}"
+           data-category="{{ tool.category }}"
+           data-installed="{{ 'installed' if tool.installed else 'not-installed' }}"
+           id="tool-card-{{ tool.id | replace('/', '-') }}">
+        <div class="tool-card-header">
+          <div>
+            <div class="tool-name">{{ tool.name }}</div>
+            <div class="tool-version">v{{ tool.version }}</div>
+          </div>
+          <div>
+            {% if not tool.available %}
+              <span class="badge-unavailable">
+                <span class="dot dot-red"></span>
+                {{ tool.platform }}-only
+              </span>
+            {% elif tool.installed %}
+              <span class="badge-installed">
+                <span class="dot dot-green"></span>
+                Installed
+              </span>
+            {% else %}
+              <span class="badge-not-installed">
+                <span class="dot dot-gray"></span>
+                Not installed
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tool-desc">{{ tool.description }}</div>
+
+        <div class="tool-meta">
+          <span class="badge-category">{{ tool.category }}</span>
+          <span class="badge-category
+            {% if tool.platform == 'windows' %}platform-win
+            {% elif tool.platform == 'linux' %}platform-linux
+            {% else %}platform-both{% endif %}">
+            {% if tool.platform == 'both' %}Win + Linux
+            {% elif tool.platform == 'windows' %}Windows
+            {% else %}Linux{% endif %}
+          </span>
+          <span class="badge-category">{{ tool.estimate }}</span>
+        </div>
+
+        <div class="tool-footer">
+          <div class="tool-date">
+            {% if tool.installed and tool.receipt.date %}
+              {{ tool.receipt.date[:10] }}
+            {% elif tool.installed %}
+              Installed
+            {% else %}
+              —
+            {% endif %}
+          </div>
+          <div class="tool-actions">
+            {% if tool.available %}
+              {% if tool.installed %}
+                <button class="btn btn-sm" onclick="installTool('{{ tool.id }}', '{{ tool.name }}', true)">
+                  ↺ Rebuild
+                </button>
+              {% else %}
+                <button class="btn btn-sm btn-success" onclick="installTool('{{ tool.id }}', '{{ tool.name }}', false)">
+                  ↓ Install
+                </button>
+              {% endif %}
+              <button class="btn btn-sm" onclick="showReceipt('{{ tool.id }}', '{{ tool.name }}')">
+                ℹ
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- Profiles section -->
+    <div class="section-header">
+      <div class="section-title">Install Profiles</div>
+    </div>
+    <div class="profiles-grid">
+      {% for pid, profile in profiles.items() %}
+      <div class="profile-card" onclick="showProfileModal('{{ pid }}')">
+        <div class="profile-name">{{ profile.name }}</div>
+        <div class="profile-desc">{{ profile.description }}</div>
+        <div class="profile-tools">
+          {% for tid in profile.tools[:5] %}
+          <span>{{ tid.split('/')[-1] }}</span>
+          {% endfor %}
+          {% if profile.tools | length > 5 %}
+          <span>+{{ profile.tools | length - 5 }} more</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </main>
+</div>
+
+<!-- Install Modal -->
+<div class="modal-overlay" id="install-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="install-modal-title">Installing...</div>
+      <button class="modal-close" onclick="closeModal('install-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="terminal" id="install-output">Waiting...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="install-close-btn" onclick="closeModal('install-modal'); refreshAll()">Close & Refresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="receipt-modal-title">Tool Info</div>
+      <button class="modal-close" onclick="closeModal('receipt-modal')">×</button>
+    </div>
+    <div class="modal-body" id="receipt-modal-body">
+      <div class="terminal">Loading...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('receipt-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="profile-modal-title">Install Profile</div>
+      <button class="modal-close" onclick="closeModal('profile-modal')">×</button>
+    </div>
+    <div class="modal-body" id="profile-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('profile-modal')">Cancel</button>
+      <button class="btn btn-primary" id="profile-install-btn">▷ Install</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // Filtering
+  // ---------------------------------------------------------------------------
+  function filterTools(btn, filter) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tool-card').forEach(card => {
+      let show = false;
+      if (filter === 'all') show = true;
+      else if (filter === 'installed') show = card.dataset.installed === 'installed';
+      else if (filter === 'not-installed') show = card.dataset.installed === 'not-installed';
+      else show = card.dataset.category === filter;
+      card.style.display = show ? '' : 'none';
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Modal helpers
+  // ---------------------------------------------------------------------------
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Install tool
+  // ---------------------------------------------------------------------------
+  function installTool(toolId, toolName, rebuild) {
+    document.getElementById('install-modal-title').textContent = (rebuild ? 'Rebuilding: ' : 'Installing: ') + toolName;
+    const output = document.getElementById('install-output');
+    output.textContent = '';
+    openModal('install-modal');
+
+    const url = `/install/${toolId}${rebuild ? '?rebuild=true' : ''}`;
+    const evtSource = new EventSource(url);
+
+    evtSource.onmessage = function(e) {
+      const line = e.data;
+      if (line.startsWith('DONE:')) {
+        evtSource.close();
+        const success = line === 'DONE:success';
+        showToast(success ? '✓ ' + toolName + ' installed' : '✗ ' + toolName + ' failed', success ? 'success' : 'error');
+        return;
+      }
+      const span = document.createElement('span');
+      span.className = 'terminal-line';
+      if (line.includes('[OK]') || line.includes('SUCCESS') || line.startsWith('✓')) span.classList.add('ok');
+      else if (line.includes('[!!]') || line.includes('ERROR') || line.includes('FAIL') || line.startsWith('✗')) span.classList.add('err');
+      else if (line.includes('[--]') || line.includes('Skipped') || line.includes('SKIP')) span.classList.add('warn');
+      else if (line.includes('[install-mode]') || line.includes('Logging')) span.classList.add('info');
+      span.textContent = line;
+      output.appendChild(span);
+      output.appendChild(document.createTextNode('\n'));
+      output.scrollTop = output.scrollHeight;
+    };
+    evtSource.onerror = function() {
+      evtSource.close();
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Show receipt
+  // ---------------------------------------------------------------------------
+  async function showReceipt(toolId, toolName) {
+    document.getElementById('receipt-modal-title').textContent = toolName + ' — Info';
+    const body = document.getElementById('receipt-modal-body');
+    openModal('receipt-modal');
+
+    const resp = await fetch(`/api/tool/${toolId}`);
+    const data = await resp.json();
+    const r = data.receipt;
+
+    body.innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="info-card">
+            <div class="info-label">Status</div>
+            <div class="info-value ${r.status === 'success' ? 'green' : ''}">${r.status === 'success' ? '✓ Installed' : 'Not installed'}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Version</div>
+            <div class="info-value accent">${data.version}</div>
+          </div>
+        </div>
+      </div>
+      ${r.date ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">Installed:</span> <span style="font-size:11px">${r.date}</span></div>` : ''}
+      ${r.install_path ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">Path:</span> <span style="font-size:11px;word-break:break-all">${r.install_path}</span></div>` : ''}
+      ${r.user ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">User:</span> <span style="font-size:11px">${r.user} @ ${r.hostname}</span></div>` : ''}
+      ${r.log_file ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">Log:</span> <span style="font-size:11px;word-break:break-all">${r.log_file}</span></div>` : ''}
+      <div style="margin-top:12px">
+        <div style="color:var(--text2);font-size:11px;margin-bottom:4px">Setup script:</div>
+        <div class="terminal" style="max-height:80px">${data.setup}</div>
+      </div>
+    `;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Profile modal
+  // ---------------------------------------------------------------------------
+  let _currentProfile = null;
+
+  function showProfileModal(profileId) {
+    _currentProfile = profileId;
+    const profiles = {{ profiles | tojson }};
+    const profile = profiles[profileId];
+    if (!profile) return;
+
+    document.getElementById('profile-modal-title').textContent = 'Profile: ' + profile.name;
+    document.getElementById('profile-modal-body').innerHTML = `
+      <p style="color:var(--text2);font-size:12px;margin-bottom:14px">${profile.description}</p>
+      <div style="color:var(--text2);font-size:11px;margin-bottom:8px">Tools included:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+        ${profile.tools.map(t => `<span class="badge-category" style="padding:3px 8px">${t}</span>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text2)">
+        Tools not available on this platform will be automatically skipped.
+      </div>
+    `;
+    document.getElementById('profile-install-btn').onclick = () => installProfile(profileId, profile.name);
+    openModal('profile-modal');
+  }
+
+  function installProfile(profileId, profileName) {
+    closeModal('profile-modal');
+    document.getElementById('install-modal-title').textContent = 'Installing Profile: ' + profileName;
+    const output = document.getElementById('install-output');
+    output.textContent = '';
+    openModal('install-modal');
+
+    const evtSource = new EventSource(`/install-profile/${profileId}`);
+    evtSource.onmessage = function(e) {
+      const line = e.data;
+      if (line.startsWith('DONE:')) {
+        evtSource.close();
+        showToast('✓ Profile ' + profileName + ' installed', 'success');
+        return;
+      }
+      const span = document.createElement('span');
+      span.className = 'terminal-line';
+      if (line.includes('[OK]') || line.includes('SUCCESS') || line.startsWith('✓')) span.classList.add('ok');
+      else if (line.includes('[!!]') || line.includes('ERROR') || line.includes('FAIL')) span.classList.add('err');
+      else if (line.includes('[--]') || line.includes('──')) span.classList.add('info');
+      span.textContent = line;
+      output.appendChild(span);
+      output.appendChild(document.createTextNode('\n'));
+      output.scrollTop = output.scrollHeight;
+    };
+    evtSource.onerror = () => evtSource.close();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Refresh
+  // ---------------------------------------------------------------------------
+  function refreshAll() {
+    window.location.reload();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Toast
+  // ---------------------------------------------------------------------------
+  function showToast(msg, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+</script>
+</body>
+</html>

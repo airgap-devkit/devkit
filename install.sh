@@ -3,8 +3,18 @@
 # =============================================================================
 # install.sh
 #
-# Top-level orchestrator for airgap-cpp-devkit.
-# Installs all tools in the correct order and wires PATH into ~/.bashrc.
+# CLI installer for airgap-cpp-devkit.
+# Use this when Python is unavailable or you prefer a non-GUI workflow.
+#
+# PREFERRED entry point (Python 3.8+ required):
+#   bash launch.sh
+#   Opens the DevKit Manager web UI at http://127.0.0.1:8080
+#   with one-click installs, profiles, and live log output.
+#
+# USE THIS SCRIPT WHEN:
+#   - Python 3.8+ is not available
+#   - You need a non-interactive / scripted install (--yes --profile)
+#   - You are in a headless environment with no browser
 #
 # REQUIRED tools (installed automatically):
 #   - toolchains/clang  (clang-format + clang-tidy 22.1.2)
@@ -22,6 +32,12 @@
 #   - frameworks/grpc    (Windows only, requires Visual Studio)
 #   - sqlite             3.53.0 (CLI binary, Windows + Linux)
 #   - matlab             (verification only -- checks Database Toolbox + Compiler)
+#
+# PREFERRED entry point (replaces this script for most users):
+#   bash launch.sh
+#   Finds Python automatically, opens http://127.0.0.1:8080 -- visual dashboard,
+#   one-click installs, profile-based batch installs, log browser.
+#   Falls back to this script automatically if Python is not found.
 #
 # USAGE:
 #   bash install.sh [--prefix <path>] [--rebuild] [--yes]
@@ -117,7 +133,10 @@ USER_PREFIX="$(_get_user_prefix)"
 # ---------------------------------------------------------------------------
 if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
-    _header "  airgap-cpp-devkit -- Installation Wizard"
+    _header "  airgap-cpp-devkit -- CLI Installer (fallback)"
+    echo ""
+    echo "  Tip: for a visual installer with live output, run instead:"
+    echo "       bash launch.sh   ->  http://127.0.0.1:8080"
     echo ""
     echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
@@ -147,6 +166,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
     echo "  Tip: use --profile <name> to skip prompts"
     echo "       Profiles: cpp-dev | devops | minimal | full"
+    echo ""
+    echo "  Tip: prefer a browser UI? Run instead: bash launch.sh"
     echo ""
     _section "  INSTALL MODE"
     echo ""
@@ -670,4 +691,7 @@ echo "  Restart your shell or run:"
 [[ -f "${ENV_FILE}" ]] && echo "    source \"${ENV_FILE}\""
 echo ""
 echo "  All installed tools will then be available on PATH."
+echo ""
+echo "  To manage tools visually: bash launch.sh"
+echo "    Opens http://127.0.0.1:8080 -- dashboard, install, logs."
 echo ""
