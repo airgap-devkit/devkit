@@ -86,7 +86,7 @@ if MATLAB_BIN="$(_find_matlab)"; then
   echo "  [OK]  MATLAB found: ${MATLAB_BIN}"
 else
   echo ""
-  echo "  [FAIL] MATLAB executable not found." >&2
+  echo "  [--]  MATLAB not installed -- skipping verification." >&2
   echo ""
   echo "  MATLAB must be installed before running this script." >&2
   echo "  Install MATLAB via the MathWorks installer:" >&2

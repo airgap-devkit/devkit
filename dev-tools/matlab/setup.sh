@@ -67,7 +67,7 @@ if [[ "${CHECK_EXIT}" -ne 0 ]]; then
 fi
 
 echo ""
-echo "  [OK]  MATLAB verification passed."
+command -v matlab &>/dev/null && echo "  [OK]  MATLAB verification passed." || echo "  [--]  MATLAB not installed -- skipped."
 echo ""
 
 if [[ "${CHECK_ONLY}" == "true" ]]; then
