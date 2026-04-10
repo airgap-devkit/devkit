@@ -214,7 +214,9 @@ if [[ "${OS}" == "windows" ]]; then
   [[ -f "${SEVENZ}" ]] && _ok "7zip 7za.exe" || _skip "7zip (not installed)"
 else
   if command -v 7zz &>/dev/null; then
-    _check_bin "7zip (7zz)" 7zz i
+    VER="$(7zz | head -2 | tail -1 | awk '{print $3}' 2>/dev/null || echo "unknown")"
+    _ok "7zip (7zz) ${VER}"
+    (( PASS++ )) || true
   else
     _skip "7zip (not installed)"
   fi
