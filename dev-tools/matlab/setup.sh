@@ -65,6 +65,7 @@ if [[ "${CHECK_EXIT}" -ne 0 ]]; then
   echo "         See output above for details."
   exit 0
 fi
+  ! command -v matlab &>/dev/null && [[ -z "${MATLAB_PATH_OVERRIDE}" ]] && exit 0
 
 echo ""
 command -v matlab &>/dev/null && echo "  [OK]  MATLAB verification passed." || echo "  [--]  MATLAB not installed -- skipped."
