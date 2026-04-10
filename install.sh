@@ -30,6 +30,11 @@
 #   --prefix <path>   Override install prefix for all tools
 #   --rebuild         Force reinstall of all tools
 #   --yes             Non-interactive: use defaults, skip confirmation screen
+#   --profile <name>  Pre-select tools for a team profile (skips prompts):
+#                       cpp-dev   -- clang, cmake, python, conan, vscode, sqlite
+#                       devops    -- cmake, python, conan, sqlite, 7zip
+#                       minimal   -- clang, cmake, python only (no optionals)
+#                       full      -- all optional tools enabled
 # =============================================================================
 set -euo pipefail
 
@@ -42,12 +47,14 @@ REPO_ROOT="${SCRIPT_DIR}"
 PREFIX_OVERRIDE=""
 REBUILD=false
 AUTO_YES=false
+PROFILE=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --prefix)  PREFIX_OVERRIDE="$2"; shift 2 ;;
         --rebuild) REBUILD=true; shift ;;
         --yes)     AUTO_YES=true; shift ;;
+        --profile) PROFILE="$2"; shift 2 ;;
         -h|--help)
             sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
             exit 0 ;;
@@ -124,16 +131,22 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "    [5] style-formatter          pre-commit hook"
     echo ""
     _section "  OPTIONAL (you will be prompted)"
-    echo "    [6] 7zip                     26.00 (Windows + Linux, admin + user)"
-    echo "    [7] servy                    7.8 (Windows service manager, Windows only)"
-    echo "    [8] conan                    2.27.0 (C/C++ package manager, Windows + Linux)"
-    echo "    [9] dev-tools/vscode-extensions  C/C++, TestMate, Python (requires 'code' on PATH)"
+    echo "  Cross-platform:"
+    echo "    [6] conan          2.27.0   C/C++ package manager            [~5s]"
+    echo "    [7] sqlite         3.53.0   Database inspection CLI          [~3s]"
+    echo "    [8] 7zip           26.00    Archive tool                     [~2s]"
+    echo "    [9] vscode-ext              C/C++, TestMate, Python          [~30s]"
+    echo "   [10] matlab                  Toolbox verification             [~2s]"
     if [[ "${OS}" == "windows" ]]; then
-    echo "   [10] winlibs-gcc-ucrt         GCC 15.2.0 + MinGW-w64"
-    echo "   [11] frameworks/grpc          gRPC C++ (requires Visual Studio)"
+    echo ""
+    echo "  Windows-only:"
+    echo "   [11] servy          7.8      Windows service manager          [~3s]"
+    echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                  [~8min]"
+    echo "   [13] grpc           1.78.1   C++ framework (needs VS)         [~20min]"
     fi
-    echo "   [12] sqlite                   3.53.0 CLI (database inspection, Windows + Linux)"
-    echo "   [13] matlab                   verification only (checks Database Toolbox + Compiler)"
+    echo ""
+    echo "  Tip: use --profile <name> to skip prompts"
+    echo "       Profiles: cpp-dev | devops | minimal | full"
     echo ""
     _section "  INSTALL MODE"
     echo ""
@@ -181,50 +194,92 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     INSTALL_MATLAB=false
     GRPC_VERSION="1.78.1"
 
-    printf "  Install 7zip 26.00? (archive tool, Windows + Linux) [y/N]: "
-    read -r reply
-    [[ "${reply^^}" == "Y" ]] && INSTALL_7ZIP=true
+    # Apply profile pre-selections if specified
+    _apply_profile() {
+        case "${PROFILE}" in
+            cpp-dev)
+                INSTALL_CONAN=true; INSTALL_VSCODE=true
+                INSTALL_SQLITE=true; INSTALL_7ZIP=true
+                echo "  [OK] Profile: cpp-dev (conan, vscode, sqlite, 7zip)"
+                ;;
+            devops)
+                INSTALL_CONAN=true; INSTALL_SQLITE=true
+                INSTALL_7ZIP=true
+                echo "  [OK] Profile: devops (conan, sqlite, 7zip)"
+                ;;
+            minimal)
+                echo "  [OK] Profile: minimal (required tools only)"
+                ;;
+            full)
+                INSTALL_7ZIP=true; INSTALL_CONAN=true
+                INSTALL_VSCODE=true; INSTALL_SQLITE=true
+                INSTALL_MATLAB=true
+                if [[ "${OS}" == "windows" ]]; then
+                    INSTALL_SERVY=true; INSTALL_WINLIBS=true; INSTALL_GRPC=true
+                fi
+                echo "  [OK] Profile: full (all optional tools)"
+                ;;
+            "")
+                # No profile -- use interactive prompts below
+                ;;
+            *)
+                echo "  [!!] Unknown profile: ${PROFILE}. Valid: cpp-dev, devops, minimal, full" >&2
+                exit 1
+                ;;
+        esac
+    }
+    _apply_profile
 
-    printf "  Install servy 7.8? (Windows service manager, Windows only) [y/N]: "
-    read -r reply
-    [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
-
-    printf "  Install conan 2.27.0? (C/C++ package manager, Windows + Linux) [y/N]: "
-    read -r reply
-    [[ "${reply^^}" == "Y" ]] && INSTALL_CONAN=true
-
-    printf "  Install dev-tools/vscode-extensions? (requires 'code' on PATH) [y/N]: "
-    read -r reply
-    [[ "${reply^^}" == "Y" ]] && INSTALL_VSCODE=true
-
-    if [[ "${OS}" == "windows" ]]; then
-        printf "  Install winlibs-gcc-ucrt? (GCC 15.2.0 + MinGW-w64) [y/N]: "
+    if [[ -z "${PROFILE}" ]]; then
+        # --- Cross-platform tools ---
+        printf "  Install conan 2.27.0?          C/C++ package manager       [~5s]  [y/N]: "
         read -r reply
-        [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
+        [[ "${reply^^}" == "Y" ]] && INSTALL_CONAN=true
 
-        printf "  Install frameworks/grpc? (requires Visual Studio) [y/N]: "
+        printf "  Install sqlite 3.53.0 CLI?     Database inspection tool    [~3s]  [y/N]: "
         read -r reply
-        if [[ "${reply^^}" == "Y" ]]; then
-            INSTALL_GRPC=true
+        [[ "${reply^^}" == "Y" ]] && INSTALL_SQLITE=true
+
+        printf "  Install 7zip 26.00?            Archive tool                [~2s]  [y/N]: "
+        read -r reply
+        [[ "${reply^^}" == "Y" ]] && INSTALL_7ZIP=true
+
+        printf "  Install vscode-extensions?     C/C++, Python (needs 'code')[~30s] [y/N]: "
+        read -r reply
+        [[ "${reply^^}" == "Y" ]] && INSTALL_VSCODE=true
+
+        printf "  Install matlab verification?   Checks toolboxes            [~2s]  [y/N]: "
+        read -r reply
+        [[ "${reply^^}" == "Y" ]] && INSTALL_MATLAB=true
+
+        # --- Windows-only tools ---
+        if [[ "${OS}" == "windows" ]]; then
             echo ""
-            echo "  gRPC version:"
-            echo "    [1] 1.78.1  (default)"
-            printf "  Choose [1, default=1]: "
-            read -r ver_choice
-            case "${ver_choice}" in
-                *) GRPC_VERSION="1.78.1" ;;
-            esac
-            echo "  [OK] gRPC version: ${GRPC_VERSION}"
+            echo "  --- Windows-only tools ---"
+            printf "  Install servy 7.8?             Windows service manager     [~3s]  [y/N]: "
+            read -r reply
+            [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
+
+            printf "  Install winlibs-gcc-ucrt?      GCC 15.2.0 + MinGW-w64      [~8min][y/N]: "
+            read -r reply
+            [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
+
+            printf "  Install frameworks/grpc?       Requires Visual Studio       [~20min][y/N]: "
+            read -r reply
+            if [[ "${reply^^}" == "Y" ]]; then
+                INSTALL_GRPC=true
+                echo ""
+                echo "  gRPC version:"
+                echo "    [1] 1.78.1  (default)"
+                printf "  Choose [1, default=1]: "
+                read -r ver_choice
+                case "${ver_choice}" in
+                    *) GRPC_VERSION="1.78.1" ;;
+                esac
+                echo "  [OK] gRPC version: ${GRPC_VERSION}"
+            fi
         fi
     fi
-
-    printf "  Install sqlite 3.53.0 CLI? (database inspection, Windows + Linux) [y/N]: "
-    read -r reply
-    [[ "${reply^^}" == "Y" ]] && INSTALL_SQLITE=true
-
-    printf "  Install matlab verification? (checks Database Toolbox + Compiler) [y/N]: "
-    read -r reply
-    [[ "${reply^^}" == "Y" ]] && INSTALL_MATLAB=true
 
     # --- Final confirmation ---
     echo ""
@@ -267,8 +322,23 @@ else
     INSTALL_MATLAB=false
     GRPC_VERSION="1.78.1"
 
+    # Apply profile if given with --yes
+    if [[ -n "${PROFILE}" ]]; then
+        case "${PROFILE}" in
+            cpp-dev)  INSTALL_CONAN=true; INSTALL_VSCODE=true; INSTALL_SQLITE=true; INSTALL_7ZIP=true ;;
+            devops)   INSTALL_CONAN=true; INSTALL_SQLITE=true; INSTALL_7ZIP=true ;;
+            minimal)  ;;
+            full)
+                INSTALL_7ZIP=true; INSTALL_CONAN=true; INSTALL_VSCODE=true
+                INSTALL_SQLITE=true; INSTALL_MATLAB=true
+                [[ "${OS}" == "windows" ]] && { INSTALL_SERVY=true; INSTALL_WINLIBS=true; INSTALL_GRPC=true; }
+                ;;
+        esac
+    fi
+
     echo ""
     echo "  [--yes] Non-interactive mode. Installing to: ${INSTALL_PREFIX_OVERRIDE}"
+    [[ -n "${PROFILE}" ]] && echo "  [--yes] Profile: ${PROFILE}"
     echo ""
 fi
 
