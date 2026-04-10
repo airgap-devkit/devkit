@@ -114,6 +114,16 @@ _install_python() {
         sed -i 's/#import site/import site/' "${pth_file}"
         echo "  [OK]  Enabled site-packages in $(basename "${pth_file}")"
       fi
+
+      # Bootstrap pip via vendored get-pip.py
+      local get_pip="${SCRIPT_DIR}/vendor/get-pip.py"
+      if [[ -f "${get_pip}" ]]; then
+        im_progress_start "Bootstrapping pip"
+        "${INSTALL_PREFIX}/python.exe" "${get_pip}"           --no-index --find-links="${PIP_PKG_DIR}" --quiet 2>/dev/null           || "${INSTALL_PREFIX}/python.exe" "${get_pip}" --quiet 2>/dev/null           || true
+        im_progress_stop "pip bootstrapped"
+      else
+        echo "  [!!]  vendor/get-pip.py not found -- pip will not be available" >&2
+      fi
       ;;
 
     linux)
