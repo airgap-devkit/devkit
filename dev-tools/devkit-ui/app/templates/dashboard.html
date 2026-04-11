@@ -408,6 +408,7 @@
 
     /* Universal copy-able code block */
     .code-wrap { position: relative; }
+    .code-wrap .terminal { padding-right: 62px; }
     .code-wrap .copy-btn {
       position: absolute; top: 6px; right: 8px;
       background: rgba(33,38,45,0.95); border: 1px solid var(--border);
@@ -677,8 +678,7 @@
 
       <div class="header-actions" style="flex-shrink:0">
         <button class="btn" onclick="refreshAll()">↺ Refresh</button>
-        <button class="btn" onclick="runTests(false)" title="Run smoke tests">✓ Run Tests</button>
-        <button class="btn" onclick="runTests(true)" title="Run smoke tests (verbose)">✓ Tests -v</button>
+        <button class="btn" onclick="runTests(false)" title="Run smoke tests">Run Tests</button>
         <button class="btn btn-primary" onclick="showProfileModal('cpp-dev')">▷ Install Profile</button>
       </div>
     </div>

@@ -100,6 +100,22 @@ _check_file() {
   fi
 }
 
+_receipt_exists() {
+  local tool_dir="$1"
+  [[ -f "${PREFIX}/${tool_dir}/INSTALL_RECEIPT.txt" ]]
+}
+
+_check_bin_receipt() {
+  local label="$1" tool_dir="$2" cmd="$3"
+  shift 3
+  local args=("$@")
+  if ! _receipt_exists "${tool_dir}"; then
+    _skip "${label} (not installed)"
+    return
+  fi
+  _check_bin "${label}" "${cmd}" "${args[@]}"
+}
+
 _check_python_import() {
   local label="$1" module="$2"
   local py_bin
@@ -108,8 +124,12 @@ _check_python_import() {
   else
     py_bin="${PREFIX}/python/bin/python3"
   fi
+  if ! _receipt_exists "python"; then
+    _skip "${label} (python not installed)"
+    return
+  fi
   if [[ ! -f "${py_bin}" ]]; then
-    _fail "${label} (python not found at ${py_bin})"
+    _fail "${label} (python binary missing at ${py_bin})"
     return
   fi
   if "${py_bin}" -c "import ${module}" 2>/dev/null; then
@@ -138,8 +158,8 @@ echo ""
 _sep
 echo "  [1] Toolchains"
 _sep
-_check_bin "clang-format 22.1.2"  clang-format --version
-_check_bin "clang-tidy 22.1.2"    clang-tidy   --version
+_check_bin_receipt "clang-format 22.1.2" "toolchains/clang/source-build" clang-format --version
+_check_bin_receipt "clang-tidy 22.1.2"   "toolchains/clang/source-build" clang-tidy   --version
 
 # ---------------------------------------------------------------------------
 # 2. Build tools
@@ -147,12 +167,13 @@ _check_bin "clang-tidy 22.1.2"    clang-tidy   --version
 _sep
 echo "  [2] Build Tools"
 _sep
-_check_bin "cmake"   cmake   --version
+_check_bin_receipt "cmake" "cmake" cmake --version
 if [[ "${OS}" == "linux" ]]; then
-  _check_bin "lcov 2.4"  lcov  --version
-  _check_bin "genhtml"   genhtml --version
+  _check_bin_receipt "lcov 2.4" "lcov" lcov    --version
+  _check_bin_receipt "genhtml"  "lcov" genhtml --version
 else
   _skip "lcov (Linux only)"
+  _skip "genhtml (Linux only)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -166,12 +187,14 @@ if [[ "${OS}" == "windows" ]]; then
 else
   PY_BIN="${PREFIX}/python/bin/python3"
 fi
-if [[ -f "${PY_BIN}" ]]; then
+if ! _receipt_exists "python"; then
+  _skip "python (not installed)"
+elif [[ -f "${PY_BIN}" ]]; then
   _ok "python binary exists"
   VER="$("${PY_BIN}" --version 2>&1)"
   _ok "python version: ${VER}"
 else
-  _fail "python binary not found at ${PY_BIN}"
+  _fail "python binary missing at ${PY_BIN}"
 fi
 
 # ---------------------------------------------------------------------------
@@ -238,7 +261,7 @@ echo "  [6] Style Formatter"
 _sep
 HOOK="${REPO_ROOT}/.git/hooks/pre-commit"
 [[ -f "${HOOK}" ]] && _ok "pre-commit hook installed" || _fail "pre-commit hook missing"
-_check_bin "clang-format (hook)" clang-format --version
+_check_bin_receipt "clang-format (hook)" "toolchains/clang/source-build" clang-format --version
 
 # ---------------------------------------------------------------------------
 # 7. Python sanity check
@@ -246,7 +269,9 @@ _check_bin "clang-format (hook)" clang-format --version
 _sep
 echo "  [7] Python Sanity Check"
 _sep
-if [[ -f "${PY_BIN}" ]]; then
+if ! _receipt_exists "python"; then
+  _skip "full package import test (python not installed)"
+elif [[ -f "${PY_BIN}" ]]; then
   SANITY_OUT="$("${PY_BIN}" -c "
 import sqlite3, numpy, pandas, streamlit, sqlalchemy
 print('sqlite3:', sqlite3.sqlite_version)
