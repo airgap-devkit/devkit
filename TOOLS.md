@@ -88,11 +88,11 @@ Install / Rebuild, profile-based batch installs (cpp-dev / devops / minimal / fu
 and an inline log browser.
 
 **Fallback:** if Python 3.8+ is not on PATH, `launch.sh` automatically falls back to
-`install.sh`. Force the fallback at any time with `bash launch.sh --cli`.
+`install-cli.sh`. Force the fallback at any time with `bash launch.sh --cli`.
 
 **Air-gap:** pre-download wheels to `dev-tools/devkit-ui/vendor/` and the launcher
 uses them instead of PyPI. All other devkit tools remain fully CLI-installable via
-`install.sh` regardless of whether devkit-ui is used.
+`install-cli.sh` regardless of whether devkit-ui is used.
 
 ---
 
@@ -230,7 +230,7 @@ All .zip archives use deflate level 9 compression.
 
 ## Install Profiles
 
-Use `--profile <name>` with `install.sh` to pre-select tools without prompts:
+Use `--profile <name>` with `install-cli.sh` to pre-select tools without prompts:
 
 | Profile | Tools selected |
 |---------|---------------|
@@ -241,10 +241,10 @@ Use `--profile <name>` with `install.sh` to pre-select tools without prompts:
 
 ```bash
 # Non-interactive install for C++ developers
-bash install.sh --yes --profile cpp-dev
+bash install-cli.sh --yes --profile cpp-dev
 
 # Non-interactive minimal install
-bash install.sh --yes --profile minimal
+bash install-cli.sh --yes --profile minimal
 ```
 
 ---
@@ -257,11 +257,11 @@ bash launch.sh                                  # opens http://127.0.0.1:8080
 bash launch.sh --port 9090                      # custom port
 bash launch.sh --host 0.0.0.0                   # LAN / remote access
 bash launch.sh --no-browser                     # server only
-bash launch.sh --cli                            # force CLI installer (install.sh)
+bash launch.sh --cli                            # force CLI installer (install-cli.sh)
 
 # CLI fallback (no Python required)
-bash install.sh                                 # full interactive wizard
-bash install.sh --yes --profile cpp-dev         # non-interactive with profile
+bash install-cli.sh                                 # full interactive wizard
+bash install-cli.sh --yes --profile cpp-dev         # non-interactive with profile
 
 # Individual tool installs (also available from the web UI)
 bash toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
