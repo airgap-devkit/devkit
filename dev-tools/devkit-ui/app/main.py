@@ -66,6 +66,53 @@ def _current_prefix() -> Path:
     """Return live prefix (re-reads override file each request)."""
     return _detect_prefix()
 
+
+def _to_bash_path(p: Path) -> str:
+    """Convert a path to forward slashes so Git Bash on Windows won't mangle \\n, \\t, \\a, etc."""
+    if OS == "windows":
+        return str(p).replace("\\", "/")
+    return str(p)
+
+
+def _detect_privilege() -> str:
+    """Return 'admin' if the process has elevated/root privileges, else 'user'."""
+    try:
+        if OS == "windows":
+            import ctypes
+            return "admin" if ctypes.windll.shell32.IsUserAnAdmin() else "user"
+        else:
+            return "admin" if os.getuid() == 0 else "user"
+    except Exception:
+        return "user"
+
+
+def _get_system_info() -> dict:
+    import shutil as _shutil
+    prefix = _current_prefix()
+    disk_free = disk_total = None
+    try:
+        check = prefix if prefix.exists() else (prefix.parent if prefix.parent.exists() else Path("/"))
+        stat = _shutil.disk_usage(str(check))
+        disk_free = f"{stat.free / (1024**3):.1f} GB"
+        disk_total = f"{stat.total / (1024**3):.1f} GB"
+    except Exception:
+        pass
+    privilege = _detect_privilege()
+    if privilege == "admin":
+        admin_prefix_str = (
+            r"C:\Program Files\airgap-cpp-devkit" if OS == "windows"
+            else "/opt/airgap-cpp-devkit"
+        )
+    else:
+        admin_prefix_str = None
+    return {
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "privilege": privilege,
+        "disk_free": disk_free,
+        "disk_total": disk_total,
+        "admin_prefix": admin_prefix_str,
+    }
+
 # ---------------------------------------------------------------------------
 # Tool definitions
 # ---------------------------------------------------------------------------
@@ -102,8 +149,9 @@ TOOLS = [
         "version": "3.14.4",
         "category": "Languages",
         "platform": "both",
-        "description": "Portable Python interpreter + 20 vendored pip packages",
+        "description": "Portable Python 3.14.4 interpreter (embeddable zip on Windows, standalone tar.gz on Linux). Install pip packages separately via the Plugins section.",
         "setup": "languages/python/setup.sh",
+        "setup_args": ["--skip-pip"],
         "receipt_name": "python",
         "estimate": "~45s",
         "uses_prebuilt": True,
@@ -183,14 +231,61 @@ TOOLS = [
     {
         "id": "vscode-extensions",
         "name": "VS Code Extensions",
+        "version_label": "8 extensions",
         "version": "Various",
-        "category": "Developer Tools",
+        "category": "Plugins",
         "platform": "both",
-        "description": "C/C++, TestMate, Python extensions for VS Code",
+        "description": "Offline VS Code extension pack for C++ development — C/C++, TestMate, Python, and more. VS Code must be installed with 'code' on PATH.",
         "setup": "dev-tools/vscode-extensions/setup.sh",
         "receipt_name": "dev-tools/vscode-extensions",
         "estimate": "~30s",
         "uses_prebuilt": False,
+        "extensions": [
+            {"id": "ms-vscode.cpptools-extension-pack", "name": "C/C++ Extension Pack", "version": "1.5.1",   "publisher": "Microsoft",   "status": "vendored",  "description": "Complete C/C++ IDE support — IntelliSense, debug, code navigation"},
+            {"id": "ms-vscode.cpptools",                "name": "C/C++",                "version": "1.30.4",  "publisher": "Microsoft",   "status": "vendored",  "description": "C/C++ language support, IntelliSense, debugging (platform-specific)"},
+            {"id": "matepek.vscode-catch2-test-adapter","name": "C++ TestMate",         "version": "4.22.3",  "publisher": "Mate Pek",    "status": "vendored",  "description": "Catch2 / GTest / doctest test explorer and runner"},
+            {"id": "ms-python.python",                  "name": "Python",               "version": "2026.5",  "publisher": "Microsoft",   "status": "vendored",  "description": "Python language support, IntelliSense, Jupyter (platform-specific)"},
+            {"id": "ms-vscode.cmake-tools",             "name": "CMake Tools",          "version": "latest",  "publisher": "Microsoft",   "status": "planned",   "description": "Full CMake integration — configure, build, debug from VS Code"},
+            {"id": "twxs.cmake",                        "name": "CMake",                "version": "latest",  "publisher": "twxs",        "status": "planned",   "description": "CMakeLists.txt syntax highlighting and IntelliSense"},
+            {"id": "cschlosser.doxdocgen",              "name": "Doxygen Doc Generator","version": "latest",  "publisher": "C. Schlosser","status": "planned",   "description": "Auto-generate Doxygen comment blocks from function signatures"},
+            {"id": "ms-vscode.live-server",             "name": "Live Preview",         "version": "latest",  "publisher": "Microsoft",   "status": "planned",   "description": "Local HTTP server for in-editor browser preview"},
+        ],
+    },
+    {
+        "id": "pip-packages",
+        "name": "Python Pip Packages",
+        "version_label": "20 packages",
+        "version": "Various",
+        "category": "Plugins",
+        "platform": "both",
+        "description": "20 vendored pip wheels for data science, web, CLI, and testing. Requires Python (from the Languages section) to be installed first.",
+        "setup": "languages/python/setup.sh",
+        "setup_args": ["--pip-only"],
+        "receipt_name": "pip-packages",
+        "estimate": "~30s",
+        "uses_prebuilt": False,
+        "packages": [
+            {"name": "numpy",          "version": "2.4.4",           "category": "Data Science", "description": "N-dimensional array and numerical computing library"},
+            {"name": "pandas",         "version": "3.0.2",           "category": "Data Science", "description": "Data analysis and manipulation with DataFrames"},
+            {"name": "scipy",          "version": "1.17.1 / 1.16.3", "category": "Data Science", "description": "Scientific computing — optimization, stats, signal processing"},
+            {"name": "scikit-learn",   "version": "1.8.0",           "category": "Data Science", "description": "Machine learning — classification, regression, clustering"},
+            {"name": "matplotlib",     "version": "3.10.8",          "category": "Data Science", "description": "2D/3D plotting and data visualization"},
+            {"name": "plotly",         "version": "6.7.0",           "category": "Visualization","description": "Interactive charts and dashboards"},
+            {"name": "pillow",         "version": "12.2.0",          "category": "Visualization","description": "Image processing — read, write, transform image files"},
+            {"name": "streamlit",      "version": "1.56.0",          "category": "Web",          "description": "Rapid data app and dashboard builder"},
+            {"name": "sqlalchemy",     "version": "2.0.49",          "category": "Database",     "description": "SQL toolkit and ORM for Python"},
+            {"name": "requests",       "version": "2.33.1",          "category": "HTTP",         "description": "Human-friendly HTTP client library"},
+            {"name": "PyYAML",         "version": "6.0.3",           "category": "Formats",      "description": "YAML parsing and serialization"},
+            {"name": "pydantic",       "version": "2.12.5",          "category": "Formats",      "description": "Data validation using Python type annotations"},
+            {"name": "openpyxl",       "version": "3.1.5",           "category": "Formats",      "description": "Read/write Excel (.xlsx) files"},
+            {"name": "Jinja2",         "version": "3.1.6",           "category": "Templating",   "description": "Fast, flexible template engine for Python"},
+            {"name": "python-dotenv",  "version": "1.2.2",           "category": "Templating",   "description": "Load environment variables from .env files"},
+            {"name": "click",          "version": "8.3.2",           "category": "CLI",          "description": "Composable command-line interface toolkit"},
+            {"name": "rich",           "version": "14.3.3",          "category": "CLI",          "description": "Rich text and beautiful formatting in the terminal"},
+            {"name": "loguru",         "version": "0.7.3",           "category": "CLI",          "description": "Simplified logging with rotation, color, and structured output"},
+            {"name": "win32-setctime", "version": "1.2.0",           "category": "Windows",      "description": "Set file creation time on Windows (loguru dependency)"},
+            {"name": "pytest",         "version": "9.0.3",           "category": "Testing",      "description": "Feature-rich testing framework for Python"},
+        ],
     },
     {
         "id": "winlibs-gcc-ucrt",
@@ -342,9 +437,11 @@ def get_submodule_status() -> dict:
 # ---------------------------------------------------------------------------
 def _parse_receipt(path: Path) -> dict:
     data = {"status": "not_installed", "version": None, "date": None,
-            "install_path": None, "user": None, "hostname": None, "log_file": None}
+            "install_path": None, "user": None, "hostname": None, "log_file": None,
+            "receipt_exists": False}
     if not path.exists():
         return data
+    data["receipt_exists"] = True
     try:
         content = path.read_text(encoding="utf-8", errors="replace")
         for line in content.splitlines():
@@ -432,6 +529,7 @@ async def dashboard(request: Request):
         "prefix": str(_current_prefix()),
         "hostname": platform.node(),
         "submodule": submodule,
+        "system_info": _get_system_info(),
     })
 
 
@@ -508,7 +606,7 @@ async def run_tests(verbose: bool = False):
     """Stream output of tests/run-tests.sh."""
     async def stream():
         yield "data: Running smoke tests...\n\n"
-        cmd = ["bash", str(REPO_ROOT / "tests" / "run-tests.sh")]
+        cmd = ["bash", _to_bash_path(REPO_ROOT / "tests" / "run-tests.sh")]
         if verbose:
             cmd.append("--verbose")
         try:
@@ -516,7 +614,7 @@ async def run_tests(verbose: bool = False):
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
-                cwd=str(REPO_ROOT),
+                cwd=_to_bash_path(REPO_ROOT),
             )
             async for line in proc.stdout:
                 text = line.decode("utf-8", errors="replace").rstrip()
@@ -557,7 +655,7 @@ async def install_tool(tool_id: str, rebuild: bool = False):
 
     async def stream():
         yield f"data: Installing {tool['name']} {tool['version']}...\n\n"
-        cmd = ["bash", str(setup_script)]
+        cmd = ["bash", _to_bash_path(setup_script)] + tool.get("setup_args", [])
         if rebuild:
             cmd.append("--rebuild")
         try:
@@ -565,7 +663,7 @@ async def install_tool(tool_id: str, rebuild: bool = False):
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
-                cwd=str(REPO_ROOT),
+                cwd=_to_bash_path(REPO_ROOT),
             )
             async for line in proc.stdout:
                 text = line.decode("utf-8", errors="replace").rstrip()
@@ -604,7 +702,7 @@ async def install_profile(profile_id: str, rebuild: bool = False):
             yield f"data: \n\n"
             yield f"data: ── {tool['name']} {tool['version']}\n\n"
             setup_script = REPO_ROOT / tool["setup"]
-            cmd = ["bash", str(setup_script)]
+            cmd = ["bash", _to_bash_path(setup_script)] + tool.get("setup_args", [])
             if rebuild:
                 cmd.append("--rebuild")
             try:
@@ -612,7 +710,7 @@ async def install_profile(profile_id: str, rebuild: bool = False):
                     *cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.STDOUT,
-                    cwd=str(REPO_ROOT),
+                    cwd=_to_bash_path(REPO_ROOT),
                 )
                 async for line in proc.stdout:
                     text = line.decode("utf-8", errors="replace").rstrip()

@@ -27,11 +27,13 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PYTHON_VERSION="3.14.4"
 TOOL_NAME="python"
 SKIP_PIP=false
+PIP_ONLY=false
 REBUILD=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-pip) SKIP_PIP=true; shift ;;
+    --pip-only) PIP_ONLY=true; SKIP_PIP=false; shift ;;
     --rebuild)  REBUILD=true;  shift ;;
     --prefix)   export INSTALL_PREFIX_OVERRIDE="$2"; shift 2 ;;
     -h|--help)
@@ -40,6 +42,11 @@ while [[ $# -gt 0 ]]; do
     *) echo "ERROR: Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
+
+# When installing pip packages only, use a separate receipt name
+if [[ "${PIP_ONLY}" == "true" ]]; then
+  TOOL_NAME="pip-packages"
+fi
 
 # ---------------------------------------------------------------------------
 # Detect platform
@@ -291,11 +298,16 @@ echo " Install mode: ${INSTALL_MODE}"
 echo "============================================================"
 echo ""
 
-_install_python
+if [[ "${PIP_ONLY}" == "false" ]]; then
+  _install_python
+fi
 
 python_bin="$(_python_bin)"
 if [[ ! -f "${python_bin}" ]]; then
-  echo "ERROR: Python binary not found after install: ${python_bin}" >&2
+  echo "ERROR: Python binary not found at ${python_bin}" >&2
+  if [[ "${PIP_ONLY}" == "true" ]]; then
+    echo "       Install Python first (Languages > Python), then install pip packages." >&2
+  fi
   exit 1
 fi
 

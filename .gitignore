@@ -55,3 +55,4 @@ CLAUDE.md
 
 # devkit-ui local overrides
 dev-tools/devkit-ui/.devkit-prefix
+dev-tools/git-bundle/tests/test_repos/

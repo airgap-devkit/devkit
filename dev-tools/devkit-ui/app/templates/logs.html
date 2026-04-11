@@ -75,7 +75,10 @@
       <div class="log-list">
         <div class="log-list-header">Recent logs</div>
         {% for log in logs %}
-        <div class="log-item" onclick="loadLog('{{ log.path }}', '{{ log.name }}', this)">
+        <div class="log-item"
+             data-path="{{ log.path }}"
+             data-name="{{ log.name }}"
+             onclick="loadLog(this)">
           <div class="log-item-name">{{ log.name }}</div>
           <div class="log-item-meta">
             <span class="tool-badge">{{ log.tool }}</span>
@@ -111,7 +114,9 @@
 <script>
   let _logContent = '';
 
-  async function loadLog(path, name, el) {
+  async function loadLog(el) {
+    const path = el.dataset.path;
+    const name = el.dataset.name;
     document.querySelectorAll('.log-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
     document.getElementById('log-viewer-title').textContent = name;
