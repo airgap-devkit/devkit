@@ -24,7 +24,11 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse at 18% 0%,   rgba(88,166,255,0.10) 0%, transparent 42%),
+        radial-gradient(ellipse at 85% 90%,  rgba(63,185,80,0.07)  0%, transparent 40%),
+        radial-gradient(ellipse at 95% 5%,   rgba(188,140,255,0.05) 0%, transparent 35%),
+        #0d1117;
       color: var(--text);
       font-family: var(--font);
       font-size: 13px;
@@ -32,31 +36,35 @@
     }
 
     /* Layout */
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .layout { display: grid; grid-template-columns: 255px 1fr; min-height: 100vh; }
 
     /* Sidebar */
     .sidebar {
-      background: var(--bg2);
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(88,166,255,0.08) 0%, transparent 55%),
+        linear-gradient(180deg, #161d2b 0%, #12171e 100%);
       border-right: 1px solid var(--border);
-      padding: 20px 0;
+      padding: 0;
       position: sticky;
       top: 0;
       height: 100vh;
       overflow-y: auto;
     }
     .sidebar-logo {
-      padding: 0 16px 20px;
+      padding: 14px 18px 14px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, rgba(88,166,255,0.10) 0%, transparent 70%);
     }
     .sidebar-logo h1 {
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 700;
       color: var(--text);
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
     }
     .sidebar-logo .version {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text2);
       margin-top: 2px;
     }
@@ -65,10 +73,11 @@
       background: var(--bg3);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 1px 6px;
+      padding: 2px 8px;
       font-size: 10px;
       color: var(--accent);
-      margin-top: 6px;
+      margin-top: 8px;
+      letter-spacing: 0.3px;
     }
     .nav-item {
       display: flex;
@@ -87,28 +96,37 @@
     }
     .nav-item .icon { width: 16px; text-align: center; }
     .nav-section {
-      padding: 12px 16px 4px;
+      padding: 20px 16px 6px;
       font-size: 10px;
       color: var(--text2);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+    .sidebar-sep {
+      margin: 18px 10px 0;
+      border: none;
+      border-top: 1px solid var(--border);
+      opacity: 0.6;
+    }
     .sidebar-stats {
-      margin: 12px 10px 0;
+      margin: 0;
       background: var(--bg3);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 10px 12px;
+      overflow: hidden;
     }
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 3px 0;
+      padding: 8px 12px;
       font-size: 11px;
       color: var(--text2);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
     }
-    .stat-row .val { color: var(--text); font-weight: 600; }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .val { color: var(--text); font-weight: 600; font-size: 12px; }
 
     /* Main content */
     .main { padding: 24px; overflow-y: auto; }
@@ -119,9 +137,14 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 24px;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(88,166,255,0.03) 0%, transparent 50%);
+      border-radius: var(--radius) var(--radius) 0 0;
     }
-    .page-title { font-size: 18px; font-weight: 600; }
-    .page-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .page-subtitle { font-size: 12px; color: var(--text2); margin-top: 3px; }
     .header-actions { display: flex; gap: 8px; }
 
     /* Buttons */
@@ -212,29 +235,33 @@
     /* Tool grid */
     .tool-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 14px;
       margin-bottom: 24px;
     }
     .tool-card {
-      background: var(--bg2);
+      background: linear-gradient(145deg, var(--bg2) 0%, #13181f 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
-      transition: border-color 0.15s;
+      padding: 18px 20px;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.15s;
     }
-    .tool-card:hover { border-color: var(--accent); }
+    .tool-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
     .tool-card.installed { border-left: 3px solid var(--green); }
     .tool-card.not-available { opacity: 0.5; }
     .tool-card-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
-    .tool-name { font-size: 13px; font-weight: 600; }
-    .tool-version { font-size: 10px; color: var(--text2); margin-top: 2px; }
-    .tool-desc { font-size: 11px; color: var(--text2); margin-bottom: 10px; line-height: 1.5; }
+    .tool-name { font-size: 15px; font-weight: 600; }
+    .tool-version { font-size: 11px; color: var(--text2); margin-top: 3px; }
+    .tool-desc { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.6; }
     .tool-meta {
       display: flex;
       align-items: center;
@@ -363,19 +390,32 @@
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 20px;
     }
     .info-card {
-      background: var(--bg2);
+      background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 12px 14px;
+      transition: border-color 0.15s;
     }
+    .info-card:hover { border-color: rgba(88,166,255,0.3); }
     .info-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
     .info-value { font-size: 14px; font-weight: 600; margin-top: 4px; }
     .info-value.green { color: var(--green); }
     .info-value.accent { color: var(--accent); }
+
+    /* Universal copy-able code block */
+    .code-wrap { position: relative; }
+    .code-wrap .copy-btn {
+      position: absolute; top: 6px; right: 8px;
+      background: rgba(33,38,45,0.95); border: 1px solid var(--border);
+      color: var(--text2); cursor: pointer; font-size: 10px;
+      padding: 2px 8px; border-radius: 4px; font-family: var(--font);
+      transition: color 0.1s, border-color 0.1s; z-index: 1;
+    }
+    .code-wrap .copy-btn:hover { color: var(--text); border-color: var(--accent); }
 
     /* Filter bar */
     .filter-bar {
@@ -464,6 +504,7 @@
     <div class="sidebar-logo">
       <h1>⚙ DevKit Manager</h1>
       <div class="version">airgap-cpp-devkit</div>
+      <div class="version" style="margin-top:1px;color:var(--text2)">by Nima Shafie</div>
       <div class="badge">{{ os | upper }} · {{ hostname }}</div>
     </div>
 
@@ -482,74 +523,218 @@
     </a>
     {% endfor %}
 
-    <div class="sidebar-stats">
-      <div class="stat-row">
-        <span>Installed</span>
-        <span class="val" style="color:var(--green)">{{ installed_count }}</span>
-      </div>
-      <div class="stat-row">
-        <span>Available</span>
-        <span class="val" style="color:var(--accent)">{{ available_count }}</span>
-      </div>
-      <div class="stat-row">
-        <span>Total Tools</span>
-        <span class="val">{{ total_count }}</span>
-      </div>
-      <div class="progress-bar" style="margin-top:8px">
-        <div class="progress-bar-fill" style="width:{{ (installed_count / available_count * 100) | int if available_count > 0 else 0 }}%"></div>
+    <!-- Tool counts -->
+    <hr class="sidebar-sep">
+    <div style="padding: 14px 10px 0">
+      <div class="sidebar-stats">
+        <div class="stat-row">
+          <span>Installed</span>
+          <span class="val" style="color:var(--green)">{{ installed_count }} / {{ available_count }}</span>
+        </div>
+        <div class="stat-row">
+          <span>Available</span>
+          <span class="val" style="color:var(--accent)">{{ available_count }}</span>
+        </div>
+        <div class="stat-row">
+          <span>Total Tools</span>
+          <span class="val">{{ total_count }}</span>
+        </div>
       </div>
     </div>
 
+    <!-- Install Prefix -->
+    <hr class="sidebar-sep">
     <div style="padding: 14px 10px 0;">
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
-        <span>Install Prefix</span>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="text-transform:uppercase;letter-spacing:1px">Install Prefix</span>
         <button onclick="openPrefixEditor()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:10px;padding:0;">✎ edit</button>
       </div>
-      <div id="prefix-display" style="font-size:10px;color:var(--text);word-break:break-all;line-height:1.5;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:6px 8px;">{{ prefix }}</div>
+      <div id="prefix-display" style="font-size:10px;color:var(--text);word-break:break-all;line-height:1.6;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:7px 10px;">{{ prefix }}</div>
+    </div>
+
+    <!-- System info -->
+    <hr class="sidebar-sep">
+    <div style="padding:14px 10px 0">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">System</div>
+      <div class="sidebar-stats">
+        <div class="stat-row">
+          <span>Python</span>
+          <span class="val" style="color:var(--accent)">{{ system_info.python_version }}</span>
+        </div>
+        <div class="stat-row">
+          <span>Mode</span>
+          <span class="val" style="color:{% if system_info.privilege == 'admin' %}var(--yellow){% else %}var(--green){% endif %}">
+            {% if system_info.privilege == 'admin' %}⬆ Admin{% else %}⬇ User{% endif %}
+          </span>
+        </div>
+        {% if system_info.disk_free %}
+        <div class="stat-row">
+          <span>Disk free</span>
+          <span class="val">{{ system_info.disk_free }}</span>
+        </div>
+        <div class="stat-row">
+          <span>Disk total</span>
+          <span class="val">{{ system_info.disk_total }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% if system_info.privilege != 'admin' %}
+      <div style="font-size:10px;color:var(--text2);margin-top:10px;line-height:1.6;padding:0 2px">
+        For system-wide installs, run as
+        {% if os == 'windows' %}<span style="color:var(--text)">Administrator</span>
+        {% else %}<span style="color:var(--text)">root / sudo</span>{% endif %}.
+      </div>
+      <button onclick="openModal('admin-info-modal')"
+              style="margin:7px 2px 0;background:none;border:none;color:var(--accent);cursor:pointer;
+                     font-size:10px;padding:0;text-align:left;display:block;line-height:1.5"
+              title="How to run as administrator">ℹ How to run as admin →</button>
+      {% else %}
+      <div style="font-size:10px;color:var(--yellow);margin-top:10px;line-height:1.6;padding:0 2px">
+        ⬆ Running with elevated privileges — tools will install system-wide.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Supported Platforms -->
+    <hr class="sidebar-sep">
+    <div style="padding:14px 10px 0">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Supported Platforms</div>
+      <div class="sidebar-stats">
+        <div class="stat-row">
+          <span>Windows 11</span>
+          <span class="val" style="color:var(--accent);font-size:10px">Git Bash / MINGW64</span>
+        </div>
+        <div class="stat-row">
+          <span>RHEL 8</span>
+          <span class="val" style="color:var(--green);font-size:10px">Bash 4.x</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text2);margin-top:10px;line-height:1.9;padding:8px 10px;
+                  background:var(--bg3);border:1px solid var(--border);border-radius:6px">
+        <div>glibc ≥ 2.28 &nbsp;(Linux)</div>
+        <div>Python 3.8+ &nbsp;(for devkit-ui)</div>
+        <div>~2 GB disk &nbsp;(full install)</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <hr class="sidebar-sep">
+    <div style="padding:14px 10px 22px">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button onclick="filterTools(document.querySelector('.filter-btn[onclick*=installed]'), 'installed')"
+                style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;
+                       color:var(--text2);cursor:pointer;font-family:var(--font);font-size:11px;text-align:left;
+                       transition:all 0.15s;display:flex;align-items:center;gap:8px"
+                onmouseenter="this.style.borderColor='var(--green)';this.style.color='var(--text)';this.style.background='rgba(63,185,80,0.06)'"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
+          <span style="color:var(--green)">●</span> Show installed only
+        </button>
+        <button onclick="filterTools(document.querySelector('.filter-btn'), 'all')"
+                style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;
+                       color:var(--text2);cursor:pointer;font-family:var(--font);font-size:11px;text-align:left;
+                       transition:all 0.15s;display:flex;align-items:center;gap:8px"
+                onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--text)';this.style.background='rgba(88,166,255,0.06)'"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
+          <span style="color:var(--accent)">◈</span> Show all tools
+        </button>
+        <button onclick="showProfileModal('full')"
+                style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;
+                       color:var(--text2);cursor:pointer;font-family:var(--font);font-size:11px;text-align:left;
+                       transition:all 0.15s;display:flex;align-items:center;gap:8px"
+                onmouseenter="this.style.borderColor='var(--purple)';this.style.color='var(--text)';this.style.background='rgba(188,140,255,0.06)'"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
+          <span style="color:var(--purple)">▷</span> Full install profile
+        </button>
+      </div>
     </div>
   </nav>
 
   <!-- Main -->
   <main class="main">
     <div class="page-header">
-      <div>
+      <div style="flex-shrink:0">
         <div class="page-title">Tool Dashboard</div>
-        <div class="page-subtitle">Manage your airgap-cpp-devkit installations</div>
+        <div class="page-subtitle">Manage your airgap-cpp-devkit installations · {{ total_count }} tools</div>
       </div>
-      <div class="header-actions">
+
+      <!-- Category quick-jump -->
+      <div style="display:flex;align-items:center;gap:6px;flex:1;overflow-x:auto;justify-content:center;padding:0 8px">
+        {% set hcats = [] %}
+        {% for t in tools %}{% if t.category not in hcats %}{% set _ = hcats.append(t.category) %}{% endif %}{% endfor %}
+        {% for cat in hcats %}
+        {% set cat_installed = categories[cat] | selectattr('installed') | list | length %}
+        {% set cat_avail = categories[cat] | selectattr('available') | list | length %}
+        <button class="filter-btn" onclick="filterTools(this, '{{ cat }}')"
+                style="white-space:nowrap;display:flex;align-items:center;gap:5px">
+          <span>{{ cat }}</span>
+          <span style="font-size:9px;background:var(--bg3);border-radius:3px;padding:0 4px;border:1px solid var(--border)">
+            {{ cat_installed }}/{{ cat_avail }}
+          </span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="header-actions" style="flex-shrink:0">
         <button class="btn" onclick="refreshAll()">↺ Refresh</button>
         <button class="btn" onclick="runTests(false)" title="Run smoke tests">✓ Run Tests</button>
-        <button class="btn" onclick="runTests(true)" title="Run smoke tests (verbose — shows binary versions)">✓ Tests -v</button>
+        <button class="btn" onclick="runTests(true)" title="Run smoke tests (verbose)">✓ Tests -v</button>
         <button class="btn btn-primary" onclick="showProfileModal('cpp-dev')">▷ Install Profile</button>
       </div>
     </div>
 
     <!-- Stats + Submodule status -->
-    <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-      <div class="info-card">
-        <div class="info-label">Installed</div>
-        <div class="info-value green">{{ installed_count }} / {{ available_count }}</div>
+    <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 20px;">
+      <!-- Installation progress card -->
+      <div class="info-card" style="padding: 16px 18px;">
+        <div class="info-label" style="margin-bottom:6px">Installation Progress</div>
+        <div class="info-value green" style="font-size:22px;letter-spacing:-0.5px">{{ installed_count }}<span style="font-size:14px;font-weight:400;color:var(--text2)"> / {{ available_count }}</span></div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px">
+          {{ available_count }} available on {{ os | upper }}
+          {% if total_count > available_count %} · {{ total_count - available_count }} other platform{% endif %}
+        </div>
+        <div class="progress-bar" style="margin-top:10px;height:4px">
+          <div class="progress-bar-fill" style="width:{{ (installed_count / available_count * 100) | int if available_count > 0 else 0 }}%"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text2);margin-top:5px;text-align:right">
+          {{ (installed_count / available_count * 100) | int if available_count > 0 else 0 }}% complete
+        </div>
       </div>
-      <div class="info-card">
-        <div class="info-label">Platform</div>
-        <div class="info-value accent">{{ os | upper }}</div>
+
+      <!-- Environment card -->
+      <div class="info-card" style="padding: 16px 18px;">
+        <div class="info-label" style="margin-bottom:6px">Environment</div>
+        <div class="info-value accent" style="font-size:18px;letter-spacing:1px">{{ os | upper }}</div>
+        <div style="font-size:11px;color:var(--text);margin-top:6px;font-weight:500">{{ hostname }}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px">Python {{ system_info.python_version }}</div>
+        <div style="font-size:10px;margin-top:4px">
+          <span style="color:{% if system_info.privilege == 'admin' %}var(--yellow){% else %}var(--green){% endif %}">
+            {% if system_info.privilege == 'admin' %}⬆ Admin (system-wide){% else %}⬇ User install{% endif %}
+          </span>
+        </div>
       </div>
+
       <!-- Prebuilt-binaries submodule card -->
       <div class="info-card" id="submodule-card"
-           style="border-color: {% if submodule.initialized %}{% if submodule.stale %}var(--yellow){% else %}var(--green){% endif %}{% else %}var(--yellow){% endif %}; cursor:pointer"
+           style="padding:16px 18px; border-color: {% if submodule.initialized %}{% if submodule.stale %}var(--yellow){% else %}var(--green){% endif %}{% else %}var(--yellow){% endif %}; cursor:pointer; transition: opacity 0.15s;"
+           onmouseenter="this.style.opacity='0.85'"
+           onmouseleave="this.style.opacity='1'"
            onclick="showSubmoduleModal()">
-        <div class="info-label">prebuilt-binaries</div>
+        <div class="info-label" style="margin-bottom:6px">Prebuilt-Binaries</div>
         {% if submodule.initialized %}
           {% if submodule.stale %}
-            <div class="info-value" style="color:var(--yellow)">⚠ Stale</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.commit }} · run git pull</div>
+            <div class="info-value" style="color:var(--yellow);font-size:18px">⚠ Stale</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:6px">Commit: {{ submodule.commit }}</div>
+            <div style="font-size:10px;color:var(--yellow);margin-top:3px">Run git pull to update</div>
           {% else %}
-            <div class="info-value green">✓ Ready</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.commit if submodule.commit else 'checked out' }}</div>
+            <div class="info-value green" style="font-size:18px">✓ Ready</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:6px">Commit: {{ submodule.commit if submodule.commit else 'checked out' }}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.prebuilt_tool_count }} tools use fast path</div>
           {% endif %}
         {% else %}
-          <div class="info-value" style="color:var(--yellow)">⚠ Not initialised</div>
-          <div style="font-size:10px;color:var(--text2);margin-top:3px">{{ submodule.prebuilt_tool_count }} tools affected · click to init</div>
+          <div class="info-value" style="color:var(--yellow);font-size:18px">⚠ Not init</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:6px">{{ submodule.prebuilt_tool_count }} tools affected</div>
+          <div style="font-size:10px;color:var(--accent);margin-top:3px">Click to initialise →</div>
         {% endif %}
       </div>
     </div>
@@ -589,7 +774,10 @@
         <div class="tool-card-header">
           <div>
             <div class="tool-name">{{ tool.name }}</div>
-            <div class="tool-version">v{{ tool.version }}</div>
+            <div class="tool-version">
+              {% if tool.version_label is defined %}{{ tool.version_label }}
+              {% else %}v{{ tool.version }}{% endif %}
+            </div>
           </div>
           <div>
             {% if not tool.available %}
@@ -612,6 +800,25 @@
         </div>
 
         <div class="tool-desc">{{ tool.description }}</div>
+
+        {% if tool.extensions is defined %}
+        <div style="margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          {% set vendored = tool.extensions | selectattr('status', 'equalto', 'vendored') | list %}
+          {% set planned  = tool.extensions | selectattr('status', 'equalto', 'planned')  | list %}
+          {% if vendored %}<span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">{{ vendored|length }} vendored</span>{% endif %}
+          {% if planned %}<span class="badge-category" style="color:var(--yellow);border-color:rgba(210,153,34,0.4)">{{ planned|length }} planned</span>{% endif %}
+          <button class="btn btn-sm" style="padding:2px 8px;font-size:10px"
+                  onclick="showSubItems('{{ tool.id }}', '{{ tool.name }}')">▾ View all</button>
+        </div>
+        {% endif %}
+
+        {% if tool.packages is defined %}
+        <div style="margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">{{ tool.packages|length }} packages</span>
+          <button class="btn btn-sm" style="padding:2px 8px;font-size:10px"
+                  onclick="showSubItems('{{ tool.id }}', '{{ tool.name }}')">▾ View all</button>
+        </div>
+        {% endif %}
 
         <div class="tool-meta">
           <span class="badge-category">{{ tool.category }}</span>
@@ -784,7 +991,7 @@
           <strong>{{ submodule.prebuilt_tool_count }} tools</strong> use prebuilt binaries for fast, compiler-free installs.
           Without the submodule they will fall back to building from vendored source archives, which takes significantly longer.<br><br>
           Click <strong>Initialise</strong> to run:<br>
-          <div class="terminal" style="max-height:40px;margin-top:6px">git submodule update --init --recursive prebuilt-binaries</div>
+          <div class="terminal" style="min-height:52px;margin-top:6px">git submodule update --init --recursive prebuilt-binaries</div>
         </div>
         <button class="btn btn-primary" onclick="initSubmodule()">⬇ Initialise Submodule</button>
       {% endif %}
@@ -823,6 +1030,91 @@
       <button class="btn btn-danger" onclick="resetPrefix()">↺ Reset to default</button>
       <button class="btn" onclick="closeModal('prefix-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="savePrefix()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Info Modal -->
+<div class="modal-overlay" id="admin-info-modal">
+  <div class="modal" style="max-width:680px;max-height:92vh">
+    <div class="modal-header">
+      <div class="modal-title">Running as Administrator / Root</div>
+      <button class="modal-close" onclick="closeModal('admin-info-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7">
+        By default DevKit installs tools into your user profile. To install system-wide (accessible to all users),
+        launch the devkit with elevated privileges. The install prefix switches automatically.
+      </div>
+
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px">Windows (Git Bash)</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.8">
+          <strong style="color:var(--text)">Option A</strong> — Right-click <strong>Git Bash</strong> in the Start Menu
+          → <strong>Run as administrator</strong>, then navigate and launch:
+        </div>
+        <div style="position:relative">
+          <div class="terminal" id="admin-win-cmd1">cd /c/path/to/airgap-cpp-devkit
+bash launch.sh</div>
+          <button onclick="copyBlock('admin-win-cmd1')"
+                  style="position:absolute;top:6px;right:8px;background:var(--bg3);border:1px solid var(--border);
+                         color:var(--text2);cursor:pointer;font-size:10px;padding:2px 8px;border-radius:4px;
+                         font-family:var(--font)">⎘ Copy</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:12px;margin-bottom:10px;line-height:1.8">
+          <strong style="color:var(--text)">Option B</strong> — Right-click <code style="color:var(--accent)">launch.sh</code>
+          → <strong>Open with Git Bash</strong>, then accept the UAC prompt.
+        </div>
+        <div style="font-size:11px;color:var(--text2);padding:8px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)">
+          ✓ Tools install to <code style="color:var(--text)">C:\Program Files\airgap-cpp-devkit\</code>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px">Linux (RHEL 8 / sudo)</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.8">
+          <strong style="color:var(--text)">Option A</strong> — Prefix with <code style="color:var(--accent)">sudo</code>:
+        </div>
+        <div style="position:relative">
+          <div class="terminal" id="admin-linux-cmd1">sudo bash launch.sh</div>
+          <button onclick="copyBlock('admin-linux-cmd1')"
+                  style="position:absolute;top:6px;right:8px;background:var(--bg3);border:1px solid var(--border);
+                         color:var(--text2);cursor:pointer;font-size:10px;padding:2px 8px;border-radius:4px;
+                         font-family:var(--font)">⎘ Copy</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:12px;margin-bottom:10px;line-height:1.8">
+          <strong style="color:var(--text)">Option B</strong> — Switch to root first:
+        </div>
+        <div style="position:relative">
+          <div class="terminal" id="admin-linux-cmd2">sudo su -
+cd /path/to/airgap-cpp-devkit
+bash launch.sh</div>
+          <button onclick="copyBlock('admin-linux-cmd2')"
+                  style="position:absolute;top:6px;right:8px;background:var(--bg3);border:1px solid var(--border);
+                         color:var(--text2);cursor:pointer;font-size:10px;padding:2px 8px;border-radius:4px;
+                         font-family:var(--font)">⎘ Copy</button>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:12px;padding:8px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)">
+          ✓ Tools install to <code style="color:var(--text)">/opt/airgap-cpp-devkit/</code>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('admin-info-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sub-items Modal (extensions / packages) -->
+<div class="modal-overlay" id="subitems-modal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <div class="modal-title" id="subitems-modal-title">Items</div>
+      <button class="modal-close" onclick="closeModal('subitems-modal')">×</button>
+    </div>
+    <div class="modal-body" id="subitems-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('subitems-modal')">Close</button>
     </div>
   </div>
 </div>
@@ -908,28 +1200,128 @@
     const data = await resp.json();
     const r = data.receipt;
 
+    const platformLabel = data.platform === 'both' ? 'Windows + Linux' : data.platform === 'windows' ? 'Windows' : 'Linux';
+    const prebuiltLabel = data.uses_prebuilt
+      ? '<span style="color:var(--green)">⚡ prebuilt binary</span>'
+      : '<span style="color:var(--yellow)">⚙ source build</span>';
+
     body.innerHTML = `
-      <div style="margin-bottom:12px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="info-card">
-            <div class="info-label">Status</div>
-            <div class="info-value ${r.status === 'success' ? 'green' : ''}">${r.status === 'success' ? '✓ Installed' : 'Not installed'}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px">${data.description}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="info-card">
+          <div class="info-label">Status</div>
+          <div class="info-value ${r.status === 'success' ? 'green' : ''}" style="${!r.receipt_exists && r.status !== 'success' ? 'color:var(--text2)' : ''}">
+            ${r.status === 'success' ? '✓ Installed' : r.receipt_exists ? '— Not installed' : '— Unknown'}
           </div>
-          <div class="info-card">
-            <div class="info-label">Version</div>
-            <div class="info-value accent">${data.version}</div>
-          </div>
+          ${!r.receipt_exists && r.status !== 'success' ? `<div style="font-size:10px;color:var(--text2);margin-top:4px">No receipt found — may be installed outside this tool</div>` : ''}
+        </div>
+        <div class="info-card">
+          <div class="info-label">Version</div>
+          <div class="info-value accent">${data.version_label || data.version}</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Est. time</div>
+          <div class="info-value">${data.estimate}</div>
         </div>
       </div>
-      ${r.date ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">Installed:</span> <span style="font-size:11px">${r.date}</span></div>` : ''}
-      ${r.install_path ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">Path:</span> <span style="font-size:11px;word-break:break-all">${r.install_path}</span></div>` : ''}
-      ${r.user ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">User:</span> <span style="font-size:11px">${r.user} @ ${r.hostname}</span></div>` : ''}
-      ${r.log_file ? `<div style="margin-bottom:8px"><span style="color:var(--text2);font-size:11px">Log:</span> <span style="font-size:11px;word-break:break-all">${r.log_file}</span></div>` : ''}
-      <div style="margin-top:12px">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="info-card">
+          <div class="info-label">Category</div>
+          <div style="font-size:12px;margin-top:4px">${data.category}</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Platform</div>
+          <div style="font-size:12px;margin-top:4px">${platformLabel}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <span style="color:var(--text2);font-size:11px">Install type:</span>
+        <span style="font-size:11px;margin-left:6px">${prebuiltLabel}</span>
+      </div>
+
+      ${r.status === 'success' ? `
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Install Receipt</div>
+        ${r.date ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Date:</span> <span>${r.date}</span></div>` : ''}
+        ${r.install_path ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Install path:</span><br><span style="word-break:break-all;color:var(--accent)">${r.install_path}</span></div>` : ''}
+        ${r.user ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Installed by:</span> <span>${r.user}@${r.hostname}</span></div>` : ''}
+        ${r.log_file ? `<div style="margin-bottom:6px;font-size:11px"><span style="color:var(--text2)">Log file:</span><br><span style="word-break:break-all">${r.log_file}</span></div>` : ''}
+      </div>` : ''}
+
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
         <div style="color:var(--text2);font-size:11px;margin-bottom:4px">Setup script:</div>
-        <div class="terminal" style="max-height:80px">${data.setup}</div>
+        <div class="terminal" style="min-height:52px">${data.setup}</div>
+        <div style="color:var(--text2);font-size:11px;margin-top:8px;margin-bottom:4px">Receipt file:</div>
+        <div class="terminal" style="min-height:52px;word-break:break-all">${data.receipt_path}</div>
       </div>
     `;
+
+    // Append sub-items table (extensions or packages) if present
+    const tS = `width:100%;border-collapse:collapse;font-size:12px`;
+    const thS = `text-align:left;padding:7px 10px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);background:var(--bg3)`;
+    const tdS = `padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top`;
+    const tdRS = `padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;vertical-align:middle`;
+
+    if (data.extensions && data.extensions.length) {
+      const vendored = data.extensions.filter(e => e.status === 'vendored');
+      const planned  = data.extensions.filter(e => e.status === 'planned');
+      let tHtml = `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">
+          Extensions (${vendored.length} vendored · ${planned.length} planned)
+        </div>
+        <table style="${tS}">
+          <thead><tr>
+            <th style="${thS}">Extension</th>
+            <th style="${thS}">Publisher</th>
+            <th style="${thS};text-align:right">Version</th>
+          </tr></thead><tbody>`;
+      data.extensions.forEach(e => {
+        const vBadge = e.status === 'vendored'
+          ? `<span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">v${e.version}</span>`
+          : `<span class="badge-category" style="color:var(--yellow);border-color:rgba(210,153,34,0.4)">⏳ planned</span>`;
+        tHtml += `<tr style="${e.status==='planned'?'opacity:0.7':''}">
+          <td style="${tdS}">
+            <div style="font-weight:600">${e.name}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
+          </td>
+          <td style="${tdS};color:var(--text2);font-size:11px">${e.publisher}</td>
+          <td style="${tdRS}">${vBadge}</td>
+        </tr>`;
+      });
+      tHtml += `</tbody></table></div>`;
+      body.innerHTML += tHtml;
+    }
+
+    if (data.packages && data.packages.length) {
+      let tHtml = `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">
+          Pip Packages (${data.packages.length})
+        </div>
+        <table style="${tS}">
+          <thead><tr>
+            <th style="${thS}">Package</th>
+            <th style="${thS}">Category</th>
+            <th style="${thS};text-align:right">Version</th>
+          </tr></thead><tbody>`;
+      data.packages.forEach(p => {
+        tHtml += `<tr>
+          <td style="${tdS}">
+            <div style="font-weight:600">${p.name}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">${p.description}</div>
+          </td>
+          <td style="${tdS};color:var(--text2);font-size:11px">${p.category}</td>
+          <td style="${tdRS}"><span class="badge-category">${p.version}</span></td>
+        </tr>`;
+      });
+      tHtml += `</tbody></table></div>`;
+      body.innerHTML += tHtml;
+    }
+
+    // Attach copy buttons to any .terminal blocks rendered in the modal
+    initCopyButtons(body);
   }
 
   // ---------------------------------------------------------------------------
@@ -1007,6 +1399,7 @@
   // ---------------------------------------------------------------------------
   function showSubmoduleModal() {
     openModal('submodule-modal');
+    initCopyButtons(document.getElementById('submodule-modal'));
   }
 
   function initSubmodule() {
@@ -1155,6 +1548,147 @@
       closeModal('prefix-modal');
       showToast('✓ Prefix reset to default', 'success');
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Copy block (named id version — for admin modal static blocks)
+  // ---------------------------------------------------------------------------
+  function copyBlock(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const btn = el.parentElement.querySelector('button');
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied';
+        btn.style.color = 'var(--green)';
+        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Universal copy buttons — wraps every .terminal that isn't already wrapped
+  // ---------------------------------------------------------------------------
+  function initCopyButtons(root) {
+    const scope = root || document;
+    scope.querySelectorAll('.terminal').forEach(el => {
+      if (el.closest('.code-wrap')) return; // already wrapped
+      const wrap = document.createElement('div');
+      wrap.className = 'code-wrap';
+      el.parentNode.insertBefore(wrap, el);
+      wrap.appendChild(el);
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '⎘ Copy';
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(el.textContent).then(() => {
+          btn.textContent = '✓ Copied';
+          btn.style.color = 'var(--green)';
+          setTimeout(() => { btn.textContent = '⎘ Copy'; btn.style.color = ''; }, 2000);
+        });
+      });
+      wrap.appendChild(btn);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', () => initCopyButtons());
+
+  // ---------------------------------------------------------------------------
+  // Sub-items (extensions / packages)
+  // ---------------------------------------------------------------------------
+  async function showSubItems(toolId, toolName) {
+    document.getElementById('subitems-modal-title').textContent = toolName;
+    const body = document.getElementById('subitems-modal-body');
+    body.innerHTML = '<div style="color:var(--text2);font-size:12px">Loading...</div>';
+    openModal('subitems-modal');
+
+    const resp = await fetch(`/api/tool/${toolId}`);
+    const data = await resp.json();
+
+    const tableStyle = `width:100%;border-collapse:collapse;font-size:12px`;
+    const thStyle = `text-align:left;padding:6px 10px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)`;
+    const tdStyle = `padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top`;
+    const tdRStyle = `padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;vertical-align:top`;
+
+    if (data.extensions) {
+      const vendored = data.extensions.filter(e => e.status === 'vendored');
+      const planned  = data.extensions.filter(e => e.status === 'planned');
+      let html = '';
+
+      if (vendored.length) {
+        html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Vendored — ${vendored.length} ready to install</div>`;
+        html += `<table style="${tableStyle}">
+          <thead><tr>
+            <th style="${thStyle}">Extension</th>
+            <th style="${thStyle}">Publisher</th>
+            <th style="${thStyle};text-align:right">Version</th>
+          </tr></thead><tbody>`;
+        html += vendored.map(e => `
+          <tr>
+            <td style="${tdStyle}">
+              <div style="font-weight:600">${e.name}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.id}</div>
+            </td>
+            <td style="${tdStyle};color:var(--text2)">${e.publisher}</td>
+            <td style="${tdRStyle}"><span class="badge-category" style="color:var(--green);border-color:rgba(63,185,80,0.3)">v${e.version}</span></td>
+          </tr>`).join('');
+        html += `</tbody></table>`;
+      }
+
+      if (planned.length) {
+        html += `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 8px">Planned — ${planned.length} vsix not yet vendored</div>`;
+        html += `<table style="${tableStyle}">
+          <thead><tr>
+            <th style="${thStyle}">Extension</th>
+            <th style="${thStyle}">Publisher</th>
+            <th style="${thStyle};text-align:right">Status</th>
+          </tr></thead><tbody>`;
+        html += planned.map(e => `
+          <tr style="opacity:0.75">
+            <td style="${tdStyle}">
+              <div style="font-weight:600">${e.name}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${e.description}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;opacity:0.6">${e.id}</div>
+            </td>
+            <td style="${tdStyle};color:var(--text2)">${e.publisher}</td>
+            <td style="${tdRStyle}"><span class="badge-category" style="color:var(--yellow);border-color:rgba(210,153,34,0.4)">⏳ planned</span></td>
+          </tr>`).join('');
+        html += `</tbody></table>`;
+      }
+
+      body.innerHTML = html;
+
+    } else if (data.packages) {
+      const groups = {};
+      data.packages.forEach(p => {
+        if (!groups[p.category]) groups[p.category] = [];
+        groups[p.category].push(p);
+      });
+      let html = `<table style="${tableStyle}">
+        <thead><tr>
+          <th style="${thStyle}">Package</th>
+          <th style="${thStyle}">Category</th>
+          <th style="${thStyle};text-align:right">Version</th>
+        </tr></thead><tbody>`;
+      for (const [cat, pkgs] of Object.entries(groups)) {
+        html += pkgs.map(p => `
+          <tr>
+            <td style="${tdStyle}">
+              <div style="font-weight:600">${p.name}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${p.description}</div>
+            </td>
+            <td style="${tdStyle};color:var(--text2)">${p.category}</td>
+            <td style="${tdRStyle}"><span class="badge-category">${p.version}</span></td>
+          </tr>`).join('');
+      }
+      html += `</tbody></table>`;
+      body.innerHTML = html;
+
+    } else {
+      body.innerHTML = '<div style="color:var(--text2);font-size:12px">No sub-item data available.</div>';
+    }
+    initCopyButtons(body);
   }
 
   // ---------------------------------------------------------------------------
