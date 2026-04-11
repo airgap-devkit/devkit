@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# install.sh
+# install-cli.sh
 #
 # CLI installer for airgap-cpp-devkit.
 # Use this when Python is unavailable or you prefer a non-GUI workflow.

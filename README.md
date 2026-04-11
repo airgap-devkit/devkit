@@ -11,6 +11,9 @@ Tools install to system-wide or per-user paths depending on available privileges
 
 ## Quick Start
 
+**Windows — double-click `Launch DevKit Manager.bat`** in the repo folder.
+
+**Terminal (Windows Git Bash or Linux):**
 ```bash
 git clone <this-repo-url>
 cd airgap-cpp-devkit
@@ -18,9 +21,8 @@ git submodule update --init --recursive
 bash launch.sh
 ```
 
-`launch.sh` starts the **DevKit Manager** — a local web UI for installing and
-managing all devkit tools. It finds Python on your machine, starts the server,
-and opens `http://127.0.0.1:8080` in your browser automatically.
+Either way, the **DevKit Manager** web UI opens at `http://127.0.0.1:8080`.
+It finds Python on your machine, starts the local server, and opens the browser automatically.
 
 Once the browser opens:
 
@@ -31,10 +33,11 @@ Once the browser opens:
    - **Full** — everything
 2. Or click **Install** next to individual tools to install them one at a time.
 3. Live output streams directly in the terminal panel on the right.
+4. To remove a tool, click the **✕** button on any installed tool card.
 
 > **No Python 3.8+?** `launch.sh` automatically falls back to the CLI wizard.
-> You can also run it directly: `bash install.sh`
-> Use `install.sh` for headless/CI installs (`--yes --profile cpp-dev`) or when no browser is available.
+> You can also run it directly: `bash install-cli.sh`
+> Use `install-cli.sh` for headless/CI installs (`--yes --profile cpp-dev`) or when no browser is available.
 
 ---
 
@@ -50,10 +53,10 @@ git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
 bash launch.sh          # preferred: opens DevKit Manager in browser
-# or: bash install.sh   # CLI fallback
+# or: bash install-cli.sh   # CLI fallback
 ```
 
-The launcher (and `install.sh`) detect the submodule and use prebuilt
+The launcher (and `install-cli.sh`) detect the submodule and use prebuilt
 binaries automatically. For toolchains that need source builds (e.g. clang
 on Linux), the scripts handle those steps transparently.
 
@@ -66,10 +69,10 @@ git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
 bash launch.sh          # preferred: opens DevKit Manager in browser
-# or: bash install.sh   # CLI fallback
+# or: bash install-cli.sh   # CLI fallback
 ```
 
-Both the DevKit Manager and `install.sh` detect that the submodule is absent
+Both the DevKit Manager and `install-cli.sh` detect that the submodule is absent
 and fall back to building all tools from vendored source archives automatically.
 
 ---
@@ -90,7 +93,7 @@ to the screen. An install receipt (`INSTALL_RECEIPT.txt`) and a timestamped
 log file are always written regardless of install mode.
 
 To install system-wide on Windows, right-click Git Bash and select
-"Run as administrator" before running `install.sh`.
+"Run as administrator" before running `install-cli.sh`.
 
 ---
 
@@ -180,7 +183,7 @@ auto-installed on first launch; in air-gapped environments pre-download wheels t
 bash launch.sh                     # preferred: auto-finds Python, opens UI
 bash launch.sh --port 9090         # custom port
 bash launch.sh --no-browser        # server only, no auto-open
-bash launch.sh --cli               # skip UI, use install.sh instead
+bash launch.sh --cli               # skip UI, use install-cli.sh instead
 ```
 
 **`build-tools/lcov/`** provides code coverage reporting for C++ projects
@@ -297,7 +300,7 @@ bash launch.sh
 | RHEL 8 | Bash 4.x, Python 3.8+ |
 
 Python is required for the DevKit Manager. It is pre-installed on all supported
-platforms. The CLI fallback (`install.sh`) requires only Bash.
+platforms. The CLI fallback (`install-cli.sh`) requires only Bash.
 
 No compiler, no Visual Studio, no CMake required for the standard install.
 See each tool's README for source-build prerequisites.
@@ -310,7 +313,7 @@ bash launch.sh
 ```
 Detects Python, starts a local server, opens `http://127.0.0.1:8080` in your
 browser. Use the profile buttons for one-click batch installs, or install tools
-individually. Live output streams to the terminal. Fallback to `install.sh`
+individually. Live output streams to the terminal. Fallback to `install-cli.sh`
 if Python is unavailable.
 
 ```bash
@@ -327,9 +330,9 @@ bash launch.sh --cli              # force CLI installer
 All methods below are also accessible from the DevKit Manager UI.
 Use these for scripting, CI, or when Python is unavailable.
 
-**Method 1 -- Full install via install.sh**
+**Method 1 -- Full install via install-cli.sh**
 ```bash
-bash install.sh
+bash install-cli.sh
 ```
 Interactive wizard. Detects platform, prompts for optional tools, installs
 everything in the correct order.
@@ -467,7 +470,7 @@ No internet access, no CPAN, no EPEL required.
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
 | Cross-platform | Windows 11 (Git Bash / MINGW64) + RHEL 8 |
-| Single entry point per tool | `bash install.sh` at root, or `bash setup.sh` per tool |
+| Single entry point per tool | `bash install-cli.sh` at root, or `bash setup.sh` per tool |
 | Integrity verification | SHA256 pinned in `manifest.json` for all vendored archives and binaries |
 
 ---
@@ -480,8 +483,8 @@ airgap-cpp-devkit/
 +-- TOOLS.md                               <- single-page tool inventory
 +-- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
 +-- launch.sh                              <- PRIMARY entry point (devkit-ui or CLI fallback)
-+-- install.sh                             <- CLI installer / fallback (no Python required)
-+-- uninstall.sh                           <- removes all installed tools
++-- install-cli.sh                             <- CLI installer / fallback (no Python required)
++-- uninstall-cli.sh                           <- removes all installed tools
 +-- .gitmodules                            <- prebuilt-binaries submodule pointer
 |
 +-- scripts/

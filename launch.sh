@@ -5,30 +5,30 @@
 #
 # Preferred way to install and manage devkit tools.
 # Finds Python 3.8+, launches the DevKit Manager web UI, and opens the browser.
-# Falls back to the interactive CLI installer (install.sh) if Python is absent.
+# Falls back to the interactive CLI installer (install-cli.sh) if Python is absent.
 #
 # USAGE:
 #   bash launch.sh                      # auto-detect; launch UI or CLI fallback
 #   bash launch.sh --port 9090          # custom port for the web UI
 #   bash launch.sh --host 0.0.0.0       # bind to all interfaces (LAN access)
 #   bash launch.sh --no-browser         # start server but don't open browser
-#   bash launch.sh --cli                # skip UI, run install.sh directly
+#   bash launch.sh --cli                # skip UI, run install-cli.sh directly
 #
 # WHAT HAPPENS:
 #   1. Script searches for Python 3.8+ (python3 / python).
 #   2. If found   -> launches dev-tools/devkit-ui/devkit.py and opens
 #                    http://127.0.0.1:8080 (or --port value).
 #                    From there: pick a profile or install tools individually.
-#   3. If not found -> falls back to bash install.sh (interactive CLI wizard).
+#   3. If not found -> falls back to bash install-cli.sh (interactive CLI wizard).
 # =============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEVKIT_UI="${SCRIPT_DIR}/dev-tools/devkit-ui/devkit.py"
-INSTALL_SH="${SCRIPT_DIR}/install.sh"
+INSTALL_SH="${SCRIPT_DIR}/install-cli.sh"
 
 # ---------------------------------------------------------------------------
-# Plain ASCII display helpers (match install.sh style)
+# Plain ASCII display helpers (match install-cli.sh style)
 # ---------------------------------------------------------------------------
 _sep2() { printf '%s\n' "================================================================================"; }
 
@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---------------------------------------------------------------------------
-# --cli: skip Python detection, go straight to install.sh
+# --cli: skip Python detection, go straight to install-cli.sh
 # ---------------------------------------------------------------------------
 if [[ "${FORCE_CLI}" == "true" ]]; then
     echo ""
@@ -58,7 +58,7 @@ if [[ "${FORCE_CLI}" == "true" ]]; then
     echo "  airgap-cpp-devkit -- CLI Installer"
     _sep2
     echo ""
-    echo "  [--cli] Skipping DevKit Manager. Launching install.sh..."
+    echo "  [--cli] Skipping DevKit Manager. Launching install-cli.sh..."
     echo ""
     exec bash "${INSTALL_SH}" "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
 fi
@@ -107,7 +107,7 @@ else
     echo ""
     echo "  Falling back to the interactive CLI installer..."
     echo ""
-    printf "  Press Enter to continue with install.sh, or Ctrl+C to cancel..."
+    printf "  Press Enter to continue with install-cli.sh, or Ctrl+C to cancel..."
     read -r
     echo ""
     exec bash "${INSTALL_SH}"
