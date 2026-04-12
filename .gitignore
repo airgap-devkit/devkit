@@ -47,6 +47,10 @@ reports/
 *.bak.clang-format
 .clang-tidy
 .llvm-hooks-local/
+
+# User-uploaded packages (added via DevKit Manager web UI)
+# Share bundles as .zip files instead of committing this directory.
+user-packages/
 mintty*.png
 
 # Claude Code

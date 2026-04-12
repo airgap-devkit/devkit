@@ -3,17 +3,20 @@ airgap-cpp-devkit — DevKit Manager
 FastAPI + HTMX web UI for managing devkit tool installations.
 """
 import asyncio
+import io
 import json
 import os
 import platform
 import re
+import shutil
 import subprocess
 import sys
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, File, Request, Form, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import jinja2
@@ -26,6 +29,7 @@ APP_DIR = Path(__file__).parent          # .../devkit-ui/app/
 REPO_ROOT = APP_DIR.parent.parent.parent  # app/ -> devkit-ui/ -> dev-tools/ -> repo root
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"
+USER_PACKAGES_DIR = REPO_ROOT / "user-packages"
 
 
 def _detect_os() -> str:
@@ -116,35 +120,45 @@ def _get_system_info() -> dict:
 # ---------------------------------------------------------------------------
 # Tool discovery — scans for devkit.json manifests in tool directories.
 #
-# To add a new tool, create a devkit.json in its directory (see packages/
-# for an example). No Python edits required.
+# Built-in tools:  devkit.json lives alongside setup.sh in the tool directory.
+# User packages:   uploaded via the web UI and stored in user-packages/<id>/.
 #
-# Search order (first match by id wins):
+# To add a built-in tool: create devkit.json next to setup.sh — no Python edits.
+# To add a user tool:     upload a .zip via the "Add Package" button in the UI.
+#
+# Scan order (first match by id wins):
 #   dev-tools/*/          dev-tools/*/*/
 #   build-tools/*/
 #   languages/*/
-#   toolchains/*/         toolchains/*/*/     toolchains/*/*/*/
+#   toolchains/*/         toolchains/*/*/    toolchains/*/*/*/
 #   frameworks/*/
-#   packages/*/           ← user-contributed or custom tools
+#   packages/*/           ← built-in tools with no dedicated directory
+#   user-packages/*/      ← user-uploaded packages (gitignored)
 # ---------------------------------------------------------------------------
-_TOOL_SCAN_PATTERNS = [
-    "dev-tools/*/devkit.json",
-    "dev-tools/*/*/devkit.json",
-    "build-tools/*/devkit.json",
-    "languages/*/devkit.json",
-    "toolchains/*/devkit.json",
-    "toolchains/*/*/devkit.json",
-    "toolchains/*/*/*/devkit.json",
-    "frameworks/*/devkit.json",
-    "packages/*/devkit.json",
+
+# Each entry: (glob_pattern, source_tag)
+_TOOL_SCAN_PATTERNS: list[tuple[str, str]] = [
+    ("dev-tools/*/devkit.json",          "builtin"),
+    ("dev-tools/*/*/devkit.json",        "builtin"),
+    ("build-tools/*/devkit.json",        "builtin"),
+    ("languages/*/devkit.json",          "builtin"),
+    ("toolchains/*/devkit.json",         "builtin"),
+    ("toolchains/*/*/devkit.json",       "builtin"),
+    ("toolchains/*/*/*/devkit.json",     "builtin"),
+    ("frameworks/*/devkit.json",         "builtin"),
+    ("packages/*/devkit.json",           "builtin"),
+    ("user-packages/*/devkit.json",      "user"),
 ]
+
+_REQUIRED_MANIFEST_FIELDS = ["id", "name", "version", "category", "platform",
+                              "description", "setup", "receipt_name"]
 
 
 def _load_tools() -> list:
     import glob as _glob
     tools: list = []
     seen_ids: set = set()
-    for pattern in _TOOL_SCAN_PATTERNS:
+    for pattern, source in _TOOL_SCAN_PATTERNS:
         for manifest_path in sorted(_glob.glob(str(REPO_ROOT / pattern))):
             try:
                 data = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
@@ -155,6 +169,8 @@ def _load_tools() -> list:
             if not tool_id or tool_id in seen_ids:
                 continue
             seen_ids.add(tool_id)
+            # Source is determined by scan location, not the manifest contents
+            data["source"] = source
             # Apply defaults so templates never see missing keys
             data.setdefault("platform", "both")
             data.setdefault("category", "Developer Tools")
@@ -169,6 +185,12 @@ def _load_tools() -> list:
 
 
 TOOLS = _load_tools()
+
+
+def _reload_tools() -> None:
+    """Refresh TOOLS in-place after a package is added or removed."""
+    global TOOLS
+    TOOLS[:] = _load_tools()
 
 PROFILES = {
     "cpp-dev": {
@@ -602,6 +624,110 @@ async def uninstall_tool(tool_id: str):
             yield "data: DONE:failed\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/packages/upload")
+async def upload_package(file: UploadFile = File(...)):
+    """Accept a .zip bundle (devkit.json + setup.sh) and install it to user-packages/."""
+    if not (file.filename or "").lower().endswith(".zip"):
+        return JSONResponse({"error": "Only .zip files are accepted"}, status_code=400)
+
+    content = await file.read()
+
+    # --- peek at devkit.json without fully extracting ---
+    try:
+        zf_peek = zipfile.ZipFile(io.BytesIO(content))
+    except zipfile.BadZipFile:
+        return JSONResponse({"error": "Invalid or corrupt zip file"}, status_code=400)
+
+    with zf_peek as zf:
+        names = zf.namelist()
+        # Support both flat zips (devkit.json at root) and single-subdirectory zips
+        manifest_name = next(
+            (n for n in names if n == "devkit.json"
+             or (n.endswith("/devkit.json") and n.count("/") == 1)),
+            None,
+        )
+        if not manifest_name:
+            return JSONResponse({"error": "devkit.json not found in zip root"}, status_code=400)
+        try:
+            manifest_data = json.loads(zf.read(manifest_name).decode("utf-8"))
+        except Exception as exc:
+            return JSONResponse({"error": f"devkit.json is not valid JSON: {exc}"}, status_code=400)
+
+    # --- validate required fields ---
+    missing = [f for f in _REQUIRED_MANIFEST_FIELDS if not str(manifest_data.get(f, "")).strip()]
+    if missing:
+        return JSONResponse({"error": f"devkit.json missing required fields: {', '.join(missing)}"}, status_code=400)
+
+    tool_id = manifest_data["id"].strip()
+
+    # --- reject id conflicts with built-in tools ---
+    builtin_ids = {t["id"] for t in TOOLS if t.get("source") == "builtin"}
+    if tool_id in builtin_ids:
+        return JSONResponse(
+            {"error": f"id '{tool_id}' conflicts with a built-in tool — choose a different id"},
+            status_code=409,
+        )
+
+    # --- safe destination directory ---
+    safe_id = re.sub(r"[^\w\-]", "-", tool_id)
+    dest_dir = USER_PACKAGES_DIR / safe_id
+
+    # --- extract, validating paths ---
+    prefix = manifest_name[: -len("devkit.json")]  # "" or "subdir/"
+    with zipfile.ZipFile(io.BytesIO(content)) as zf:
+        for member in zf.namelist():
+            rel = member[len(prefix):] if prefix and member.startswith(prefix) else member
+            if not rel:
+                continue
+            p = Path(rel)
+            if p.is_absolute() or ".." in p.parts:
+                return JSONResponse({"error": f"Unsafe path in zip: {member}"}, status_code=400)
+
+        if dest_dir.exists():
+            shutil.rmtree(str(dest_dir))
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        for member in zf.namelist():
+            rel = member[len(prefix):] if prefix and member.startswith(prefix) else member
+            if not rel:
+                continue
+            dest_path = dest_dir / rel
+            if member.endswith("/"):
+                dest_path.mkdir(parents=True, exist_ok=True)
+            else:
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                dest_path.write_bytes(zf.read(member))
+
+    # --- rewrite setup path to be repo-root-relative ---
+    setup_filename = Path(manifest_data.get("setup", "setup.sh")).name
+    manifest_data["setup"] = f"user-packages/{safe_id}/{setup_filename}"
+    manifest_data["source"] = "user"
+    (dest_dir / "devkit.json").write_text(
+        json.dumps(manifest_data, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    _reload_tools()
+    return {"ok": True, "id": tool_id, "name": manifest_data["name"]}
+
+
+@app.delete("/packages/{tool_id:path}")
+async def delete_package(tool_id: str):
+    """Remove a user-uploaded package from user-packages/. Built-in tools are protected."""
+    tool = next((t for t in TOOLS if t["id"] == tool_id), None)
+    if not tool:
+        return JSONResponse({"error": "Tool not found"}, status_code=404)
+    if tool.get("source") != "user":
+        return JSONResponse({"error": "Built-in tools cannot be removed via the UI"}, status_code=403)
+
+    safe_id = re.sub(r"[^\w\-]", "-", tool_id)
+    package_dir = USER_PACKAGES_DIR / safe_id
+    if package_dir.exists():
+        shutil.rmtree(str(package_dir))
+
+    _reload_tools()
+    return {"ok": True, "id": tool_id}
 
 
 @app.get("/health")

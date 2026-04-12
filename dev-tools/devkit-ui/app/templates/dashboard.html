@@ -171,6 +171,31 @@
     .btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
     .btn-sm { padding: 4px 8px; font-size: 11px; }
 
+    /* Source badges */
+    .badge-source-builtin {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 4px;
+      color: var(--text2); background: var(--bg3); border: 1px solid var(--border);
+    }
+    .badge-source-user {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 4px;
+      color: var(--yellow); background: rgba(210,153,34,0.08); border: 1px solid rgba(210,153,34,0.35);
+    }
+
+    /* Upload drop zone */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 32px 24px; text-align: center; cursor: pointer;
+      color: var(--text2); transition: all 0.15s;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent); color: var(--text); background: rgba(88,166,255,0.04);
+    }
+    .upload-zone input[type=file] { display: none; }
+
     /* Progress bar */
     .progress-bar {
       height: 3px;
@@ -647,6 +672,14 @@
                 onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
           <span style="color:var(--purple)">▷</span> Full install profile
         </button>
+        <button onclick="openModal('upload-modal')"
+                style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;
+                       color:var(--text2);cursor:pointer;font-family:var(--font);font-size:11px;text-align:left;
+                       transition:all 0.15s;display:flex;align-items:center;gap:8px"
+                onmouseenter="this.style.borderColor='var(--yellow)';this.style.color='var(--text)';this.style.background='rgba(210,153,34,0.06)'"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)';this.style.background='var(--bg3)'">
+          <span style="color:var(--yellow)">⬆</span> Add Package
+        </button>
       </div>
     </div>
   </nav>
@@ -841,6 +874,11 @@
           {% else %}
             <span class="badge-category">{{ tool.estimate }}</span>
           {% endif %}
+          {% if tool.source == 'user' %}
+            <span class="badge-source-user" title="Uploaded via Add Package">⬆ custom</span>
+          {% else %}
+            <span class="badge-source-builtin" title="Shipped with airgap-cpp-devkit">built-in</span>
+          {% endif %}
         </div>
 
         <div class="tool-footer">
@@ -869,6 +907,11 @@
               <button class="btn btn-sm" onclick="showReceipt('{{ tool.id }}', '{{ tool.name }}')">
                 ℹ
               </button>
+            {% endif %}
+            {% if tool.source == 'user' %}
+              <button class="btn btn-sm" style="color:var(--red);border-color:rgba(248,81,73,0.4)"
+                      onclick="confirmRemovePackage('{{ tool.id }}', '{{ tool.name }}')"
+                      title="Remove this package from user-packages/">🗑</button>
             {% endif %}
           </div>
         </div>
@@ -999,6 +1042,40 @@
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('submodule-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Package Modal -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">Add Package</span>
+      <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px">
+        Upload a <code style="color:var(--accent)">.zip</code> containing
+        <code style="color:var(--accent)">devkit.json</code> and
+        <code style="color:var(--accent)">setup.sh</code>.
+        The package will appear in the tool list immediately.
+      </p>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('pkg-file').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="event.preventDefault();this.classList.remove('dragover');handlePackageDrop(event)">
+        <input type="file" id="pkg-file" accept=".zip" onchange="handlePackageSelect(event)">
+        <div id="upload-zone-label">
+          <div style="font-size:28px;margin-bottom:8px">📦</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Drop .zip here or click to browse</div>
+          <div style="font-size:11px;margin-top:4px">devkit.json + setup.sh</div>
+        </div>
+      </div>
+      <div id="upload-status" style="margin-top:12px;font-size:12px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('upload-modal')">Cancel</button>
+      <button class="btn btn-primary" id="upload-submit-btn" onclick="uploadPackage()" disabled>Upload</button>
     </div>
   </div>
 </div>
@@ -1513,6 +1590,104 @@ bash launch.sh</div>
       }
       read();
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Add Package (upload)
+  // ---------------------------------------------------------------------------
+  let _pendingPackageFile = null;
+
+  function handlePackageSelect(evt) {
+    _pendingPackageFile = evt.target.files[0] || null;
+    _updateUploadZone();
+  }
+
+  function handlePackageDrop(evt) {
+    _pendingPackageFile = evt.dataTransfer.files[0] || null;
+    _updateUploadZone();
+  }
+
+  function _updateUploadZone() {
+    const btn = document.getElementById('upload-submit-btn');
+    const label = document.getElementById('upload-zone-label');
+    const status = document.getElementById('upload-status');
+    status.style.display = 'none';
+    if (_pendingPackageFile) {
+      label.innerHTML = `<div style="font-size:20px;margin-bottom:6px">📦</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${_pendingPackageFile.name}</div>
+        <div style="font-size:11px;margin-top:2px">${(_pendingPackageFile.size/1024).toFixed(1)} KB — click to change</div>`;
+      btn.disabled = false;
+    } else {
+      label.innerHTML = `<div style="font-size:28px;margin-bottom:8px">📦</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Drop .zip here or click to browse</div>
+        <div style="font-size:11px;margin-top:4px">devkit.json + setup.sh</div>`;
+      btn.disabled = true;
+    }
+  }
+
+  function uploadPackage() {
+    if (!_pendingPackageFile) return;
+    const status = document.getElementById('upload-status');
+    const btn = document.getElementById('upload-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Uploading…';
+    status.style.display = 'block';
+    status.style.color = 'var(--text2)';
+    status.textContent = 'Uploading…';
+
+    const fd = new FormData();
+    fd.append('file', _pendingPackageFile);
+
+    fetch('/packages/upload', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          status.style.color = 'var(--green)';
+          status.textContent = `✓ "${data.name}" added successfully.`;
+          showToast(`✓ ${data.name} added`, 'success');
+          setTimeout(() => { closeModal('upload-modal'); window.location.reload(); }, 800);
+        } else {
+          status.style.color = 'var(--red)';
+          status.textContent = `✗ ${data.error || 'Upload failed'}`;
+          btn.disabled = false;
+          btn.textContent = 'Upload';
+        }
+      })
+      .catch(err => {
+        status.style.color = 'var(--red)';
+        status.textContent = `✗ ${err}`;
+        btn.disabled = false;
+        btn.textContent = 'Upload';
+      });
+  }
+
+  // Reset upload state when modal closes
+  const _origClose = window.closeModal;
+  window.closeModal = function(id) {
+    if (id === 'upload-modal') {
+      _pendingPackageFile = null;
+      document.getElementById('pkg-file').value = '';
+      _updateUploadZone();
+      document.getElementById('upload-submit-btn').textContent = 'Upload';
+    }
+    _origClose(id);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Remove Package (delete user-uploaded package definition)
+  // ---------------------------------------------------------------------------
+  function confirmRemovePackage(toolId, toolName) {
+    if (!confirm(`Remove package "${toolName}"?\n\nThis removes the tool definition from user-packages/.\nAny files already installed to the prefix are not affected.\nYou can re-add the package at any time.`)) return;
+    fetch(`/packages/${toolId}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          showToast(`✓ Package "${toolName}" removed`, 'success');
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          showToast(data.error || 'Remove failed', 'error');
+        }
+      });
   }
 
   // ---------------------------------------------------------------------------
