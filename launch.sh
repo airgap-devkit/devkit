@@ -16,7 +16,7 @@
 #
 # WHAT HAPPENS:
 #   1. Script searches for Python 3.8+ (python3 / python).
-#   2. If found   -> launches dev-tools/devkit-ui/devkit.py and opens
+#   2. If found   -> launches airgap-devkit-manager/devkit.py and opens
 #                    http://127.0.0.1:8080 (or --port value).
 #                    From there: pick a profile or install tools individually.
 #   3. If not found -> falls back to bash install-cli.sh (interactive CLI wizard).
@@ -24,7 +24,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEVKIT_UI="${SCRIPT_DIR}/dev-tools/devkit-ui/devkit.py"
+DEVKIT_UI="${SCRIPT_DIR}/airgap-devkit-manager/devkit.py"
 INSTALL_SH="${SCRIPT_DIR}/install-cli.sh"
 
 # ---------------------------------------------------------------------------
