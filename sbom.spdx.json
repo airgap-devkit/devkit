@@ -2,12 +2,12 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-04-08T00:00:00Z",
+    "created": "2026-04-17T18:26:34Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
     ],
-    "comment": "Root aggregate SBOM for airgap-cpp-devkit. References all subproject SBOMs. For full component detail see each subproject sbom.spdx.json."
+    "comment": "Root aggregate SBOM for airgap-cpp-devkit. References all subproject SBOMs."
   },
   "name": "airgap-cpp-devkit",
   "dataLicense": "CC0-1.0",
@@ -17,27 +17,59 @@
   ],
   "externalDocumentRefs": [
     {
-      "externalDocumentId": "DocumentRef-toolchains-clang-source-build",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/clang/source-build/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-toolchains-llvm",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/llvm/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "d475175c5de0c82020f5d7caace6d3fe779c27ac"
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
-      "externalDocumentId": "DocumentRef-toolchains-clang-style-formatter",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/clang/style-formatter/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-toolchains-llvm-mingw",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/llvm-mingw/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "8fc5f78713f618112cbe8c0c58b39d6068e082d5"
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
-      "externalDocumentId": "DocumentRef-dev-tools-git-bundle",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/git-bundle/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-toolchains-ninja",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/ninja/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "03fdab7e3a5c5bbcbc6aa68bd5380bdb52e0b460"
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-toolchains-gcc",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/gcc/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-toolchains-lcov",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/lcov/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-llvm-style-formatter",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/llvm/style-formatter/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-build-tools-cmake",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/build-tools/cmake/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
@@ -45,15 +77,7 @@
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/build-tools/lcov/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "3325c377d33b7aed01b771143d022bf4431e96b0"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-toolchains-gcc-windows",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/gcc/windows/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "6138786b90732e5134545cdfd936fcb0084f4f24"
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
@@ -61,7 +85,15 @@
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/7zip/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "59a16572fe110989b0b32cca0e9375b2788d50de"
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-conan",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/conan/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
@@ -69,20 +101,36 @@
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/servy/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "0718c5a4b2088cb4f29478dd7e8b1dedd179a240"
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
-      "externalDocumentId": "DocumentRef-languages-python",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/sbom.spdx.json",
+      "externalDocumentId": "DocumentRef-sqlite",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/sqlite/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
-        "checksumValue": "70ddea042c68cea1fdbc7547604e222932dfc20a"
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-dev-tools-git-bundle",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/git-bundle/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
       }
     },
     {
       "externalDocumentId": "DocumentRef-frameworks-grpc",
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/frameworks/grpc/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-languages-python",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "0000000000000000000000000000000000000000"
@@ -97,32 +145,16 @@
       }
     },
     {
-      "externalDocumentId": "DocumentRef-build-tools-cmake",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/build-tools/cmake/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "aacb14da13898f9621ad6c062febea870dbfb7cb"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-conan",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/conan/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "61b9c25b4df8899f7d0191931c711f9e026b82ee"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-languages-python-pip-packages",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/pip-packages/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "23e8a6345c133e4b4f08cb9c6a54529a39872d0b"
-      }
-    },
-    {
       "externalDocumentId": "DocumentRef-dev-tools-devkit-ui",
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/devkit-ui/sbom.spdx.json",
+      "checksum": {
+        "algorithm": "SHA1",
+        "checksumValue": "0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "externalDocumentId": "DocumentRef-python-pip-packages",
+      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/pip-packages/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "0000000000000000000000000000000000000000"
@@ -141,12 +173,12 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Air-gapped C++ developer toolkit. All tools work without internet access, without admin rights, and without pre-installed binaries. Targets Windows 11 (Git Bash/MINGW64) and RHEL 8."
+      "comment": "Air-gapped C++ developer toolkit. All tools work without internet access. Targets Windows 10/11 (Git Bash/MINGW64) and RHEL 8/9."
     },
     {
-      "SPDXID": "SPDXRef-subproject-toolchains-clang-source-build",
-      "name": "tools/toolchains/clang-source-build",
-      "versionInfo": "1.0.0",
+      "SPDXID": "SPDXRef-toolchains-llvm",
+      "name": "toolchains/llvm",
+      "versionInfo": "22.1.3",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -154,12 +186,12 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Builds clang-format and clang-tidy from LLVM 22.1.3 source. See DocumentRef-toolchains-clang-source-build for full component SBOM."
+      "comment": "LLVM/Clang 22.1.3 prebuilt (Windows + Linux) and source build. Includes clang, clang++, clang-format, clang-tidy, lld. Full prebuilt split at 50MB (.tar.xz)."
     },
     {
-      "SPDXID": "SPDXRef-subproject-toolchains-clang-style-formatter",
-      "name": "tools/toolchains/clang-style-formatter",
-      "versionInfo": "1.0.0",
+      "SPDXID": "SPDXRef-toolchains-llvm-mingw",
+      "name": "toolchains/llvm-mingw",
+      "versionInfo": "20260407",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -167,12 +199,12 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Core subproject. Enforces LLVM C++ style via Git pre-commit hook using vendored clang-format wheel. See DocumentRef-toolchains-clang-style-formatter for full component SBOM."
+      "comment": "llvm-mingw 20260407 UCRT MinGW-w64 cross-compiler toolchain for Windows and Linux. Split at 50MB (.tar.xz)."
     },
     {
-      "SPDXID": "SPDXRef-subproject-dev-tools-git-bundle",
-      "name": "tools/dev-tools/git-bundle",
-      "versionInfo": "1.0.0",
+      "SPDXID": "SPDXRef-toolchains-ninja",
+      "name": "toolchains/ninja",
+      "versionInfo": "1.13.2",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -180,11 +212,24 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Core subproject. Transfers Git repositories with nested submodules across air-gapped boundaries. Pure Python, no third-party dependencies. See DocumentRef-dev-tools-git-bundle for full component SBOM."
+      "comment": "Ninja 1.13.2 build system. Prebuilt single-binary for Windows and Linux. Source build supported."
     },
     {
-      "SPDXID": "SPDXRef-subproject-build-tools-lcov",
-      "name": "tools/build-tools/lcov",
+      "SPDXID": "SPDXRef-toolchains-gcc",
+      "name": "toolchains/gcc",
+      "versionInfo": "15.2.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "GCC 15.2.0. Windows: WinLibs GCC 15.2.0 mingw-w64ucrt 14.0.0 r7 (.tar.xz 4 parts). Linux: gcc-toolset-15 RHEL 8 RPMs (.tar.xz 2 parts). Includes gcov."
+    },
+    {
+      "SPDXID": "SPDXRef-toolchains-lcov",
+      "name": "toolchains/lcov",
       "versionInfo": "2.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -193,12 +238,12 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Code coverage reporting via lcov 2.4 + gcov for RHEL 8 / Linux. Vendored lcov source and Perl dependencies as pre-built tarballs. No internet access, CPAN, or EPEL required. See DocumentRef-build-tools-lcov for full component SBOM."
+      "comment": "lcov 2.4 code coverage frontend for gcov. Linux only. RPM for RHEL 8 + source tarball. Requires Perl."
     },
     {
-      "SPDXID": "SPDXRef-subproject-toolchains-gcc-windows",
-      "name": "prebuilt-toolchains/gcc/windows",
-      "versionInfo": "15.2.0posix-13.0.0-ucrt-r6",
+      "SPDXID": "SPDXRef-llvm-style-formatter",
+      "name": "toolchains/llvm/style-formatter",
+      "versionInfo": "22.1.3",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -206,76 +251,11 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. Pre-built GCC 15.2.0 toolchain for Windows x86_64. Available as .zip (6 parts, split at 49MB). See DocumentRef-toolchains-gcc-windows for full component SBOM."
+      "comment": "Git pre-commit hook enforcing LLVM C++ style via clang-format. bootstrap.sh installs hook into any git repo."
     },
     {
-      "SPDXID": "SPDXRef-subproject-7zip",
-      "name": "prebuilt-7zip",
-      "versionInfo": "26.00",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "https://airgap-cpp-devkit.internal",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. 7-Zip 26.00 prebuilt binaries for Windows x64 and Linux x86-64. Supports admin and user install modes on both platforms. See DocumentRef-7zip for full component SBOM."
-    },
-    {
-      "SPDXID": "SPDXRef-subproject-servy",
-      "name": "prebuilt-servy",
-      "versionInfo": "7.9",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "https://airgap-cpp-devkit.internal",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. Servy 7.9 Windows service manager -- portable prebuilt for Windows x64 only. Single file under 100MB. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
-    },
-    {
-      "SPDXID": "SPDXRef-subproject-languages-python",
-      "name": "tools/languages/python",
-      "versionInfo": "3.14.4",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "https://airgap-cpp-devkit.internal",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Portable Python 3.14.4 -- Windows embeddable zip (single file ~12MB); Linux python-build-standalone tar.gz (2 split parts, ~120MB). No installer, no PATH modification until env-setup.sh is sourced. Includes 10 vendored pip packages. See DocumentRef-languages-python for full component SBOM."
-    },
-    {
-      "SPDXID": "SPDXRef-subproject-languages-dotnet",
-      "name": "tools/languages/dotnet",
-      "versionInfo": "10.0.201",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "https://airgap-cpp-devkit.internal",
-      "filesAnalyzed": false,
-      "licenseConcluded": "MIT",
-      "licenseDeclared": "MIT",
-      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
-      "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Portable .NET 10 SDK 10.0.201 -- Windows x64 (.zip 283MB, 6 parts split at 49MB) and Linux x64 (.tar.gz 231MB, split into parts). No installer, no registry changes. Includes C# 14 compiler, .NET Runtime 10.0.5, ASP.NET Core Runtime, MSBuild, NuGet client, dotnet CLI. Supported until November 2028. See DocumentRef-languages-dotnet for full component SBOM."
-    },
-    {
-      "SPDXID": "SPDXRef-subproject-frameworks-grpc",
-      "name": "tools/frameworks/grpc",
-      "versionInfo": "1.80.0",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "https://airgap-cpp-devkit.internal",
-      "filesAnalyzed": false,
-      "licenseConcluded": "Apache-2.0",
-      "licenseDeclared": "Apache-2.0",
-      "copyrightText": "Copyright 2015 gRPC authors.",
-      "primaryPackagePurpose": "LIBRARY",
-      "comment": "Optional standalone subproject. gRPC v1.80.0 for air-gapped Windows C++ development. Two install paths: prebuilt extract (.zip instant, no 7-Zip required) or source build from vendored recursive bundle (127MB, ~40 min, MSVC required). Full cmake --target install output: bin/, include/, lib/, share/. HelloWorld demo built and verified end-to-end. See DocumentRef-frameworks-grpc for full component SBOM."
-    },
-    {
-      "SPDXID": "SPDXRef-subproject-build-tools-cmake",
-      "name": "tools/build-tools/cmake",
+      "SPDXID": "SPDXRef-build-tools-cmake",
+      "name": "build-tools/cmake",
       "versionInfo": "4.3.1",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -284,11 +264,24 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64. Both files under 100MB -- no split required. Also includes source tarball for Linux source builds. See DocumentRef-build-tools-cmake for full component SBOM."
+      "comment": "CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64. Single .tar.xz per platform, no split required."
     },
     {
-      "SPDXID": "SPDXRef-subproject-dev-tools-conan",
-      "name": "tools/dev-tools/conan",
+      "SPDXID": "SPDXRef-7zip",
+      "name": "dev-tools/7zip",
+      "versionInfo": "26.00",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "7-Zip 26.00. Windows: NSIS installer .exe. Linux: .tar.xz binary. Source included."
+    },
+    {
+      "SPDXID": "SPDXRef-conan",
+      "name": "dev-tools/conan",
       "versionInfo": "2.27.1",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -297,11 +290,37 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Conan 2.27.1 C/C++ package manager. Self-contained executables for Windows x64 and Linux x86_64 -- no Python required. Both files under 100MB -- no split required. See DocumentRef-dev-tools-conan for full component SBOM."
+      "comment": "Conan 2.27.1 C/C++ package manager. Windows: .tar.xz. Linux: .deb."
     },
     {
-      "SPDXID": "SPDXRef-subproject-dev-tools-devkit-ui",
-      "name": "tools/dev-tools/devkit-ui",
+      "SPDXID": "SPDXRef-servy",
+      "name": "dev-tools/servy",
+      "versionInfo": "7.9",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Servy 7.9 Windows service manager. Windows only. Portable .tar.xz."
+    },
+    {
+      "SPDXID": "SPDXRef-sqlite",
+      "name": "dev-tools/sqlite",
+      "versionInfo": "3.53.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "SQLite 3.53.0 CLI. Windows and Linux .tar.xz. RHEL 8 .rpm."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-git-bundle",
+      "name": "dev-tools/git-bundle",
       "versionInfo": "1.0.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
@@ -310,12 +329,25 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Web-based package manager GUI for airgap-cpp-devkit. Built with FastAPI + HTMX. Launch with: python tools/dev-tools/devkit-ui/devkit.py. Provides a dashboard of all tools with install status, one-click install/rebuild, profile-based batch installs, and a log browser. Python 3.8+ required. Dependencies (fastapi>=0.110.0, uvicorn>=0.27.0, python-multipart, jinja2, aiofiles) are auto-installed on first launch; pre-download to vendor/ for air-gapped use. HTMX (~14KB) is vendored in app/static/. See DocumentRef-dev-tools-devkit-ui for full component SBOM."
+      "comment": "Git bundle transfer utility for air-gapped environments. Pure Python."
     },
     {
-      "SPDXID": "SPDXRef-subproject-python-pip-packages",
-      "name": "tools/languages/python/pip-packages",
-      "versionInfo": "2026-04-08",
+      "SPDXID": "SPDXRef-frameworks-grpc",
+      "name": "frameworks/grpc",
+      "versionInfo": "1.80.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright 2015 gRPC authors.",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "gRPC v1.80.0 for Windows C++. Prebuilt .tar.xz. Source build supported."
+    },
+    {
+      "SPDXID": "SPDXRef-languages-python",
+      "name": "languages/python",
+      "versionInfo": "3.14.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -323,7 +355,46 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Vendored pip packages for offline installation: numpy 2.4.4, pandas 3.0.2, plotly 6.6.0, streamlit 1.56.0, requests 2.32.3, PyYAML 6.0.2, Jinja2 3.1.5, click 8.1.8, rich 14.0.0, pytest 8.3.5. See DocumentRef-languages-python-pip-packages for full component SBOM."
+      "comment": "Python 3.14.4. Windows: full .zip and embeddable .zip. Linux: cpython standalone .tar.xz 2 parts. Source build supported."
+    },
+    {
+      "SPDXID": "SPDXRef-languages-dotnet",
+      "name": "languages/dotnet",
+      "versionInfo": "10.0.202",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) .NET Foundation and Contributors",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "NET SDK 10.0.202. Windows and Linux .tar.xz split at 50MB (4 and 3 parts respectively). No installer required."
+    },
+    {
+      "SPDXID": "SPDXRef-dev-tools-devkit-ui",
+      "name": "dev-tools/devkit-ui",
+      "versionInfo": "1.0.0",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "FastAPI + HTMX web UI for managing devkit tool installs. Auto-discovers tools from devkit.json."
+    },
+    {
+      "SPDXID": "SPDXRef-python-pip-packages",
+      "name": "languages/python/pip-packages",
+      "versionInfo": "2026-04-17",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "APPLICATION",
+      "comment": "Vendored pip packages for offline Python use."
     }
   ],
   "relationships": [
@@ -335,142 +406,87 @@
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-toolchains-clang-source-build"
+      "relatedSpdxElement": "SPDXRef-toolchains-llvm"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-toolchains-clang-style-formatter"
+      "relatedSpdxElement": "SPDXRef-toolchains-llvm-mingw"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-dev-tools-git-bundle"
+      "relatedSpdxElement": "SPDXRef-toolchains-ninja"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-build-tools-lcov"
+      "relatedSpdxElement": "SPDXRef-toolchains-gcc"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-toolchains-gcc-windows"
+      "relatedSpdxElement": "SPDXRef-toolchains-lcov"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-7zip"
+      "relatedSpdxElement": "SPDXRef-llvm-style-formatter"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-servy"
+      "relatedSpdxElement": "SPDXRef-build-tools-cmake"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-languages-python"
+      "relatedSpdxElement": "SPDXRef-7zip"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-languages-dotnet"
+      "relatedSpdxElement": "SPDXRef-conan"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-frameworks-grpc"
+      "relatedSpdxElement": "SPDXRef-servy"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-build-tools-cmake"
+      "relatedSpdxElement": "SPDXRef-sqlite"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-dev-tools-conan"
+      "relatedSpdxElement": "SPDXRef-dev-tools-git-bundle"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-dev-tools-devkit-ui"
+      "relatedSpdxElement": "SPDXRef-frameworks-grpc"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-subproject-python-pip-packages"
+      "relatedSpdxElement": "SPDXRef-languages-python"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-toolchains-clang-source-build",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-toolchains-clang-source-build:SPDXRef-toolchains-clang-source-build"
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-languages-dotnet"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-toolchains-clang-style-formatter",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-toolchains-clang-style-formatter:SPDXRef-toolchains-clang-style-formatter"
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-dev-tools-devkit-ui"
     },
     {
-      "spdxElementId": "SPDXRef-subproject-dev-tools-git-bundle",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-dev-tools-git-bundle:SPDXRef-dev-tools-git-bundle"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-build-tools-lcov",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-build-tools-lcov:SPDXRef-build-tools-lcov"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-toolchains-gcc-windows",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-toolchains-gcc-windows:SPDXRef-toolchains-gcc-windows"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-7zip",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-7zip:SPDXRef-7zip-subproject"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-servy",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-servy:SPDXRef-servy-subproject"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-languages-python",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-languages-python:SPDXRef-python-linux"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-languages-dotnet",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-languages-dotnet:SPDXRef-dotnet-sdk-windows"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-frameworks-grpc",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-frameworks-grpc:SPDXRef-frameworks-grpc"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-build-tools-cmake",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-build-tools-cmake:SPDXRef-cmake-subproject"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-dev-tools-conan",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-dev-tools-conan:SPDXRef-conan-subproject"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-dev-tools-devkit-ui",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-dev-tools-devkit-ui:SPDXRef-devkit-ui-subproject"
-    },
-    {
-      "spdxElementId": "SPDXRef-subproject-python-pip-packages",
-      "relationshipType": "DESCRIBED_BY",
-      "relatedSpdxElement": "DocumentRef-languages-python-pip-packages:SPDXRef-pip-packages-subproject"
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-python-pip-packages"
     }
   ]
 }
