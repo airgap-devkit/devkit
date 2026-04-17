@@ -455,15 +455,15 @@ echo "  Platform : ${OS}   Prefix : ${INSTALL_PREFIX_OVERRIDE}"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Step 1: prebuilt-binaries submodule
+# Step 1: prebuilt submodule
 # ---------------------------------------------------------------------------
-echo "  [1/13] Checking prebuilt-binaries submodule..."
-if ! git -C "${REPO_ROOT}" submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
-    im_progress_start "Initialising prebuilt-binaries submodule"
-    git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt-binaries
+echo "  [1/13] Checking prebuilt submodule..."
+if ! git -C "${REPO_ROOT}" submodule status prebuilt 2>/dev/null | grep -q "^[^-]"; then
+    im_progress_start "Initialising prebuilt submodule"
+    git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt
     im_progress_stop "Submodule ready"
 else
-    echo "  [OK]  prebuilt-binaries already initialized."
+    echo "  [OK]  prebuilt already initialized."
 fi
 
 # ---------------------------------------------------------------------------

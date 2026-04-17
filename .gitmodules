@@ -1,5 +1,5 @@
-[submodule "prebuilt-binaries"]
-	path = prebuilt-binaries
+[submodule "prebuilt"]
+	path = prebuilt
 	url = https://github.com/airgap-devkit/prebuilt.git
 [submodule "airgap-devkit-manager"]
 	path = airgap-devkit-manager

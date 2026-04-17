@@ -3,7 +3,7 @@
 # =============================================================================
 # scripts/setup-prebuilt-submodule.sh
 #
-# PURPOSE: One-time setup script to initialize the prebuilt-binaries submodule.
+# PURPOSE: One-time setup script to initialize the prebuilt submodule.
 #          Run this after cloning if you want the pre-built binaries (Base Case).
 #          Skip this entirely if you are in a binary-restricted environment
 #          and will be building all tools from source (Worst Case).
@@ -12,7 +12,7 @@
 #   bash scripts/setup-prebuilt-submodule.sh
 #
 # WHAT IT DOES:
-#   1. Initializes and clones the prebuilt-binaries submodule
+#   1. Initializes and clones the prebuilt submodule
 #   2. Verifies SHA256 of all binaries against manifest.json
 #   3. Prints a clear summary of what is available
 #
@@ -34,7 +34,7 @@ echo "╔═══════════════════════�
 echo "║  airgap-cpp-devkit — Prebuilt Binaries Submodule Setup          ║"
 echo "╠══════════════════════════════════════════════════════════════════╣"
 echo "║                                                                  ║"
-echo "║  This initializes the prebuilt-binaries submodule which         ║"
+echo "║  This initializes the prebuilt submodule which         ║"
 echo "║  contains pre-compiled binaries for immediate use.              ║"
 echo "║                                                                  ║"
 echo "║  BINARY-RESTRICTED ENVIRONMENTS:                                ║"
@@ -51,14 +51,14 @@ cd "${REPO_ROOT}"
 # ---------------------------------------------------------------------------
 # Check if submodule is already initialized
 # ---------------------------------------------------------------------------
-if [[ -f "prebuilt-binaries/.git" ]] || \
-   git submodule status prebuilt-binaries 2>/dev/null | grep -q "^[^-]"; then
-    echo "[INFO] prebuilt-binaries submodule already initialized."
+if [[ -f "prebuilt/.git" ]] || \
+   git submodule status prebuilt 2>/dev/null | grep -q "^[^-]"; then
+    echo "[INFO] prebuilt submodule already initialized."
     echo "       Running git submodule update to ensure it is current..."
-    git submodule update --init --recursive prebuilt-binaries
+    git submodule update --init --recursive prebuilt
 else
-    echo "[INFO] Initializing prebuilt-binaries submodule..."
-    git submodule update --init --recursive prebuilt-binaries
+    echo "[INFO] Initializing prebuilt submodule..."
+    git submodule update --init --recursive prebuilt
 fi
 
 echo ""
@@ -69,7 +69,7 @@ echo ""
 # Helper: check a single binary file or a set of split parts
 #
 # Usage:
-#   _check_binary  <label>  <relative-path-under-prebuilt-binaries>  [parts]
+#   _check_binary  <label>  <relative-path-under-prebuilt>  [parts]
 #
 #   If the third argument is "parts", the function checks for <path>.part-*
 #   glob matches instead of a plain file, and reports them as split parts
@@ -79,7 +79,7 @@ _check_binary() {
     local label="$1"
     local rel="$2"
     local mode="${3:-file}"   # "file" or "parts"
-    local base="${REPO_ROOT}/prebuilt-binaries/${rel}"
+    local base="${REPO_ROOT}/prebuilt/${rel}"
 
     if [[ "${mode}" == "parts" ]]; then
         local parts=( "${base}".part-* )
