@@ -99,7 +99,10 @@ if PYTHON_BIN="$(_find_python 2>/dev/null)"; then
     echo ""
     _sep2
     echo ""
-    exec "${PYTHON_BIN}" "${DEVKIT_UI}" "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
+    PYTHONPATH="${SCRIPT_DIR}/manager/src${PYTHONPATH:+:${PYTHONPATH}}" \
+    exec "${PYTHON_BIN}" -m airgap_devkit.launcher \
+        --tools "${SCRIPT_DIR}/tools" \
+        "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
 else
     echo "  [!!]  Python 3.8+ not found on PATH."
     echo ""

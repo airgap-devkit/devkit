@@ -280,15 +280,15 @@ install_receipt_write() {
 
     mkdir -p "${INSTALL_PREFIX}" 2>/dev/null || true
     {
-        echo "airgap-cpp-devkit -- Install Receipt"
-        echo "====================================="
+        echo "airgap-cpp-devkit -- Installation Summary"
+        echo "=========================================="
         echo ""
         echo "Tool         : ${INSTALL_TOOL_NAME}"
         echo "Version      : ${INSTALL_TOOL_VERSION}"
         echo "Status       : ${status}"
         echo "Install mode : ${INSTALL_MODE}"
         echo "Install path : ${INSTALL_PREFIX}"
-        echo "Date         : $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        echo "Date         : $(date -u +'%m/%d/%Y %H:%M')"
         echo "User         : $(whoami 2>/dev/null || echo unknown)"
         echo "Hostname     : $(hostname 2>/dev/null || echo unknown)"
         echo "OS           : ${INSTALL_OS}"
