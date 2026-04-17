@@ -154,7 +154,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Builds clang-format and clang-tidy from LLVM 22.1.2 source. See DocumentRef-toolchains-clang-source-build for full component SBOM."
+      "comment": "Optional subproject. Builds clang-format and clang-tidy from LLVM 22.1.3 source. See DocumentRef-toolchains-clang-source-build for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-toolchains-clang-style-formatter",
@@ -224,7 +224,7 @@
     {
       "SPDXID": "SPDXRef-subproject-servy",
       "name": "prebuilt-servy",
-      "versionInfo": "7.8",
+      "versionInfo": "7.9",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -232,7 +232,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional standalone subproject. Servy 7.8 Windows service manager -- portable prebuilt for Windows x64 only. Single file under 100MB. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
+      "comment": "Optional standalone subproject. Servy 7.9 Windows service manager -- portable prebuilt for Windows x64 only. Single file under 100MB. Linux exits gracefully. Requires 7-Zip for extraction. See DocumentRef-servy for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-languages-python",
@@ -263,7 +263,7 @@
     {
       "SPDXID": "SPDXRef-subproject-frameworks-grpc",
       "name": "tools/frameworks/grpc",
-      "versionInfo": "1.78.1",
+      "versionInfo": "1.80.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -271,7 +271,7 @@
       "licenseDeclared": "Apache-2.0",
       "copyrightText": "Copyright 2015 gRPC authors.",
       "primaryPackagePurpose": "LIBRARY",
-      "comment": "Optional standalone subproject. gRPC v1.78.1 for air-gapped Windows C++ development. Two install paths: prebuilt extract (.zip instant, no 7-Zip required) or source build from vendored recursive bundle (127MB, ~40 min, MSVC required). Full cmake --target install output: bin/, include/, lib/, share/. HelloWorld demo built and verified end-to-end. See DocumentRef-frameworks-grpc for full component SBOM."
+      "comment": "Optional standalone subproject. gRPC v1.80.0 for air-gapped Windows C++ development. Two install paths: prebuilt extract (.zip instant, no 7-Zip required) or source build from vendored recursive bundle (127MB, ~40 min, MSVC required). Full cmake --target install output: bin/, include/, lib/, share/. HelloWorld demo built and verified end-to-end. See DocumentRef-frameworks-grpc for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-build-tools-cmake",
@@ -289,7 +289,7 @@
     {
       "SPDXID": "SPDXRef-subproject-dev-tools-conan",
       "name": "tools/dev-tools/conan",
-      "versionInfo": "2.27.0",
+      "versionInfo": "2.27.1",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -297,7 +297,7 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Optional subproject. Conan 2.27.0 C/C++ package manager. Self-contained executables for Windows x64 and Linux x86_64 -- no Python required. Both files under 100MB -- no split required. See DocumentRef-dev-tools-conan for full component SBOM."
+      "comment": "Optional subproject. Conan 2.27.1 C/C++ package manager. Self-contained executables for Windows x64 and Linux x86_64 -- no Python required. Both files under 100MB -- no split required. See DocumentRef-dev-tools-conan for full component SBOM."
     },
     {
       "SPDXID": "SPDXRef-subproject-dev-tools-devkit-ui",

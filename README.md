@@ -116,7 +116,7 @@ To install system-wide on Windows, right-click Git Bash and select
 | Directory | Purpose | Required? |
 |-----------|---------|-----------|
 | [`tools/toolchains/clang/style-formatter/`](tools/toolchains/clang/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
-| [`tools/toolchains/clang/source-build/`](tools/toolchains/clang/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
+| [`tools/toolchains/clang/source-build/`](tools/toolchains/clang/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.3 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
 | [`tools/build-tools/cmake/`](tools/build-tools/cmake/README.md) | CMake 4.3.1 -- build from source or install pre-built; RHEL 8 + Windows | No |
 | [`tools/dev-tools/git-bundle/`](tools/dev-tools/git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
 | [`tools/dev-tools/devkit-ui/`](tools/dev-tools/devkit-ui/README.md) | Web-based package manager GUI for installing and managing devkit tools (FastAPI + HTMX) | No |
@@ -126,9 +126,9 @@ To install system-wide on Windows, right-click Git Bash and select
 | [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
 | [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No -- standalone |
 | [`tools/dev-tools/7zip/`](tools/dev-tools/7zip/README.md) | 7-Zip 26.00 -- admin + user install for Windows and Linux | No -- standalone |
-| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 7.8 -- Windows service manager (Windows only, graceful no-op on Linux) | No -- standalone |
-| [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.0 -- C/C++ package manager, Windows + Linux, no Python required | No -- standalone |
-| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.78.1 for Windows -- prebuilt install (instant) or full source build (~40 min) | No -- standalone |
+| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 7.9 -- Windows service manager (Windows only, graceful no-op on Linux) | No -- standalone |
+| [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 -- C/C++ package manager, Windows + Linux, no Python required | No -- standalone |
+| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.80.0 for Windows -- prebuilt install (instant) or full source build (~40 min) | No -- standalone |
 
 ---
 
@@ -167,18 +167,18 @@ or places `7zz` in `/usr/local/bin` (Linux). User install uses the portable
 `7za.exe` (Windows) or `~/.local/bin/7zz` (Linux). No internet access or
 package manager required.
 
-**`tools/dev-tools/servy/`** provides Servy 7.8, a Windows service manager that turns
+**`tools/dev-tools/servy/`** provides Servy 7.9, a Windows service manager that turns
 any executable into a native Windows service with health checks, log rotation,
 restart policies, and a full GUI + CLI + PowerShell interface. Requires 7-Zip
 (`tools/dev-tools/7zip/`) for extraction. Running `setup.sh` on Linux exits cleanly
 with an informational message -- no error.
 
-**`tools/dev-tools/conan/`** provides Conan 2.27.0, the open-source C/C++ package manager.
+**`tools/dev-tools/conan/`** provides Conan 2.27.1, the open-source C/C++ package manager.
 Self-contained executables for Windows and Linux -- no Python runtime required.
 Pairs with CMake via `CMakeDeps` and `CMakeToolchain` generators. Supports
 air-gap workflows via `conan cache save` / `conan cache restore`.
 
-**`tools/frameworks/grpc/`** provides gRPC v1.78.1 for air-gapped Windows C++ development.
+**`tools/frameworks/grpc/`** provides gRPC v1.80.0 for air-gapped Windows C++ development.
 Two paths are available: install from prebuilt in seconds using
 `install-prebuilt.ps1`, or build from the vendored recursive source bundle
 using `setup.ps1` (~40 minutes, MSVC required). Both paths produce an
@@ -370,7 +370,7 @@ submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
 ```bash
 bash tools/toolchains/clang/source-build/setup.sh --build-from-source
 ```
-Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.2
+Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.3
 source tarball (~30-120 minutes). Use when pre-built binaries are not
 permitted or Python is unavailable.
 Requires: Visual Studio 2022 (Windows) or GCC 8+ (Linux). CMake 3.14+.
@@ -431,34 +431,34 @@ bash tools/dev-tools/7zip/setup.sh
 Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
 drop-in with no elevation required.
 
-**Method 11 -- Servy 7.8 (Windows service manager)**
+**Method 11 -- Servy 7.9 (Windows service manager)**
 ```bash
 bash tools/dev-tools/servy/setup.sh
 ```
-Installs Servy 7.8 portable. Turns any executable into a native Windows
+Installs Servy 7.9 portable. Turns any executable into a native Windows
 service with health checks, log rotation, and restart policies.
 Requires 7-Zip first. Windows only.
 
-**Method 12 -- Conan 2.27.0 (C/C++ package manager)**
+**Method 12 -- Conan 2.27.1 (C/C++ package manager)**
 ```bash
 bash tools/dev-tools/conan/setup.sh
 ```
-Installs Conan 2.27.0 self-contained executable. No Python required.
+Installs Conan 2.27.1 self-contained executable. No Python required.
 Windows and Linux. Pairs with CMake for dependency management.
 
-**Method 13 -- gRPC v1.78.1 for Windows (prebuilt)**
+**Method 13 -- gRPC v1.80.0 for Windows (prebuilt)**
 ```powershell
 cd tools\frameworks\grpc
-.\install-prebuilt.ps1 -version 1.78.1
-.\setup.ps1 -version 1.78.1
+.\install-prebuilt.ps1 -version 1.80.0
+.\setup.ps1 -version 1.80.0
 ```
-Extracts prebuilt gRPC from `prebuilt/frameworks/grpc/windows/1.78.1/`
+Extracts prebuilt gRPC from `prebuilt/frameworks/grpc/windows/1.80.0/`
 (69MB .7z -> 1.6GB install). No compiler or Visual Studio required for install.
 
-**Method 14 -- gRPC v1.78.1 for Windows (source build)**
+**Method 14 -- gRPC v1.80.0 for Windows (source build)**
 ```powershell
 cd tools\frameworks\grpc
-.\setup.ps1 -version 1.78.1
+.\setup.ps1 -version 1.80.0
 ```
 Builds gRPC from the vendored recursive source bundle (~40 minutes).
 Requires: Visual Studio 2019/2022/Insiders with Desktop C++ workload,
@@ -521,9 +521,9 @@ airgap-cpp-devkit/
 +-- prebuilt/                              <- SUBMODULE (separate repo, optional)
 |   +-- build-tools/cmake/                 <- CMake 4.3.1 (Windows .zip, Linux .tar.gz, source .tar.gz)
 |   +-- dev-tools/7zip/                    <- 7-Zip 26.00
-|   +-- dev-tools/servy/                   <- Servy 7.8 (single file ~80MB)
-|   +-- dev-tools/conan/                   <- Conan 2.27.0 (Windows .zip, Linux .tgz)
-|   +-- frameworks/grpc/windows/1.78.1/    <- gRPC prebuilt (.7z 69MB + .zip 162MB)
+|   +-- dev-tools/servy/                   <- Servy 7.9 (single file ~80MB)
+|   +-- dev-tools/conan/                   <- Conan 2.27.1 (Windows .zip, Linux .tgz)
+|   +-- frameworks/grpc/windows/1.80.0/    <- gRPC prebuilt (.7z 69MB + .zip 162MB)
 |   +-- languages/dotnet/10.0.201/         <- .NET 10 SDK (.7z 148MB + .zip 290MB, Linux .tar.gz 231MB)
 |   +-- languages/python/                  <- Python 3.14.4 (Windows .zip, Linux .tar.gz 2 parts)
 |   +-- toolchains/clang/mingw/            <- llvm-mingw 20260324
@@ -539,13 +539,13 @@ airgap-cpp-devkit/
 |   |
 |   +-- dev-tools/
 |   |   +-- 7zip/                          <- 7-Zip 26.00 scripts + manifests
-|   |   +-- servy/                         <- Servy 7.8 scripts + manifests
-|   |   +-- conan/                         <- Conan 2.27.0 scripts + manifests
+|   |   +-- servy/                         <- Servy 7.9 scripts + manifests
+|   |   +-- conan/                         <- Conan 2.27.1 scripts + manifests
 |   |   +-- vscode-extensions/             <- offline VS Code extensions
 |   |   +-- devkit-ui/                     <- web-based package manager (FastAPI + HTMX)
 |   |
 |   +-- frameworks/
-|   |   +-- grpc/                          <- gRPC v1.78.1 (Windows)
+|   |   +-- grpc/                          <- gRPC v1.80.0 (Windows)
 |   |
 |   +-- languages/
 |   |   +-- python/                        <- Python 3.14.4 (Windows + Linux) + pip packages
