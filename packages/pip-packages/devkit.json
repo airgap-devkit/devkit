@@ -5,7 +5,7 @@
   "version_label": "20 packages",
   "category": "Plugins",
   "platform": "both",
-  "description": "20 vendored pip wheels for data science, web, CLI, and testing. Requires Python (from the Languages section) to be installed first.",
+  "description": "Vendored pip wheels covering data science, web, CLI, and testing. Requires Python to be installed first.",
   "setup": "languages/python/setup.sh",
   "setup_args": ["--pip-only"],
   "receipt_name": "pip-packages",
