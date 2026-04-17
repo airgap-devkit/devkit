@@ -17,10 +17,10 @@ All tools work without internet access. All dependencies are vendored.
 | **clang-format** | 22.1.2 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
 | **clang-tidy** | 22.1.2 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
 | **LLVM source** | 22.1.2 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
-| **llvm-mingw** | 20260324 | Windows + Linux | Yes | `prebuilt-binaries/toolchains/clang/mingw/` |
-| **Clang RPMs** | 20.1.8 | RHEL 8 | Yes | `prebuilt-binaries/toolchains/clang/rhel8/` |
+| **llvm-mingw** | 20260324 | Windows + Linux | Yes | `prebuilt/toolchains/clang/mingw/` |
+| **Clang RPMs** | 20.1.8 | RHEL 8 | Yes | `prebuilt/toolchains/clang/rhel8/` |
 | **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
-| **gcc-toolset** | 15 | RHEL 8 | Yes | `prebuilt-binaries/toolchains/gcc/linux/` |
+| **gcc-toolset** | 15 | RHEL 8 | Yes | `prebuilt/toolchains/gcc/linux/` |
 | **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `tools/toolchains/gcc/linux/cross/` |
 | **GCC native (RHEL 8)** | 15 | RHEL 8 | Yes | `tools/toolchains/gcc/linux/native/` |
 
@@ -31,7 +31,7 @@ All tools work without internet access. All dependencies are vendored.
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **CMake** | 4.3.1 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
-| **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt-binaries/toolchains/clang/source-build/` |
+| **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt/toolchains/clang/source-build/` |
 | **lcov** | 2.4 | Linux / RHEL 8 | Yes (vendored tarball) | `tools/build-tools/lcov/` |
 
 ---
@@ -284,7 +284,7 @@ bash tools/toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows 
 
 The **main repo contains no compiled binaries** (no `.exe`, `.dll`, `.msi`, or
 pre-compiled object files). All binaries live exclusively in the
-`prebuilt-binaries/` submodule, which can be skipped entirely in
+`prebuilt/` submodule, which can be skipped entirely in
 binary-restricted environments.
 
 Everything in the main repo is source code, shell scripts, PowerShell scripts,

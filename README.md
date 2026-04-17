@@ -59,7 +59,7 @@ The script finds Python, starts a local web server, and opens
 
 ### Base Case -- Pre-built binaries allowed
 
-Pre-built binaries are available via the `prebuilt-binaries` submodule.
+Pre-built binaries are available via the `prebuilt` submodule.
 No compiler, no Visual Studio, no CMake required for most tools.
 
 ```bash
@@ -299,7 +299,7 @@ Done. The hook is installed. Every subsequent `git commit` enforces LLVM style.
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 
-# Base case -- initialize prebuilt-binaries submodule (if binaries are permitted)
+# Base case -- initialize prebuilt submodule (if binaries are permitted)
 bash scripts/setup-prebuilt-submodule.sh
 
 # Launch DevKit Manager (preferred)
@@ -363,7 +363,7 @@ No network access. No compiler. No admin rights required (installs in-repo).
 bash scripts/setup-prebuilt-submodule.sh
 bash tools/toolchains/clang/source-build/setup.sh
 ```
-Verifies and installs pre-built binaries from the `prebuilt-binaries`
+Verifies and installs pre-built binaries from the `prebuilt`
 submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
 
 **Method 4 -- Build from LLVM source (worst case / policy requirement)**
@@ -452,7 +452,7 @@ cd tools\frameworks\grpc
 .\install-prebuilt.ps1 -version 1.78.1
 .\setup.ps1 -version 1.78.1
 ```
-Extracts prebuilt gRPC from `prebuilt-binaries/frameworks/grpc/windows/1.78.1/`
+Extracts prebuilt gRPC from `prebuilt/frameworks/grpc/windows/1.78.1/`
 (69MB .7z -> 1.6GB install). No compiler or Visual Studio required for install.
 
 **Method 14 -- gRPC v1.78.1 for Windows (source build)**
@@ -478,8 +478,8 @@ No internet access, no CPAN, no EPEL required.
 
 | Principle | How it is met |
 |-----------|--------------|
-| Air-gapped | All dependencies vendored in-repo or in prebuilt-binaries submodule |
-| Binary-restricted environments | Skip prebuilt-binaries submodule; build all tools from vendored source |
+| Air-gapped | All dependencies vendored in-repo or in prebuilt submodule |
+| Binary-restricted environments | Skip prebuilt submodule; build all tools from vendored source |
 | Admin + user install support | Admin detection at runtime; system-wide or per-user install paths |
 | Install transparency | Install receipt + timestamped log file written on every bootstrap |
 | Minimal production footprint | One `setup.sh` + one submodule pointer per production repo |
@@ -498,15 +498,27 @@ airgap-cpp-devkit/
 +-- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
 +-- launch.sh                              <- PRIMARY entry point (devkit-ui or CLI fallback)
 +-- install-cli.sh                             <- CLI installer / fallback (no Python required)
-+-- uninstall-cli.sh                           <- removes all installed tools
-+-- .gitmodules                            <- prebuilt-binaries submodule pointer
++-- uninstall.sh                               <- removes all installed tools
++-- .gitmodules                            <- three submodule pointers (prebuilt, tools, airgap-devkit-manager)
 |
 +-- scripts/
 |   +-- install-mode.sh                    <- shared admin/user detection library
-|   +-- setup-prebuilt-submodule.sh        <- initialize prebuilt-binaries submodule
+|   +-- setup-prebuilt-submodule.sh        <- initialize prebuilt submodule
 |   +-- generate-sbom.sh                   <- regenerates all SBOM timestamps
+|   +-- fetch-vscode-extensions.py         <- mirrors .vsix files for offline use
+|   +-- status.sh                          <- prints install status of all tools
 |
-+-- prebuilt-binaries/                     <- SUBMODULE (separate repo, optional)
++-- tests/
+|   +-- run-tests.sh                       <- post-install smoke tests
+|
++-- packages/
+|   +-- pip-packages/                      <- vendored pip wheels for devkit-ui
+|
++-- user-packages/                         <- user-managed packages (not tracked by git)
+|
++-- airgap-devkit-manager/                 <- SUBMODULE: web UI + CLI orchestrator (FastAPI + HTMX)
+|
++-- prebuilt/                              <- SUBMODULE (separate repo, optional)
 |   +-- build-tools/cmake/                 <- CMake 4.3.1 (Windows .zip, Linux .tar.gz, source .tar.gz)
 |   +-- dev-tools/7zip/                    <- 7-Zip 26.00
 |   +-- dev-tools/servy/                   <- Servy 7.8 (single file ~80MB)
