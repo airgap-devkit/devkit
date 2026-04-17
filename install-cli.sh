@@ -17,7 +17,7 @@
 #   - You are in a headless environment with no browser
 #
 # REQUIRED tools (installed automatically):
-#   - toolchains/clang  (clang-format + clang-tidy 22.1.2)
+#   - tools/toolchains/clang  (clang-format + clang-tidy 22.1.2)
 #   - cmake       4.3.1
 #   - python      3.14.4  (portable interpreter)
 #   - lcov        2.4  (Linux only)
@@ -27,9 +27,9 @@
 #   - 7zip               26.00  (Windows + Linux, admin + user)
 #   - servy              7.8    (Windows only)
 #   - conan              2.27.0 (Windows + Linux, no Python required)
-#   - dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
+#   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
-#   - frameworks/grpc    (Windows only, requires Visual Studio)
+#   - tools/frameworks/grpc    (Windows only, requires Visual Studio)
 #   - sqlite             3.53.0 (CLI binary, Windows + Linux)
 #   - matlab             (verification only -- checks Database Toolbox + Compiler)
 #
@@ -141,7 +141,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
     _section "  REQUIRED (installed automatically)"
-    echo "    [1] toolchains/clang         clang-format + clang-tidy 22.1.2"
+    echo "    [1] tools/toolchains/clang         clang-format + clang-tidy 22.1.2"
     echo "    [2] cmake                    4.3.1"
     echo "    [3] python                   3.14.4 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
@@ -285,7 +285,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_WINLIBS=true
 
-            printf "  Install frameworks/grpc?       Requires Visual Studio      [~20min] [y/N]: "
+            printf "  Install tools/frameworks/grpc?       Requires Visual Studio      [~20min] [y/N]: "
             read -r reply
             if [[ "${reply^^}" == "Y" ]]; then
                 INSTALL_GRPC=true
@@ -310,14 +310,14 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Rebuild        : ${REBUILD}"
     echo ""
     echo "  Tools to install:"
-    echo "    [OK] toolchains/clang, cmake 4.3.1, python 3.14.4, style-formatter"
+    echo "    [OK] tools/toolchains/clang, cmake 4.3.1, python 3.14.4, style-formatter"
     [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.4"
     [[ "${INSTALL_7ZIP}"    == "true" ]]  && echo "    [OK] 7zip 26.00"
     [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.8 (Windows only)"
     [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.27.0"
-    [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] dev-tools/vscode-extensions"
+    [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] tools/dev-tools/vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && echo "    [OK] winlibs-gcc-ucrt"
-    [[ "${INSTALL_GRPC}"    == "true" ]]  && echo "    [OK] frameworks/grpc ${GRPC_VERSION}"
+    [[ "${INSTALL_GRPC}"    == "true" ]]  && echo "    [OK] tools/frameworks/grpc ${GRPC_VERSION}"
     [[ "${INSTALL_SQLITE}"  == "true" ]]  && echo "    [OK] sqlite 3.53.0"
     [[ "${INSTALL_MATLAB}"  == "true" ]]  && echo "    [OK] matlab (verification only)"
     echo ""
@@ -467,12 +467,12 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 2: toolchains/clang
+# Step 2: tools/toolchains/clang
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/13] Installing toolchains/clang (required)..."
+echo "  [2/13] Installing tools/toolchains/clang (required)..."
 _run_bootstrap "toolchains/clang" \
-    "${REPO_ROOT}/toolchains/clang/source-build/setup.sh"
+    "${REPO_ROOT}/tools/toolchains/clang/source-build/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 3: cmake
@@ -480,7 +480,7 @@ _run_bootstrap "toolchains/clang" \
 echo ""
 echo "  [3/13] Installing cmake 4.3.1 (required)..."
 _run_bootstrap "cmake" \
-    "${REPO_ROOT}/build-tools/cmake/setup.sh"
+    "${REPO_ROOT}/tools/build-tools/cmake/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 4: python
@@ -488,7 +488,7 @@ _run_bootstrap "cmake" \
 echo ""
 echo "  [4/13] Installing python 3.14.4 (required)..."
 _run_bootstrap "python" \
-    "${REPO_ROOT}/languages/python/setup.sh"
+    "${REPO_ROOT}/tools/languages/python/setup.sh"
 
 # ---------------------------------------------------------------------------
 # Step 5: lcov (Linux only)
@@ -497,7 +497,7 @@ if [[ "${OS}" == "linux" ]]; then
     echo ""
     echo "  [5/13] Installing lcov 2.4 (required on Linux)..."
     _run_bootstrap "lcov" \
-        "${REPO_ROOT}/build-tools/lcov/setup.sh"
+        "${REPO_ROOT}/tools/build-tools/lcov/setup.sh"
 else
     echo ""
     echo "  [5/13] lcov -- skipped (Linux only)"
@@ -510,7 +510,7 @@ fi
 echo ""
 echo "  [6/13] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
-    "${REPO_ROOT}/toolchains/clang/style-formatter/bootstrap.sh"
+    "${REPO_ROOT}/tools/toolchains/clang/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
 # Step 7: 7zip (optional)
@@ -518,7 +518,7 @@ _run_bootstrap_no_prefix "style-formatter" \
 echo ""
 echo "  [7/13] 7-Zip 26.00 (optional)..."
 if [[ "${INSTALL_7ZIP}" == "true" ]]; then
-    _run_setup "7zip" "${REPO_ROOT}/dev-tools/7zip/setup.sh"
+    _run_setup "7zip" "${REPO_ROOT}/tools/dev-tools/7zip/setup.sh"
 else
     echo "  [--]  Skipped: 7zip"
     SKIPPED_TOOLS+=("7zip")
@@ -530,7 +530,7 @@ fi
 echo ""
 echo "  [8/13] Servy 7.8 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
-    _run_setup "servy" "${REPO_ROOT}/dev-tools/servy/setup.sh"
+    _run_setup "servy" "${REPO_ROOT}/tools/dev-tools/servy/setup.sh"
 else
     echo "  [--]  Skipped: servy"
     SKIPPED_TOOLS+=("servy")
@@ -542,23 +542,23 @@ fi
 echo ""
 echo "  [9/13] Conan 2.27.0 (optional)..."
 if [[ "${INSTALL_CONAN}" == "true" ]]; then
-    _run_setup "conan" "${REPO_ROOT}/dev-tools/conan/setup.sh"
+    _run_setup "conan" "${REPO_ROOT}/tools/dev-tools/conan/setup.sh"
 else
     echo "  [--]  Skipped: conan"
     SKIPPED_TOOLS+=("conan")
 fi
 
 # ---------------------------------------------------------------------------
-# Step 10: dev-tools/vscode-extensions (optional)
+# Step 10: tools/dev-tools/vscode-extensions (optional)
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [10/13] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
-        "${REPO_ROOT}/dev-tools/vscode-extensions/setup.sh"
+        "${REPO_ROOT}/tools/dev-tools/vscode-extensions/setup.sh"
 else
-    echo "  [--]  Skipped: dev-tools/vscode-extensions"
-    SKIPPED_TOOLS+=("dev-tools/vscode-extensions")
+    echo "  [--]  Skipped: tools/dev-tools/vscode-extensions"
+    SKIPPED_TOOLS+=("tools/dev-tools/vscode-extensions")
 fi
 
 # ---------------------------------------------------------------------------
@@ -569,7 +569,7 @@ echo "  [11/13] Optional platform tools..."
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
         _run_bootstrap_winlibs "winlibs-gcc-ucrt" \
-            "${REPO_ROOT}/toolchains/gcc/windows/setup.sh"
+            "${REPO_ROOT}/tools/toolchains/gcc/windows/setup.sh"
     else
         echo "  [--]  Skipped: winlibs-gcc-ucrt"
         SKIPPED_TOOLS+=("winlibs-gcc-ucrt")
@@ -577,16 +577,16 @@ if [[ "${OS}" == "windows" ]]; then
 
     if [[ "${INSTALL_GRPC}" == "true" ]]; then
         _run_bootstrap "grpc-${GRPC_VERSION}" \
-            "${REPO_ROOT}/frameworks/grpc/setup_grpc.sh" \
+            "${REPO_ROOT}/tools/frameworks/grpc/setup_grpc.sh" \
             "--version" "${GRPC_VERSION}"
     else
-        echo "  [--]  Skipped: frameworks/grpc"
-        SKIPPED_TOOLS+=("frameworks/grpc")
+        echo "  [--]  Skipped: tools/frameworks/grpc"
+        SKIPPED_TOOLS+=("tools/frameworks/grpc")
     fi
 else
     echo "  [--]  winlibs-gcc-ucrt  -- skipped (Windows only)"
-    echo "  [--]  frameworks/grpc  -- skipped (Windows only)"
-    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "frameworks/grpc (Windows only)")
+    echo "  [--]  tools/frameworks/grpc  -- skipped (Windows only)"
+    SKIPPED_TOOLS+=("winlibs-gcc-ucrt (Windows only)" "tools/frameworks/grpc (Windows only)")
 fi
 
 # ---------------------------------------------------------------------------
@@ -595,7 +595,7 @@ fi
 echo ""
 echo "  [12/13] SQLite 3.53.0 CLI (optional)..."
 if [[ "${INSTALL_SQLITE}" == "true" ]]; then
-    _run_setup "sqlite" "${REPO_ROOT}/dev-tools/sqlite/setup.sh"
+    _run_setup "sqlite" "${REPO_ROOT}/tools/dev-tools/sqlite/setup.sh"
 else
     echo "  [--]  Skipped: sqlite"
     SKIPPED_TOOLS+=("sqlite")
@@ -608,7 +608,7 @@ echo ""
 echo "  [13/13] MATLAB toolbox verification (optional)..."
 if [[ "${INSTALL_MATLAB}" == "true" ]]; then
     _run_bootstrap_no_prefix "matlab" \
-        "${REPO_ROOT}/dev-tools/matlab/setup.sh"
+        "${REPO_ROOT}/tools/dev-tools/matlab/setup.sh"
 else
     echo "  [--]  Skipped: matlab"
     SKIPPED_TOOLS+=("matlab")

@@ -1,6 +1,9 @@
 [submodule "prebuilt-binaries"]
 	path = prebuilt-binaries
-	url = https://github.com/NimaShafie/airgap-cpp-devkit-prebuilt.git
+	url = https://github.com/airgap-devkit/prebuilt.git
 [submodule "airgap-devkit-manager"]
 	path = airgap-devkit-manager
-	url = git@github.com:NimaShafie/airgap-devkit-manager.git
+	url = https://github.com/airgap-devkit/manager.git
+[submodule "tools"]
+	path = tools
+	url = https://github.com/airgap-devkit/tools.git

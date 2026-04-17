@@ -14,15 +14,15 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **clang-format** | 22.1.2 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
-| **clang-tidy** | 22.1.2 | Windows + Linux | Yes | `toolchains/clang/source-build/` |
-| **LLVM source** | 22.1.2 | Windows + Linux | - (source only) | `toolchains/clang/source-build/llvm-src/` |
+| **clang-format** | 22.1.2 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
+| **clang-tidy** | 22.1.2 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
+| **LLVM source** | 22.1.2 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
 | **llvm-mingw** | 20260324 | Windows + Linux | Yes | `prebuilt-binaries/toolchains/clang/mingw/` |
 | **Clang RPMs** | 20.1.8 | RHEL 8 | Yes | `prebuilt-binaries/toolchains/clang/rhel8/` |
-| **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `toolchains/gcc/windows/` |
+| **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
 | **gcc-toolset** | 15 | RHEL 8 | Yes | `prebuilt-binaries/toolchains/gcc/linux/` |
-| **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `toolchains/gcc/linux/cross/` |
-| **GCC native (RHEL 8)** | 15 | RHEL 8 | Yes | `toolchains/gcc/linux/native/` |
+| **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `tools/toolchains/gcc/linux/cross/` |
+| **GCC native (RHEL 8)** | 15 | RHEL 8 | Yes | `tools/toolchains/gcc/linux/native/` |
 
 ---
 
@@ -30,9 +30,9 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **CMake** | 4.3.1 | Windows + Linux | Yes | `build-tools/cmake/` |
+| **CMake** | 4.3.1 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
 | **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt-binaries/toolchains/clang/source-build/` |
-| **lcov** | 2.4 | Linux / RHEL 8 | Yes (vendored tarball) | `build-tools/lcov/` |
+| **lcov** | 2.4 | Linux / RHEL 8 | Yes (vendored tarball) | `tools/build-tools/lcov/` |
 
 ---
 
@@ -40,8 +40,8 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.78.1 | Windows | Yes (.zip, 4 parts) | `frameworks/grpc/` |
-| **gRPC source bundle** | 1.78.1 | Windows | - (source build ~40 min) | `frameworks/grpc/vendor/` |
+| **gRPC** | 1.78.1 | Windows | Yes (.zip, 4 parts) | `tools/frameworks/grpc/` |
+| **gRPC source bundle** | 1.78.1 | Windows | - (source build ~40 min) | `tools/frameworks/grpc/vendor/` |
 
 gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/`, `lib/` (static), `share/` (cmake config).
 
@@ -51,10 +51,10 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **Python** | 3.14.4 | Windows (embeddable) | Yes (single file ~12 MB) | `languages/python/` |
-| **Python** | 3.14.4 | Linux x86_64 | Yes (tar.gz, 2 parts) | `languages/python/` |
-| **.NET SDK** | 10.0.201 | Windows x64 | Yes (.zip, 6 parts) | `languages/dotnet/` |
-| **.NET SDK** | 10.0.201 | Linux x64 | Yes (.tar.gz, 6 parts) | `languages/dotnet/` |
+| **Python** | 3.14.4 | Windows (embeddable) | Yes (single file ~12 MB) | `tools/languages/python/` |
+| **Python** | 3.14.4 | Linux x86_64 | Yes (tar.gz, 2 parts) | `tools/languages/python/` |
+| **.NET SDK** | 10.0.201 | Windows x64 | Yes (.zip, 6 parts) | `tools/languages/dotnet/` |
+| **.NET SDK** | 10.0.201 | Linux x64 | Yes (.tar.gz, 6 parts) | `tools/languages/dotnet/` |
 
 ---
 
@@ -62,21 +62,21 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **7-Zip** | 26.00 | Windows + Linux | Yes | `dev-tools/7zip/` |
-| **Servy** | 7.8 | Windows | Yes (single file ~80 MB) | `dev-tools/servy/` |
-| **Conan** | 2.27.0 | Windows + Linux | Yes (self-contained) | `dev-tools/conan/` |
-| **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `dev-tools/vscode-extensions/` |
-| **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `dev-tools/sqlite/` |
-| **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `dev-tools/matlab/` |
-| **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `dev-tools/git-bundle/` |
-| **devkit-ui** | - | Windows + Linux | - (Python web app) | `dev-tools/devkit-ui/` |
-| **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes (via pip wheel) | `toolchains/clang/style-formatter/` |
+| **7-Zip** | 26.00 | Windows + Linux | Yes | `tools/dev-tools/7zip/` |
+| **Servy** | 7.8 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Conan** | 2.27.0 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
+| **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
+| **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
+| **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |
+| **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `tools/dev-tools/git-bundle/` |
+| **devkit-ui** | - | Windows + Linux | - (Python web app) | `tools/dev-tools/devkit-ui/` |
+| **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes (via pip wheel) | `tools/toolchains/clang/style-formatter/` |
 
 ---
 
 ## DevKit UI Notes
 
-`dev-tools/devkit-ui/` is the **preferred** way to install and manage devkit tools.
+`tools/dev-tools/devkit-ui/` is the **preferred** way to install and manage devkit tools.
 The root-level `launch.sh` script finds Python automatically and starts it — no manual
 setup required. On first run it bootstraps its own Python dependencies (FastAPI,
 uvicorn, jinja2, aiofiles) then opens `http://127.0.0.1:8080` in your browser.
@@ -90,7 +90,7 @@ and an inline log browser.
 **Fallback:** if Python 3.8+ is not on PATH, `launch.sh` automatically falls back to
 `install-cli.sh`. Force the fallback at any time with `bash launch.sh --cli`.
 
-**Air-gap:** pre-download wheels to `dev-tools/devkit-ui/vendor/` and the launcher
+**Air-gap:** pre-download wheels to `tools/dev-tools/devkit-ui/vendor/` and the launcher
 uses them instead of PyPI. All other devkit tools remain fully CLI-installable via
 `install-cli.sh` regardless of whether devkit-ui is used.
 
@@ -109,8 +109,8 @@ uses them instead of PyPI. All other devkit tools remain fully CLI-installable v
 
 ## Python Pip Packages
 
-All packages are vendored as `.whl` files in `languages/python/pip-packages/`
-and installed offline by `languages/python/setup.sh`. No internet access required.
+All packages are vendored as `.whl` files in `tools/languages/python/pip-packages/`
+and installed offline by `tools/languages/python/setup.sh`. No internet access required.
 Platform-specific wheels are provided for both Windows (win_amd64) and Linux (manylinux).
 
 ### Core packages
@@ -160,7 +160,7 @@ prebuilt requires GLIBC 2.29+ which RHEL 8 does not provide (ships GLIBC 2.28).
 
 ## MATLAB Notes
 
-`dev-tools/matlab/` provides **verification only** — it checks that MATLAB is
+`tools/dev-tools/matlab/` provides **verification only** — it checks that MATLAB is
 installed and that required toolboxes (Database Toolbox, MATLAB Compiler) are
 licensed. It does not install MATLAB. If MATLAB is not installed the script exits
 cleanly with a skip message.
@@ -264,18 +264,18 @@ bash install-cli.sh                                 # full interactive wizard
 bash install-cli.sh --yes --profile cpp-dev         # non-interactive with profile
 
 # Individual tool installs (also available from the web UI)
-bash toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
-bash toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
-bash build-tools/cmake/setup.sh                # CMake 4.3.1
-bash build-tools/lcov/setup.sh                 # lcov 2.4 (Linux only)
-bash languages/python/setup.sh                 # Python 3.14.4 + pip packages
-bash dev-tools/conan/setup.sh                  # Conan 2.27.0
-bash dev-tools/7zip/setup.sh                   # 7-Zip 26.00
-bash dev-tools/servy/setup.sh                  # Servy 7.8 (Windows only)
-bash dev-tools/sqlite/setup.sh                 # SQLite CLI
-bash dev-tools/matlab/setup.sh                 # MATLAB verification
-bash dev-tools/vscode-extensions/setup.sh      # VS Code extensions
-bash toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows only)
+bash tools/toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
+bash tools/toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
+bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
+bash tools/build-tools/lcov/setup.sh                 # lcov 2.4 (Linux only)
+bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
+bash tools/dev-tools/conan/setup.sh                  # Conan 2.27.0
+bash tools/dev-tools/7zip/setup.sh                   # 7-Zip 26.00
+bash tools/dev-tools/servy/setup.sh                  # Servy 7.8 (Windows only)
+bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
+bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
+bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions
+bash tools/toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows only)
 ```
 
 ---

@@ -1,7 +1,0 @@
-# OS noise
-.DS_Store
-Thumbs.db
-
-# Extracted/temp files — binaries live in prebuilt-binaries/servy/
-extracted/
-*.7z
