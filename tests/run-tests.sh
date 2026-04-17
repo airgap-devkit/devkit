@@ -166,8 +166,8 @@ echo ""
 _sep
 echo "  [1] Toolchains"
 _sep
-_check_bin_receipt "clang-format 22.1.2" "toolchains/clang/source-build" clang-format --version
-_check_bin_receipt "clang-tidy 22.1.2"   "toolchains/clang/source-build" clang-tidy   --version
+_check_bin_receipt "clang-format 22.1.3" "toolchains/clang/source-build" clang-format --version
+_check_bin_receipt "clang-tidy 22.1.3"   "toolchains/clang/source-build" clang-tidy   --version
 
 # ---------------------------------------------------------------------------
 # 2. Build tools
@@ -227,7 +227,7 @@ _sep
 
 # Conan
 if command -v conan &>/dev/null; then
-  _check_bin "conan 2.27.0" conan --version
+  _check_bin "conan 2.27.1" conan --version
 else
   _skip "conan (not installed)"
 fi

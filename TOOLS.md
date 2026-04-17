@@ -14,9 +14,9 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **clang-format** | 22.1.2 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
-| **clang-tidy** | 22.1.2 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
-| **LLVM source** | 22.1.2 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
+| **clang-format** | 22.1.3 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
+| **clang-tidy** | 22.1.3 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
+| **LLVM source** | 22.1.3 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
 | **llvm-mingw** | 20260324 | Windows + Linux | Yes | `prebuilt/toolchains/clang/mingw/` |
 | **Clang RPMs** | 20.1.8 | RHEL 8 | Yes | `prebuilt/toolchains/clang/rhel8/` |
 | **GCC + MinGW-w64** | 15.2.0 + 13.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
@@ -40,8 +40,8 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **gRPC** | 1.78.1 | Windows | Yes (.zip, 4 parts) | `tools/frameworks/grpc/` |
-| **gRPC source bundle** | 1.78.1 | Windows | - (source build ~40 min) | `tools/frameworks/grpc/vendor/` |
+| **gRPC** | 1.80.0 | Windows | Yes (.zip, 4 parts) | `tools/frameworks/grpc/` |
+| **gRPC source bundle** | 1.80.0 | Windows | - (source build ~40 min) | `tools/frameworks/grpc/vendor/` |
 
 gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/`, `lib/` (static), `share/` (cmake config).
 
@@ -63,14 +63,14 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **7-Zip** | 26.00 | Windows + Linux | Yes | `tools/dev-tools/7zip/` |
-| **Servy** | 7.8 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
-| **Conan** | 2.27.0 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
+| **Servy** | 7.9 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Conan** | 2.27.1 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.0 (Win) / 3.26.0 RPM (RHEL 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |
 | **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `tools/dev-tools/git-bundle/` |
 | **devkit-ui** | - | Windows + Linux | - (Python web app) | `tools/dev-tools/devkit-ui/` |
-| **LLVM style formatter** | 22.1.2 | Windows + Linux | Yes (via pip wheel) | `tools/toolchains/clang/style-formatter/` |
+| **LLVM style formatter** | 22.1.3 | Windows + Linux | Yes (via pip wheel) | `tools/toolchains/clang/style-formatter/` |
 
 ---
 
@@ -175,22 +175,22 @@ All .zip archives use deflate level 9 compression.
 
 | Archive | Size | Parts | Split at |
 |---------|------|-------|----------|
-| gRPC 1.78.1 Windows (.zip) | 170MB | 4 | 49MB |
+| gRPC 1.80.0 Windows (.zip) | 170MB | 4 | 49MB |
 | WinLibs GCC 15.2.0 Windows (.zip) | 264MB | 6 | 49MB |
 | llvm-mingw 20260324 Windows (.zip) | 179MB | 4 | 49MB |
 | llvm-mingw 20260324 Linux (.tar.xz) | 82MB | 2 | 50MB |
 | .NET SDK 10.0.201 Windows (.zip) | 283MB | 6 | 49MB |
 | .NET SDK 10.0.201 Linux (.tar.gz) | 231MB | 6 | 45MB |
 | Python 3.14.4 Linux (.tar.gz) | 120MB | 2 | 99MB |
-| Clang LLVM 22.1.2 Linux slim (.tar.xz) | 124MB | 3 | 50MB |
+| Clang LLVM 22.1.3 Linux slim (.tar.xz) | 124MB | 3 | 50MB |
 | clang-tidy Linux | 95MB | 2 | 50MB |
 | Clang 20.1.8 RHEL8 RPMs (.tar) | 101MB | 2 | 50MB |
 | gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
 | CMake 4.3.1 Linux (.tar.gz) | 61MB | 1 | -- single file |
 | CMake 4.3.1 Windows (.zip) | 51MB | 1 | -- single file |
-| Servy 7.8 Windows (.7z) | 80MB | 1 | -- single file |
-| Conan 2.27.0 Windows (.zip) | 15MB | 1 | -- single file |
-| Conan 2.27.0 Linux (.tgz) | 27MB | 1 | -- single file |
+| Servy 7.9 Windows (.7z) | 80MB | 1 | -- single file |
+| Conan 2.27.1 Windows (.zip) | 15MB | 1 | -- single file |
+| Conan 2.27.1 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
 | SQLite 3.53.0 Windows CLI (.zip) | 6.2MB | 1 | -- single file |
 | SQLite 3.53.0 Linux CLI (.zip) | 4.1MB | 1 | -- single file |
@@ -212,12 +212,12 @@ All .zip archives use deflate level 9 compression.
 | GCC cross/native | - | Yes | Linux only |
 | CMake 4.3.1 | Yes | Yes | Prebuilt for both |
 | Ninja | Yes | Yes | Prebuilt for both |
-| gRPC 1.78.1 | Yes | - | Windows MSVC build only |
+| gRPC 1.80.0 | Yes | - | Windows MSVC build only |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.201 | Yes | Yes | Portable, no installer |
 | 7-Zip 26.00 | Yes | Yes | Admin + user install |
-| Servy 7.8 | Yes | - | Windows only, graceful no-op on Linux |
-| Conan 2.27.0 | Yes | Yes | Self-contained, no Python required |
+| Servy 7.9 | Yes | - | Windows only, graceful no-op on Linux |
+| Conan 2.27.1 | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI | Yes (3.53.0) | Yes (3.26.0 RPM) | RHEL 8 uses system RPM |
 | MATLAB verification | Yes | Yes | Checks existing install only |
@@ -269,9 +269,9 @@ bash tools/toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
 bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/build-tools/lcov/setup.sh                 # lcov 2.4 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
-bash tools/dev-tools/conan/setup.sh                  # Conan 2.27.0
+bash tools/dev-tools/conan/setup.sh                  # Conan 2.27.1
 bash tools/dev-tools/7zip/setup.sh                   # 7-Zip 26.00
-bash tools/dev-tools/servy/setup.sh                  # Servy 7.8 (Windows only)
+bash tools/dev-tools/servy/setup.sh                  # Servy 7.9 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions

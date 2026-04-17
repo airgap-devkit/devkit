@@ -17,7 +17,7 @@
 #   - You are in a headless environment with no browser
 #
 # REQUIRED tools (installed automatically):
-#   - tools/toolchains/clang  (clang-format + clang-tidy 22.1.2)
+#   - tools/toolchains/clang  (clang-format + clang-tidy 22.1.3)
 #   - cmake       4.3.1
 #   - python      3.14.4  (portable interpreter)
 #   - lcov        2.4  (Linux only)
@@ -25,8 +25,8 @@
 #
 # OPTIONAL tools (prompted):
 #   - 7zip               26.00  (Windows + Linux, admin + user)
-#   - servy              7.8    (Windows only)
-#   - conan              2.27.0 (Windows + Linux, no Python required)
+#   - servy              7.9    (Windows only)
+#   - conan              2.27.1 (Windows + Linux, no Python required)
 #   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
 #   - tools/frameworks/grpc    (Windows only, requires Visual Studio)
@@ -141,7 +141,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
     _section "  REQUIRED (installed automatically)"
-    echo "    [1] tools/toolchains/clang         clang-format + clang-tidy 22.1.2"
+    echo "    [1] tools/toolchains/clang         clang-format + clang-tidy 22.1.3"
     echo "    [2] cmake                    4.3.1"
     echo "    [3] python                   3.14.4 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
@@ -151,7 +151,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
     _section "  OPTIONAL (you will be prompted)"
     echo "  Cross-platform:"
-    echo "    [6] conan          2.27.0   C/C++ package manager            [~5s]"
+    echo "    [6] conan          2.27.1   C/C++ package manager            [~5s]"
     echo "    [7] sqlite         3.53.0   Database inspection CLI          [~3s]"
     echo "    [8] 7zip           26.00    Archive tool                     [~2s]"
     echo "    [9] vscode-ext              C/C++, TestMate, Python          [~30s]"
@@ -159,9 +159,9 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     if [[ "${OS}" == "windows" ]]; then
     echo ""
     echo "  Windows-only:"
-    echo "   [11] servy          7.8      Windows service manager          [~3s]"
+    echo "   [11] servy          7.9      Windows service manager          [~3s]"
     echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                [~8min]"
-    echo "   [13] grpc           1.78.1   C++ framework (needs VS)       [~20min]"
+    echo "   [13] grpc           1.80.0   C++ framework (needs VS)       [~20min]"
     fi
     echo ""
     echo "  Tip: use --profile <name> to skip prompts"
@@ -213,7 +213,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     INSTALL_GRPC=false
     INSTALL_SQLITE=false
     INSTALL_MATLAB=false
-    GRPC_VERSION="1.78.1"
+    GRPC_VERSION="1.80.0"
 
     # Apply profile pre-selections if specified
     _apply_profile() {
@@ -253,7 +253,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
 
     if [[ -z "${PROFILE}" ]]; then
         # --- Cross-platform tools ---
-        printf "  Install conan 2.27.0?          C/C++ package manager       [~5s]  [y/N]: "
+        printf "  Install conan 2.27.1?          C/C++ package manager       [~5s]  [y/N]: "
         read -r reply
         [[ "${reply^^}" == "Y" ]] && INSTALL_CONAN=true
 
@@ -277,7 +277,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
         if [[ "${OS}" == "windows" ]]; then
             echo ""
             echo "  --- Windows-only tools ---"
-            printf "  Install servy 7.8?             Windows service manager     [~3s]  [y/N]: "
+            printf "  Install servy 7.9?             Windows service manager     [~3s]  [y/N]: "
             read -r reply
             [[ "${reply^^}" == "Y" ]] && INSTALL_SERVY=true
 
@@ -291,11 +291,11 @@ if [[ "${AUTO_YES}" == "false" ]]; then
                 INSTALL_GRPC=true
                 echo ""
                 echo "  gRPC version:"
-                echo "    [1] 1.78.1  (default)"
+                echo "    [1] 1.80.0  (default)"
                 printf "  Choose [1, default=1]: "
                 read -r ver_choice
                 case "${ver_choice}" in
-                    *) GRPC_VERSION="1.78.1" ;;
+                    *) GRPC_VERSION="1.80.0" ;;
                 esac
                 echo "  [OK] gRPC version: ${GRPC_VERSION}"
             fi
@@ -313,8 +313,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "    [OK] tools/toolchains/clang, cmake 4.3.1, python 3.14.4, style-formatter"
     [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.4"
     [[ "${INSTALL_7ZIP}"    == "true" ]]  && echo "    [OK] 7zip 26.00"
-    [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.8 (Windows only)"
-    [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.27.0"
+    [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.9 (Windows only)"
+    [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.27.1"
     [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] tools/dev-tools/vscode-extensions"
     [[ "${INSTALL_WINLIBS}" == "true" ]]  && echo "    [OK] winlibs-gcc-ucrt"
     [[ "${INSTALL_GRPC}"    == "true" ]]  && echo "    [OK] tools/frameworks/grpc ${GRPC_VERSION}"
@@ -341,7 +341,7 @@ else
     INSTALL_GRPC=false
     INSTALL_SQLITE=false
     INSTALL_MATLAB=false
-    GRPC_VERSION="1.78.1"
+    GRPC_VERSION="1.80.0"
 
     # Apply profile if given with --yes
     if [[ -n "${PROFILE}" ]]; then
@@ -540,7 +540,7 @@ fi
 # Step 9: conan (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [9/13] Conan 2.27.0 (optional)..."
+echo "  [9/13] Conan 2.27.1 (optional)..."
 if [[ "${INSTALL_CONAN}" == "true" ]]; then
     _run_setup "conan" "${REPO_ROOT}/tools/dev-tools/conan/setup.sh"
 else

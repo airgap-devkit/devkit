@@ -225,7 +225,7 @@ _check_grpc() {
     fi
     local found=false
     for base in "${ADMIN_PREFIX}" "${USER_PREFIX}"; do
-        for ver in "grpc-1.76.0" "grpc-1.78.1"; do
+        for ver in "grpc-1.76.0" "grpc-1.78.1" "grpc-1.80.0"; do
             local grpc_dir="${base}/${ver}"
             local plugin="${grpc_dir}/bin/grpc_cpp_plugin.exe"
             if [[ -d "${grpc_dir}" ]]; then
