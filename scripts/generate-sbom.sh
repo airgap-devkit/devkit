@@ -37,10 +37,13 @@ update_timestamp() {
 # Update timestamps
 # ---------------------------------------------------------------------------
 update_timestamp "${REPO_ROOT}/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/tools/toolchains/clang/source-build/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/tools/toolchains/clang/style-formatter/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/tools/toolchains/llvm/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/tools/toolchains/llvm-mingw/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/tools/toolchains/ninja/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/tools/toolchains/gcc/sbom.spdx.json"
+update_timestamp "${REPO_ROOT}/tools/toolchains/lcov/sbom.spdx.json"
 update_timestamp "${REPO_ROOT}/tools/dev-tools/git-bundle/sbom.spdx.json"
-update_timestamp "${REPO_ROOT}/tools/toolchains/gcc/windows/sbom.spdx.json"
 
 echo ""
 
@@ -58,30 +61,26 @@ update_sha1() {
   echo "${sha1}"
 }
 
-SHA1_SOURCE_BUILD=$(update_sha1 "${REPO_ROOT}/tools/toolchains/clang/source-build/sbom.spdx.json")
-SHA1_FORMATTER=$(update_sha1 "${REPO_ROOT}/tools/toolchains/clang/style-formatter/sbom.spdx.json")
-SHA1_GIT_BUNDLE=$(update_sha1 "${REPO_ROOT}/tools/dev-tools/git-bundle/sbom.spdx.json")
-SHA1_WINLIBS=$(update_sha1 "${REPO_ROOT}/tools/toolchains/gcc/windows/sbom.spdx.json")
-
-python3 - "${ROOT_SBOM}" "${SHA1_SOURCE_BUILD}" "${SHA1_FORMATTER}" "${SHA1_GIT_BUNDLE}" "${SHA1_WINLIBS}" << 'PYEOF'
-import json, sys
-path, sha_sb, sha_fmt, sha_gb, sha_wl = sys.argv[1:]
-hashes = {
-    "DocumentRef-toolchains-clang-source-build": sha_sb,
-    "DocumentRef-toolchains-clang-style-formatter": sha_fmt,
-    "DocumentRef-dev-tools-git-bundle": sha_gb,
-    "DocumentRef-winlibs-gcc-ucrt": sha_wl,
-}
-with open(path) as f:
+# Compute SHA1 for any sub-SBOMs that exist; skip missing ones gracefully
+python3 - "${ROOT_SBOM}" "${REPO_ROOT}/tools" << 'PYEOF'
+import json, sys, hashlib
+from pathlib import Path
+root_sbom, tools_root = sys.argv[1], Path(sys.argv[2])
+with open(root_sbom) as f:
     doc = json.load(f)
+updated = 0
 for ref in doc.get("externalDocumentRefs", []):
-    doc_id = ref.get("externalDocumentId")
-    if doc_id in hashes:
-        ref["checksum"]["checksumValue"] = hashes[doc_id]
-with open(path, "w") as f:
+    url = ref.get("spdxDocument", "")
+    rel = url.replace("https://airgap-cpp-devkit.internal/tools/", "")
+    candidate = tools_root / rel
+    if candidate.exists():
+        sha1 = hashlib.sha1(candidate.read_bytes()).hexdigest()
+        ref["checksum"]["checksumValue"] = sha1
+        updated += 1
+with open(root_sbom, "w") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
-print("[OK] SHA1 checksums updated in root SBOM.")
+print(f"[OK] SHA1 checksums updated ({updated} sub-SBOMs found).")
 PYEOF
 
 echo ""
@@ -92,11 +91,7 @@ echo ""
 echo "Verifying JSON syntax..."
 ALL_OK=true
 for sbom in \
-  "${REPO_ROOT}/sbom.spdx.json" \
-  "${REPO_ROOT}/tools/toolchains/clang/source-build/sbom.spdx.json" \
-  "${REPO_ROOT}/tools/toolchains/clang/style-formatter/sbom.spdx.json" \
-  "${REPO_ROOT}/tools/dev-tools/git-bundle/sbom.spdx.json" \
-  "${REPO_ROOT}/tools/toolchains/gcc/windows/sbom.spdx.json"
+  "${REPO_ROOT}/sbom.spdx.json"
 do
   if [[ ! -f "${sbom}" ]]; then
     echo "  [FAIL] Missing: ${sbom}" >&2
@@ -119,10 +114,7 @@ if [[ "${ALL_OK}" == "true" ]]; then
   echo ""
   echo " Files:"
   echo "   sbom.spdx.json                                 (root)"
-  echo "   tools/toolchains/clang/source-build/sbom.spdx.json"
-  echo "   tools/toolchains/clang/style-formatter/sbom.spdx.json"
-  echo "   tools/dev-tools/git-bundle/sbom.spdx.json"
-  echo "   tools/toolchains/gcc/windows/sbom.spdx.json"
+  echo "   Sub-SBOMs: updated where present under tools/"
   echo ""
   echo " Validate online: https://tools.spdx.org/app/validate/"
   echo "============================================================"
