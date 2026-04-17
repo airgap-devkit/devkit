@@ -1,9 +1,0 @@
-# OS noise
-.DS_Store
-Thumbs.db
-
-# Extracted/temp files — binaries live in prebuilt-binaries/llvm-toolchain/
-extracted/
-*.tar
-*.tar.xz
-*.zip

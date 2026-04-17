@@ -19,7 +19,7 @@
 # BINARY-RESTRICTED ENVIRONMENTS:
 #   If your air-gapped network does not permit pre-compiled binaries,
 #   do NOT run this script. Instead, build all tools from source:
-#     bash toolchains/clang/source-build/setup.sh --build-from-source
+#     bash tools/toolchains/clang/source-build/setup.sh --build-from-source
 #     bash winlibs-gcc-ucrt/bootstrap.sh --build-from-source
 #     etc.
 # =============================================================================
@@ -122,6 +122,6 @@ esac
 
 echo ""
 echo "  Run the individual tool bootstraps to install:"
-echo "    bash toolchains/clang/source-build/setup.sh"
+echo "    bash tools/toolchains/clang/source-build/setup.sh"
 echo "    bash winlibs-gcc-ucrt/bootstrap.sh"
 echo ""

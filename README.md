@@ -115,83 +115,83 @@ To install system-wide on Windows, right-click Git Bash and select
 
 | Directory | Purpose | Required? |
 |-----------|---------|-----------|
-| [`toolchains/clang/style-formatter/`](toolchains/clang/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
-| [`toolchains/clang/source-build/`](toolchains/clang/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
-| [`build-tools/cmake/`](build-tools/cmake/README.md) | CMake 4.3.1 -- build from source or install pre-built; RHEL 8 + Windows | No |
-| [`dev-tools/git-bundle/`](dev-tools/git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
-| [`dev-tools/devkit-ui/`](dev-tools/devkit-ui/README.md) | Web-based package manager GUI for installing and managing devkit tools (FastAPI + HTMX) | No |
-| [`build-tools/lcov/`](build-tools/lcov/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
-| [`languages/python/`](languages/python/README.md) | Portable Python 3.14.4 interpreter -- Windows embeddable + Linux standalone | No |
-| [`languages/dotnet/`](languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.201 -- Windows + Linux, no installer required | No |
-| [`dev-tools/vscode-extensions/`](dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
-| [`toolchains/gcc/windows/`](toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No -- standalone |
-| [`dev-tools/7zip/`](dev-tools/7zip/README.md) | 7-Zip 26.00 -- admin + user install for Windows and Linux | No -- standalone |
-| [`dev-tools/servy/`](dev-tools/servy/README.md) | Servy 7.8 -- Windows service manager (Windows only, graceful no-op on Linux) | No -- standalone |
-| [`dev-tools/conan/`](dev-tools/conan/README.md) | Conan 2.27.0 -- C/C++ package manager, Windows + Linux, no Python required | No -- standalone |
-| [`frameworks/grpc/`](frameworks/grpc/README.md) | gRPC v1.78.1 for Windows -- prebuilt install (instant) or full source build (~40 min) | No -- standalone |
+| [`tools/toolchains/clang/style-formatter/`](tools/toolchains/clang/style-formatter/README.md) | Enforces LLVM C++ coding standards via Git pre-commit hook | Yes |
+| [`tools/toolchains/clang/source-build/`](tools/toolchains/clang/source-build/README.md) | Builds clang-format + clang-tidy from LLVM 22.1.2 source; installs pre-built binaries (Windows: instant, Linux: ~30-60 min) | No |
+| [`tools/build-tools/cmake/`](tools/build-tools/cmake/README.md) | CMake 4.3.1 -- build from source or install pre-built; RHEL 8 + Windows | No |
+| [`tools/dev-tools/git-bundle/`](tools/dev-tools/git-bundle/README.md) | Transfers Git repositories with nested submodules across air-gapped boundaries | Yes |
+| [`tools/dev-tools/devkit-ui/`](tools/dev-tools/devkit-ui/README.md) | Web-based package manager GUI for installing and managing devkit tools (FastAPI + HTMX) | No |
+| [`tools/build-tools/lcov/`](tools/build-tools/lcov/README.md) | Code coverage reporting via lcov 2.4 + gcov, vendored Perl deps included | No |
+| [`tools/languages/python/`](tools/languages/python/README.md) | Portable Python 3.14.4 interpreter -- Windows embeddable + Linux standalone | No |
+| [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.201 -- Windows + Linux, no installer required | No |
+| [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python (win32-x64 + linux-x64) | No |
+| [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT toolchain for Windows | No -- standalone |
+| [`tools/dev-tools/7zip/`](tools/dev-tools/7zip/README.md) | 7-Zip 26.00 -- admin + user install for Windows and Linux | No -- standalone |
+| [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 7.8 -- Windows service manager (Windows only, graceful no-op on Linux) | No -- standalone |
+| [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.0 -- C/C++ package manager, Windows + Linux, no Python required | No -- standalone |
+| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.78.1 for Windows -- prebuilt install (instant) or full source build (~40 min) | No -- standalone |
 
 ---
 
 ## Optional Tools
 
-All tools outside of `toolchains/clang/style-formatter/` and `dev-tools/git-bundle/` are
+All tools outside of `tools/toolchains/clang/style-formatter/` and `tools/dev-tools/git-bundle/` are
 fully independent and optional. You can use any subset without affecting the others.
 
-**`languages/python/`** installs a portable Python 3.14.4 that lives alongside any
+**`tools/languages/python/`** installs a portable Python 3.14.4 that lives alongside any
 existing system Python. It does not modify your PATH until you explicitly
-run `source languages/python/scripts/env-setup.sh`. Other devkit tools that require
+run `source tools/languages/python/scripts/env-setup.sh`. Other devkit tools that require
 Python will prefer this interpreter if active, and fall back to the system
 Python if not. Includes 10 vendored pip packages installed offline.
 
-**`languages/dotnet/`** installs a portable .NET 10 SDK 10.0.201 that lives alongside
+**`tools/languages/dotnet/`** installs a portable .NET 10 SDK 10.0.201 that lives alongside
 any existing system .NET installation. No installer, no registry changes, no elevation
 required for user install. Includes the C# 14 compiler, .NET Runtime, ASP.NET Core
 Runtime, MSBuild, NuGet client, and the full `dotnet` CLI. Supports building and
 publishing self-contained executables for Windows and Linux.
 
-**`dev-tools/vscode-extensions/`** installs offline VS Code extensions for C++
+**`tools/dev-tools/vscode-extensions/`** installs offline VS Code extensions for C++
 development. Requires VS Code to be installed and `code` on PATH.
 Extensions are installed per-user into VS Code's extension directory.
 
-**`build-tools/cmake/`** provides CMake 4.3.1 for environments where the system CMake
+**`tools/build-tools/cmake/`** provides CMake 4.3.1 for environments where the system CMake
 is too old. On RHEL 8 the system CMake is 3.x -- this module builds or
 installs 4.3.1 into the devkit path without touching the system.
 
-**`toolchains/gcc/windows/`** is a standalone GCC 15.2.0 + MinGW-w64
+**`tools/toolchains/gcc/windows/`** is a standalone GCC 15.2.0 + MinGW-w64
 toolchain for developers who need to compile C++ projects in an air-gapped
 Windows environment. It has no relationship to any other tool in this devkit.
 
-**`dev-tools/7zip/`** provides 7-Zip 26.00 for environments that need `.7z`
+**`tools/dev-tools/7zip/`** provides 7-Zip 26.00 for environments that need `.7z`
 archive support. Admin install uses the official silent installer (Windows)
 or places `7zz` in `/usr/local/bin` (Linux). User install uses the portable
 `7za.exe` (Windows) or `~/.local/bin/7zz` (Linux). No internet access or
 package manager required.
 
-**`dev-tools/servy/`** provides Servy 7.8, a Windows service manager that turns
+**`tools/dev-tools/servy/`** provides Servy 7.8, a Windows service manager that turns
 any executable into a native Windows service with health checks, log rotation,
 restart policies, and a full GUI + CLI + PowerShell interface. Requires 7-Zip
-(`dev-tools/7zip/`) for extraction. Running `setup.sh` on Linux exits cleanly
+(`tools/dev-tools/7zip/`) for extraction. Running `setup.sh` on Linux exits cleanly
 with an informational message -- no error.
 
-**`dev-tools/conan/`** provides Conan 2.27.0, the open-source C/C++ package manager.
+**`tools/dev-tools/conan/`** provides Conan 2.27.0, the open-source C/C++ package manager.
 Self-contained executables for Windows and Linux -- no Python runtime required.
 Pairs with CMake via `CMakeDeps` and `CMakeToolchain` generators. Supports
 air-gap workflows via `conan cache save` / `conan cache restore`.
 
-**`frameworks/grpc/`** provides gRPC v1.78.1 for air-gapped Windows C++ development.
+**`tools/frameworks/grpc/`** provides gRPC v1.78.1 for air-gapped Windows C++ development.
 Two paths are available: install from prebuilt in seconds using
 `install-prebuilt.ps1`, or build from the vendored recursive source bundle
 using `setup.ps1` (~40 minutes, MSVC required). Both paths produce an
 identical install layout. A HelloWorld demo (greeter server + client) is
 built and launched automatically to verify the installation end-to-end.
 
-**`dev-tools/devkit-ui/`** is the preferred way to install and manage devkit tools.
+**`tools/dev-tools/devkit-ui/`** is the preferred way to install and manage devkit tools.
 Started automatically by `bash launch.sh`. Provides a visual dashboard of all tools
 with installed/not-installed status, one-click install and rebuild per tool,
 profile-based batch installs, and a log browser with inline viewer.
 Requires Python 3.8+ (system Python). Dependencies (FastAPI, uvicorn, HTMX) are
 auto-installed on first launch; in air-gapped environments pre-download wheels to
-`dev-tools/devkit-ui/vendor/` and the launcher uses them automatically.
+`tools/dev-tools/devkit-ui/vendor/` and the launcher uses them automatically.
 
 ```bash
 bash launch.sh                     # preferred: auto-finds Python, opens UI
@@ -200,7 +200,7 @@ bash launch.sh --no-browser        # server only, no auto-open
 bash launch.sh --cli               # skip UI, use install-cli.sh instead
 ```
 
-**`build-tools/lcov/`** provides code coverage reporting for C++ projects
+**`tools/build-tools/lcov/`** provides code coverage reporting for C++ projects
 compiled with GCC's `-fprofile-arcs -ftest-coverage` flags. Vendors lcov
 2.4 and all required Perl dependencies -- no CPAN, no EPEL required.
 
@@ -218,7 +218,7 @@ Your repo already has the formatter set up. Run one command after cloning:
 bash setup.sh
 ```
 
-See your repo's `setup.sh` or [toolchains/clang/style-formatter/README.md](toolchains/clang/style-formatter/README.md)
+See your repo's `setup.sh` or [toolchains/clang/style-formatter/README.md](tools/toolchains/clang/style-formatter/README.md)
 for the full developer reference.
 
 ### I am a maintainer adding the formatter to a new production repo
@@ -353,7 +353,7 @@ everything in the correct order.
 
 **Method 2 -- pip/venv for clang-format only (~5 seconds)**
 ```bash
-bash toolchains/clang/style-formatter/setup.sh
+bash tools/toolchains/clang/style-formatter/setup.sh
 ```
 Installs `clang-format` from a vendored `.whl` file into a local Python venv.
 No network access. No compiler. No admin rights required (installs in-repo).
@@ -361,14 +361,14 @@ No network access. No compiler. No admin rights required (installs in-repo).
 **Method 3 -- clang-format + clang-tidy from vendored binaries (base case)**
 ```bash
 bash scripts/setup-prebuilt-submodule.sh
-bash toolchains/clang/source-build/setup.sh
+bash tools/toolchains/clang/source-build/setup.sh
 ```
 Verifies and installs pre-built binaries from the `prebuilt-binaries`
 submodule. Windows: instant. Linux: reassembles clang-tidy from split parts.
 
 **Method 4 -- Build from LLVM source (worst case / policy requirement)**
 ```bash
-bash toolchains/clang/source-build/setup.sh --build-from-source
+bash tools/toolchains/clang/source-build/setup.sh --build-from-source
 ```
 Compiles `clang-format` and `clang-tidy` from the vendored LLVM 22.1.2
 source tarball (~30-120 minutes). Use when pre-built binaries are not
@@ -377,17 +377,17 @@ Requires: Visual Studio 2022 (Windows) or GCC 8+ (Linux). CMake 3.14+.
 
 **Method 5 -- CMake 4.3.1**
 ```bash
-bash build-tools/cmake/setup.sh
+bash tools/build-tools/cmake/setup.sh
 # or build from source:
-bash build-tools/cmake/setup.sh --build-from-source
+bash tools/build-tools/cmake/setup.sh --build-from-source
 ```
 Installs CMake 4.3.1 to the devkit path. Required for RHEL 8 environments
 where the system CMake is too old for modern C++ projects.
 
 **Method 6 -- Portable Python 3.14.4**
 ```bash
-bash languages/python/setup.sh
-source languages/python/scripts/env-setup.sh
+bash tools/languages/python/setup.sh
+source tools/languages/python/scripts/env-setup.sh
 ```
 Installs a self-contained Python 3.14.4 alongside any existing system Python.
 Does not affect system Python until `env-setup.sh` is sourced.
@@ -401,7 +401,7 @@ cd languages\dotnet
 .\install-prebuilt.ps1
 
 # Linux:
-bash languages/dotnet/setup.sh
+bash tools/languages/dotnet/setup.sh
 ```
 Installs .NET 10 SDK 10.0.201 from prebuilt archives. No installer, no registry
 changes, no elevation required for user install. Includes C# 14 compiler,
@@ -410,14 +410,14 @@ Supported until November 2028.
 
 **Method 8 -- VS Code extensions (offline)**
 ```bash
-bash dev-tools/vscode-extensions/setup.sh
+bash tools/dev-tools/vscode-extensions/setup.sh
 ```
 Installs C/C++, C++ TestMate, and Python extensions into VS Code offline.
 Requires VS Code installed and `code` on PATH.
 
 **Method 9 -- GCC toolchain for Windows**
 ```bash
-cd toolchains/gcc/windows
+cd tools/toolchains/gcc/windows
 bash setup.sh x86_64
 source scripts/env-setup.sh x86_64
 ```
@@ -426,14 +426,14 @@ GCC to compile C++ projects on Windows.
 
 **Method 10 -- 7-Zip 26.00 (Windows + Linux)**
 ```bash
-bash dev-tools/7zip/setup.sh
+bash tools/dev-tools/7zip/setup.sh
 ```
 Installs 7-Zip 26.00. Admin mode: system-wide install. User mode: portable
 drop-in with no elevation required.
 
 **Method 11 -- Servy 7.8 (Windows service manager)**
 ```bash
-bash dev-tools/servy/setup.sh
+bash tools/dev-tools/servy/setup.sh
 ```
 Installs Servy 7.8 portable. Turns any executable into a native Windows
 service with health checks, log rotation, and restart policies.
@@ -441,14 +441,14 @@ Requires 7-Zip first. Windows only.
 
 **Method 12 -- Conan 2.27.0 (C/C++ package manager)**
 ```bash
-bash dev-tools/conan/setup.sh
+bash tools/dev-tools/conan/setup.sh
 ```
 Installs Conan 2.27.0 self-contained executable. No Python required.
 Windows and Linux. Pairs with CMake for dependency management.
 
 **Method 13 -- gRPC v1.78.1 for Windows (prebuilt)**
 ```powershell
-cd frameworks\grpc
+cd tools\frameworks\grpc
 .\install-prebuilt.ps1 -version 1.78.1
 .\setup.ps1 -version 1.78.1
 ```
@@ -457,7 +457,7 @@ Extracts prebuilt gRPC from `prebuilt-binaries/frameworks/grpc/windows/1.78.1/`
 
 **Method 14 -- gRPC v1.78.1 for Windows (source build)**
 ```powershell
-cd frameworks\grpc
+cd tools\frameworks\grpc
 .\setup.ps1 -version 1.78.1
 ```
 Builds gRPC from the vendored recursive source bundle (~40 minutes).
@@ -466,7 +466,7 @@ CMake, Git Bash. All cmake deps sourced from `third_party/` -- no network access
 
 **Method 15 -- lcov code coverage (RHEL 8 / Linux)**
 ```bash
-bash build-tools/lcov/setup.sh
+bash tools/build-tools/lcov/setup.sh
 source build-tools/lcov/scripts/env-setup.sh
 ```
 Installs lcov 2.4 and all Perl dependencies from vendored tarballs.
@@ -520,29 +520,30 @@ airgap-cpp-devkit/
 |   +-- toolchains/gcc/linux/              <- gcc-toolset-15 RHEL8 RPMs
 |   +-- toolchains/gcc/windows/            <- WinLibs GCC 15.2.0
 |
-+-- build-tools/
-|   +-- cmake/                             <- CMake 4.3.1 source + scripts
-|   +-- lcov/                              <- lcov 2.4 + vendored Perl deps (Linux)
-|
-+-- dev-tools/
-|   +-- 7zip/                              <- 7-Zip 26.00 scripts + manifests
-|   +-- servy/                             <- Servy 7.8 scripts + manifests
-|   +-- conan/                             <- Conan 2.27.0 scripts + manifests
-|   +-- vscode-extensions/                 <- offline VS Code extensions
-|   +-- devkit-ui/                         <- web-based package manager (FastAPI + HTMX)
-|
-+-- frameworks/
-|   +-- grpc/                              <- gRPC v1.78.1 (Windows)
-|
-+-- languages/
-|   +-- python/                            <- Python 3.14.4 (Windows + Linux) + pip packages
-|   +-- dotnet/                            <- .NET 10 SDK 10.0.201 (Windows + Linux)
-|
-+-- toolchains/
-    +-- clang/
-    |   +-- source-build/                  <- clang-format + clang-tidy from LLVM source
-    |   +-- style-formatter/               <- LLVM C++ style enforcement
-    +-- gcc/
-        +-- linux/                         <- gcc-toolset-15 for RHEL 8
-        +-- windows/                       <- WinLibs GCC 15.2.0 for Windows
++-- tools/                                 <- SUBMODULE (airgap-devkit/tools)
+|   +-- build-tools/
+|   |   +-- cmake/                         <- CMake 4.3.1 source + scripts
+|   |   +-- lcov/                          <- lcov 2.4 + vendored Perl deps (Linux)
+|   |
+|   +-- dev-tools/
+|   |   +-- 7zip/                          <- 7-Zip 26.00 scripts + manifests
+|   |   +-- servy/                         <- Servy 7.8 scripts + manifests
+|   |   +-- conan/                         <- Conan 2.27.0 scripts + manifests
+|   |   +-- vscode-extensions/             <- offline VS Code extensions
+|   |   +-- devkit-ui/                     <- web-based package manager (FastAPI + HTMX)
+|   |
+|   +-- frameworks/
+|   |   +-- grpc/                          <- gRPC v1.78.1 (Windows)
+|   |
+|   +-- languages/
+|   |   +-- python/                        <- Python 3.14.4 (Windows + Linux) + pip packages
+|   |   +-- dotnet/                        <- .NET 10 SDK 10.0.201 (Windows + Linux)
+|   |
+|   +-- toolchains/
+|       +-- clang/
+|       |   +-- source-build/              <- clang-format + clang-tidy from LLVM source
+|       |   +-- style-formatter/           <- LLVM C++ style enforcement
+|       +-- gcc/
+|           +-- linux/                     <- gcc-toolset-15 for RHEL 8
+|           +-- windows/                   <- WinLibs GCC 15.2.0 for Windows
 ```
