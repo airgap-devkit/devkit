@@ -499,7 +499,7 @@ airgap-cpp-devkit/
 +-- launch.sh                              <- PRIMARY entry point (devkit-ui or CLI fallback)
 +-- install-cli.sh                             <- CLI installer / fallback (no Python required)
 +-- uninstall.sh                               <- removes all installed tools
-+-- .gitmodules                            <- three submodule pointers (prebuilt, tools, airgap-devkit-manager)
++-- .gitmodules                            <- three submodule pointers (prebuilt, tools, manager)
 |
 +-- scripts/
 |   +-- install-mode.sh                    <- shared admin/user detection library
@@ -516,7 +516,7 @@ airgap-cpp-devkit/
 |
 +-- user-packages/                         <- user-managed packages (not tracked by git)
 |
-+-- airgap-devkit-manager/                 <- SUBMODULE: web UI + CLI orchestrator (FastAPI + HTMX)
++-- manager/                 <- SUBMODULE: web UI + CLI orchestrator (FastAPI + HTMX)
 |
 +-- prebuilt/                              <- SUBMODULE (separate repo, optional)
 |   +-- build-tools/cmake/                 <- CMake 4.3.1 (Windows .zip, Linux .tar.gz, source .tar.gz)
