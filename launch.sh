@@ -99,7 +99,17 @@ if PYTHON_BIN="$(_find_python 2>/dev/null)"; then
     echo ""
     _sep2
     echo ""
-    PYTHONPATH="${SCRIPT_DIR}/manager/src${PYTHONPATH:+:${PYTHONPATH}}" \
+    # Windows Python (python.exe) ignores POSIX-style PYTHONPATH entries set
+    # inside Git Bash, because MINGW64 converts path *arguments* but not env vars.
+    # Convert to a Windows path + semicolon separator when running on MSYS/Git Bash.
+    PY_SRC="${SCRIPT_DIR}/manager/src"
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "${OS:-}" == "Windows_NT" ]]; then
+        PY_SRC="$(cygpath -w "${PY_SRC}")"
+        PYTHONPATH="${PY_SRC}${PYTHONPATH:+;${PYTHONPATH}}"
+    else
+        PYTHONPATH="${PY_SRC}${PYTHONPATH:+:${PYTHONPATH}}"
+    fi
+    PYTHONPATH="${PYTHONPATH}" \
     exec "${PYTHON_BIN}" -m airgap_devkit.launcher \
         --tools "${SCRIPT_DIR}/tools" \
         "${UI_ARGS[@]+"${UI_ARGS[@]}"}"
