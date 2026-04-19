@@ -1,0 +1,25 @@
+# Shell scripts must always use LF — CRLF breaks bash on Windows subprocesses
+*.sh    text eol=lf
+*.bash  text eol=lf
+
+# Text files — normalize on commit, checkout with platform endings
+*.md    text
+*.json  text
+*.txt   text
+*.py    text
+*.html  text
+*.css   text
+*.js    text
+*.yaml  text
+*.yml   text
+
+# Binaries — no line-ending conversion
+*.exe   binary
+*.dll   binary
+*.so    binary
+*.tar   binary
+*.xz    binary
+*.gz    binary
+*.zip   binary
+*.png   binary
+*.jpg   binary

@@ -51,11 +51,14 @@ _INSTALL_MODE_LOADED=1
 # Internal helpers
 # ---------------------------------------------------------------------------
 _im_os() {
+    if [[ "${AIRGAP_OS:-}" == "windows" ]]; then echo "windows"; return; fi
+    if [[ "${AIRGAP_OS:-}" == "linux"   ]]; then echo "linux";   return; fi
     case "$(uname -s)" in
         MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
-        Linux*)                echo "linux"   ;;
-        Darwin*)               echo "macos"   ;;
-        *)                     echo "unknown" ;;
+        Linux*)
+            command -v cmd.exe &>/dev/null 2>&1 && echo "windows" || echo "linux" ;;
+        Darwin*) echo "macos"   ;;
+        *)       echo "unknown" ;;
     esac
 }
 
