@@ -1390,3 +1390,34 @@ input, select, textarea { font-family: inherit; }
   background: transparent;
   padding: 6px 8px;
 }
+
+/* ── Console entry: subtle separator header ── */
+.console-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+/* Override the colored badge version — just dim text timestamp */
+.console-entry .console-time {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-left: 0;
+  font-style: italic;
+}
+
+/* ── Progress drawer body collapse ── */
+#progress-body {
+  transition: none;
+}
+#drawer-collapse-icon {
+  transition: transform 0.2s ease;
+}
+.progress-drawer-header {
+  user-select: none;
+}
+
+/* ── Progress drawer Clear button ── */
