@@ -277,13 +277,15 @@ function installTool(id, name, btn) {
       drawer.setStatus(success);
       btn.disabled = false;
       btn.innerHTML = success ? '✓ Installed' : '⟳ Retry';
-      // Update card badge/buttons without closing the drawer or reloading the page
-      if (success) {
-        refreshCard(id);
+      // Delay slightly so the OS flushes the receipt file before we read it
+      setTimeout(() => {
+        if (success) {
+          refreshCard(id);
+          // If first refresh still shows not-installed, retry once after 1s
+          setTimeout(() => refreshCard(id), 1200);
+        }
         _appendLatestInstallToConsole(id);
-      } else {
-        _appendLatestInstallToConsole(id);
-      }
+      }, 300);
       // Drawer stays open — user closes it with the ↓ button
       return;
     }
@@ -523,9 +525,10 @@ function refreshCard(id) {
     })
     .catch(() => {}); // silently ignore; user can reload manually
 
-  // If the modal is open for this same tool, refresh it too
-  if (_modalToolId === id) {
-    setTimeout(() => showToolDetail(id), 150);
+  // If the modal is currently visible for this same tool, refresh it too
+  const modalEl = document.getElementById('tool-modal');
+  if (_modalToolId === id && modalEl && modalEl.style.display !== 'none') {
+    setTimeout(() => showToolDetail(id), 200);
   }
 }
 
