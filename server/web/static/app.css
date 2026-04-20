@@ -717,8 +717,11 @@ input, select, textarea { font-family: inherit; }
   padding: 0 4px;
 }
 .tab-btn {
-  padding: 13px 20px;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 13px 18px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-body);
   border: none;
