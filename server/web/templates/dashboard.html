@@ -268,6 +268,8 @@ function installTool(id, name, btn) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Installing…';
 
+  const _sseLines = []; // buffer lines for console
+
   const es = new EventSource('/install/' + encodeURIComponent(id));
   es.onmessage = e => {
     const line = e.data;
@@ -277,24 +279,31 @@ function installTool(id, name, btn) {
       drawer.setStatus(success);
       btn.disabled = false;
       btn.innerHTML = success ? '✓ Installed' : '⟳ Retry';
+      // Flush buffered lines into the persistent console
+      if (_sseLines.length > 0) {
+        _appendConsoleEntry(id, 'install', _sseLines.join('\n'));
+      }
       // Delay slightly so the OS flushes the receipt file before we read it
-      setTimeout(() => {
-        if (success) {
+      if (success) {
+        setTimeout(() => {
           refreshCard(id);
           // If first refresh still shows not-installed, retry once after 1s
           setTimeout(() => refreshCard(id), 1200);
-        }
-        _appendLatestInstallToConsole(id);
-      }, 300);
+        }, 300);
+      }
       // Drawer stays open — user closes it with the ↓ button
       return;
     }
+    _sseLines.push(line);
     drawer.append(line);
   };
   es.onerror = () => {
     es.close();
     drawer.append('ERROR: connection lost');
     drawer.setStatus(false);
+    if (_sseLines.length > 0) {
+      _appendConsoleEntry(id, 'install', _sseLines.join('\n'));
+    }
     btn.disabled = false;
     btn.textContent = '⟳ Retry';
   };
@@ -433,6 +442,7 @@ function _appendLatestInstallToConsole(id) {
 
 function formatLog(raw) {
   return raw.split('\n').map(line => {
+    if (line.startsWith('data: ')) line = line.slice(6);
     const e = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     if (/✓|success|installed|complete|done/i.test(line)) return '<span class="log-success">' + e + '</span>';
     if (/✗|error|fail|missing|not found/i.test(line)) return '<span class="log-error">' + e + '</span>';
