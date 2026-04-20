@@ -1330,3 +1330,63 @@ input, select, textarea { font-family: inherit; }
   0%   { transform: scale(0.4); opacity: 0; }
   100% { transform: scale(1);   opacity: 1; }
 }
+
+/* ── Persistent modal console ── */
+.modal-console {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 4px;
+  scroll-behavior: smooth;
+}
+.console-empty {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+.console-entry {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  animation: log-line-in 0.2s ease both;
+}
+.console-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.console-source {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.console-source-install { background: #dbeafe; color: #1d4ed8; }
+.console-source-check   { background: #f3e8ff; color: #7c3aed; }
+.console-source-uninstall { background: #fee2e2; color: #b91c1c; }
+[data-theme="dark"] .console-source-install   { background: #1e3461; color: #93c5fd; }
+[data-theme="dark"] .console-source-check     { background: #2d1b4e; color: #c4b5fd; }
+[data-theme="dark"] .console-source-uninstall { background: #3b1212; color: #fca5a5; }
+.console-time {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+.console-entry .modal-log-pre {
+  margin: 0;
+  border-radius: 0;
+  max-height: 180px;
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+}
