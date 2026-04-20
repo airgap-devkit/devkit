@@ -153,6 +153,17 @@ function showToolDetail(id) {
       // Reset check output panel when opening a new tool
       document.getElementById('modal-check-result').style.display = 'none';
 
+      // Log viewer — show button only for installed tools, reset state
+      _logLoaded = false;
+      _logVisible = false;
+      const logBtn = document.getElementById('modal-log-btn');
+      const logSection = document.getElementById('modal-log-section');
+      if (logBtn) {
+        logBtn.style.display = installed ? '' : 'none';
+        logBtn.innerHTML = _logIconSvg() + ' View Log';
+      }
+      if (logSection) logSection.style.display = 'none';
+
       // Upload metadata (user packages)
       const uploaderPkgRow = document.getElementById('modal-uploader-pkg-row');
       const uploadTimePkgRow = document.getElementById('modal-upload-time-pkg-row');
@@ -298,6 +309,77 @@ function installProfile(id, name) {
 // ── Export team config ──
 function exportConfig() {
   window.location.href = '/api/export';
+}
+
+// ── Open modal directly to log tab (called from card log icon) ──
+function openToolLog(id) {
+  showToolDetail(id);
+  // Wait for the modal fetch to complete then auto-expand the log
+  setTimeout(() => {
+    const logBtn = document.getElementById('modal-log-btn');
+    if (logBtn && logBtn.style.display !== 'none') toggleModalLog();
+  }, 400);
+}
+
+// ── Modal log viewer ──
+let _logLoaded = false;
+let _logVisible = false;
+function toggleModalLog() {
+  const section = document.getElementById('modal-log-section');
+  const btn = document.getElementById('modal-log-btn');
+  if (!_logLoaded) {
+    loadModalLog(() => {
+      _logLoaded = true;
+      _logVisible = true;
+      section.style.display = '';
+      btn.innerHTML = _logIconSvg() + ' Hide Log';
+    });
+    return;
+  }
+  _logVisible = !_logVisible;
+  section.style.display = _logVisible ? '' : 'none';
+  btn.innerHTML = _logIconSvg() + (_logVisible ? ' Hide Log' : ' View Log');
+}
+function _logIconSvg() {
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>';
+}
+function loadModalLog(done) {
+  if (!_modalToolId) return;
+  const contentEl = document.getElementById('modal-log-content');
+  const filenameEl = document.getElementById('modal-log-filename');
+  contentEl.textContent = 'Loading…';
+  fetch('/api/tool/' + encodeURIComponent(_modalToolId) + '/log')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) {
+        contentEl.textContent = d.error || 'No log available.';
+        return;
+      }
+      filenameEl.textContent = d.filename + ' · ' + d.path;
+      contentEl.innerHTML = formatLog(d.log);
+      if (done) done();
+    })
+    .catch(() => { contentEl.textContent = 'Failed to load log.'; });
+}
+function formatLog(raw) {
+  // Color-code log lines — escape HTML first
+  return raw.split('\n').map(line => {
+    const e = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (/✓|success|installed|complete|done/i.test(line)) return '<span class="log-success">' + e + '</span>';
+    if (/✗|error|fail|missing|not found/i.test(line)) return '<span class="log-error">' + e + '</span>';
+    if (/^==?>|^==>/.test(line)) return '<span class="log-step">' + e + '</span>';
+    if (/^#|^tool=|^version=|^status=|^platform=|^install/.test(line)) return '<span class="log-meta">' + e + '</span>';
+    return e;
+  }).join('\n');
+}
+function copyModalLog() {
+  const el = document.getElementById('modal-log-content');
+  navigator.clipboard.writeText(el ? el.innerText : '').then(() => {
+    const btn = document.getElementById('modal-copy-log-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied';
+    setTimeout(() => { btn.innerHTML = orig; }, 1800);
+  });
 }
 
 // ── Run version check from modal ──
@@ -684,6 +766,9 @@ function deletePackage(id, name, btn) {
                     Update
                   </button>
                   {{end}}
+                  <button class="btn btn-ghost btn-sm btn-icon card-log-btn" onclick="openToolLog('{{.ID}}')" title="View install log">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                  </button>
                 {{else}}
                   <button class="btn btn-primary btn-sm" onclick="installTool('{{.ID}}','{{.Name}}',this)">
                     Install
@@ -1045,6 +1130,21 @@ function deletePackage(id, name, btn) {
         </div>
       </div>
 
+      <!-- Install log viewer -->
+      <div class="modal-section" id="modal-log-section" style="display:none;">
+        <div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Install Log</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" id="modal-copy-log-btn" onclick="copyModalLog()" style="font-size:0.75rem;padding:2px 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div id="modal-log-filename" style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:6px;"></div>
+        <pre id="modal-log-content" class="modal-log-pre"></pre>
+      </div>
+
       <!-- Package metadata (always shown) -->
       <div class="modal-section">
         <div class="modal-section-title">Package Info</div>
@@ -1063,6 +1163,10 @@ function deletePackage(id, name, btn) {
     <div class="modal-footer" id="modal-footer">
       <div id="modal-actions"></div>
       <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+        <button class="btn btn-ghost btn-sm" id="modal-log-btn" onclick="toggleModalLog()" style="display:none;" title="View install log">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+          View Log
+        </button>
         <button class="btn btn-ghost btn-sm" id="modal-check-btn" onclick="runModalCheck()" title="Probe system for current installed version">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
           Run Check

@@ -556,6 +556,36 @@ input, select, textarea { font-family: inherit; }
 .progress-log .log-error   { color: var(--danger); }
 .progress-log .log-dim     { color: var(--text-light); }
 
+/* ── Modal log pre ── */
+.modal-log-pre {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  animation: fade-in-down 0.2s ease;
+}
+.modal-log-pre .log-success { color: var(--success); font-weight: 500; }
+.modal-log-pre .log-error   { color: var(--danger);  font-weight: 500; }
+.modal-log-pre .log-step    { color: var(--accent);  font-weight: 600; }
+.modal-log-pre .log-meta    { color: var(--text-muted); }
+
+/* ── Card log icon button ── */
+.card-log-btn {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+  padding: 4px 6px;
+}
+.card-log-btn:hover { opacity: 1; }
+
 /* ── Status bar at bottom of drawer ── */
 .progress-status {
   display: flex;
