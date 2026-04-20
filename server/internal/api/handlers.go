@@ -109,6 +109,7 @@ func (s *Server) Routes() http.Handler {
 	r.Delete("/uninstall/{id}", s.handleUninstall)
 	r.Get("/install-profile/{id}", s.handleInstallProfile)
 	r.Get("/check/{id}", s.handleCheck)
+	r.Get("/api/tool/{id}/log", s.handleToolLog)
 	r.Post("/packages/upload", s.handlePackageUpload)
 	r.Delete("/packages/{id}", s.handlePackageDelete)
 	r.Get("/shutdown", s.handleShutdown)
@@ -649,6 +650,33 @@ func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 		"output":    string(out),
 		"check_cmd": t.CheckCmd,
 	})
+}
+
+func (s *Server) handleToolLog(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	t, ok := s.findTool(id)
+	if !ok {
+		jsonErr(w, "tool not found", 404)
+		return
+	}
+	prefix := s.currentPrefix()
+	clean := strings.ReplaceAll(t.ReceiptName, "/", string(os.PathSeparator))
+	toolDir := filepath.Join(prefix, clean)
+
+	for _, name := range []string{"INSTALL_LOG.txt", "INSTALL_RECEIPT.txt"} {
+		p := filepath.Join(toolDir, name)
+		b, err := os.ReadFile(p)
+		if err == nil {
+			jsonOK(w, map[string]any{
+				"ok":       true,
+				"log":      string(b),
+				"filename": name,
+				"path":     p,
+			})
+			return
+		}
+	}
+	jsonOK(w, map[string]any{"ok": false, "error": "No install log found for this tool."})
 }
 
 func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
