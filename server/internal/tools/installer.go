@@ -75,7 +75,7 @@ func RunInstall(bash, repoRoot string, t Tool, args []string, env []string, w io
 	cmd.Stdout = w
 	cmd.Stderr = w
 
-	fmt.Fprintf(w, "data: Installing %s %s...\n\n", t.Name, t.Version)
+	fmt.Fprintf(w, "Installing %s %s...\n", t.Name, t.Version)
 	if err := cmd.Run(); err != nil {
 		if exit, ok := err.(*exec.ExitError); ok {
 			return exit.ExitCode()
