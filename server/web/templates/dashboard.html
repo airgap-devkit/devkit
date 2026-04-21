@@ -215,8 +215,19 @@ function showToolDetail(id) {
 
       // Hero status badge (inline)
       const heroStatus = document.getElementById('modal-status-hero');
-      if (d.update_available) {
-        heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot">Update Available</span>';
+      // Determine GitHub update state too
+      const githubUpd = _availableUpdates[id];
+      const hasGitHubUpdate = githubUpd && githubUpd.available;
+
+      if (hasGitHubUpdate && d.update_available) {
+        // Both: a bundled install is pending AND an even newer one is on GitHub
+        heroStatus.innerHTML =
+          '<span class="badge badge-success badge-dot" style="margin-right:4px;" title="v' + d.version + ' is bundled and ready to install offline">Ready v' + d.version + '</span>' +
+          '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' is available on GitHub (requires internet)">GitHub v' + githubUpd.latest_version + '</span>';
+      } else if (hasGitHubUpdate) {
+        heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' available on GitHub">GitHub v' + githubUpd.latest_version + '</span>';
+      } else if (d.update_available) {
+        heroStatus.innerHTML = '<span class="badge badge-success badge-dot" title="v' + d.version + ' is bundled and ready to install on this machine offline">Ready v' + d.version + '</span>';
       } else if (installed) {
         heroStatus.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
       } else if (!d.available) {
@@ -227,7 +238,7 @@ function showToolDetail(id) {
 
       // Hero tint based on status
       const hero = document.getElementById('modal-hero');
-      hero.className = 'modal-hero' + (installed ? (d.update_available ? ' hero-upgrade' : ' hero-success') : '');
+      hero.className = 'modal-hero' + (installed ? (hasGitHubUpdate ? ' hero-upgrade' : d.update_available ? ' hero-success' : ' hero-success') : '');
 
       // Description
       document.getElementById('modal-desc').textContent = d.description || '';
@@ -299,9 +310,11 @@ function showToolDetail(id) {
           removeBtn.onclick = () => { closeToolModal(); uninstallTool(id, d.name, removeBtn); };
           actions.appendChild(removeBtn);
           if (d.update_available) {
+            // "Install bundled" — runs setup.sh offline, upgrades local machine
             const updateBtn = document.createElement('button');
-            updateBtn.className = 'btn btn-upgrade btn-sm';
-            updateBtn.textContent = 'Update to v' + d.version;
+            updateBtn.className = 'btn btn-primary btn-sm';
+            updateBtn.title = 'Installs the bundled v' + d.version + ' to this machine (offline — no internet required)';
+            updateBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Install v' + d.version;
             updateBtn.onclick = () => { closeToolModal(); installTool(id, d.name, updateBtn); };
             actions.appendChild(updateBtn);
           }
@@ -314,13 +327,13 @@ function showToolDetail(id) {
         }
       }
 
-      // Download-Update button (online update available)
+      // GitHub fetch button — downloads newer version from internet to update the bundle
       const upd = _availableUpdates[id];
       if (upd && upd.available) {
         const updBtn = document.createElement('button');
         updBtn.className = 'btn btn-upgrade btn-sm';
-        updBtn.innerHTML = '⬆ Download v' + upd.latest_version;
-        updBtn.title = 'Download ' + upd.asset_name + ' from GitHub';
+        updBtn.title = 'Downloads ' + upd.asset_name + ' from GitHub and updates the local bundle (requires internet)';
+        updBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>Fetch v' + upd.latest_version + ' from GitHub';
         updBtn.onclick = () => { closeToolModal(); downloadUpdate(id, upd.latest_version, updBtn); };
         actions.appendChild(updBtn);
       }
@@ -744,7 +757,7 @@ function refreshCard(id) {
       // Update status badge
       const badgeWrap = el.querySelector('.tool-card-header > div:last-child');
       if (badgeWrap) {
-        if (d.update_available) badgeWrap.innerHTML = '<span class="badge badge-upgrade badge-dot">Update</span>';
+        if (d.update_available) badgeWrap.innerHTML = '<span class="badge badge-success badge-dot" title="v' + d.version + ' bundled and ready to install (offline)">Install Ready</span>';
         else if (d.installed)   badgeWrap.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
         else if (!d.available)  badgeWrap.innerHTML = '<span class="badge badge-gray">N/A</span>';
         else                    badgeWrap.innerHTML = '<span class="badge badge-gray badge-dot">Available</span>';
@@ -757,7 +770,7 @@ function refreshCard(id) {
         if (d.available) {
           if (d.installed) {
             html += `<button class="btn btn-danger btn-sm" onclick="uninstallTool('${id}','${d.name}',this)">Remove</button>`;
-            if (d.update_available) html += `<button class="btn btn-upgrade btn-sm" onclick="installTool('${id}','${d.name}',this)">Update</button>`;
+            if (d.update_available) html += `<button class="btn btn-primary btn-sm" title="Installs bundled v${d.version} to this machine (offline)" onclick="installTool('${id}','${d.name}',this)">Install v${d.version}</button>`;
           } else {
             html += `<button class="btn btn-primary btn-sm" onclick="installTool('${id}','${d.name}',this)">Install</button>`;
           }
@@ -1051,16 +1064,16 @@ function deletePackage(id, name, btn) {
         </div>
         <div class="tool-grid">
           {{range $ts}}
-          <div class="tool-card{{if .Installed}} installed{{else if .UpdateAvailable}} update-available{{else if not .Available}} unavailable{{end}}" id="card-{{.ID | lower}}" onclick="showToolDetail('{{.ID}}')" style="cursor:pointer;">
+          <div class="tool-card{{if .Installed}} installed{{else if .UpdateAvailable}} update-available{{else if not .Available}} unavailable{{end}}" id="card-{{.ID | lower}}" data-tool-id="{{.ID}}" onclick="showToolDetail('{{.ID}}')" style="cursor:pointer;">
             <div class="tool-card-header">
               <div>
                 <div class="tool-card-name">{{.Name}}</div>
                 <div class="tool-card-version">{{.Version}}</div>
               </div>
-              <div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
                 {{if .Installed}}
                   {{if .UpdateAvailable}}
-                    <span class="badge badge-upgrade badge-dot">Update</span>
+                    <span class="badge badge-success badge-dot" title="v{{.Version}} bundled — click Install to upgrade this machine offline">Install Ready</span>
                   {{else}}
                     <span class="badge badge-success badge-dot">Installed</span>
                   {{end}}
@@ -1069,6 +1082,7 @@ function deletePackage(id, name, btn) {
                 {{else}}
                   <span class="badge badge-gray badge-dot">Available</span>
                 {{end}}
+                <span class="badge badge-upgrade badge-dot card-update-badge" title="Newer version available on GitHub" style="display:none;">GitHub Update</span>
               </div>
             </div>
             <div class="tool-card-desc">{{.Description}}</div>
@@ -1079,8 +1093,8 @@ function deletePackage(id, name, btn) {
                     Remove
                   </button>
                   {{if .UpdateAvailable}}
-                  <button class="btn btn-upgrade btn-sm" onclick="installTool('{{.ID}}','{{.Name}}',this)">
-                    Update
+                  <button class="btn btn-primary btn-sm" title="Installs bundled v{{.Version}} to this machine (offline)" onclick="installTool('{{.ID}}','{{.Name}}',this)">
+                    Install v{{.Version}}
                   </button>
                   {{end}}
                   <button class="btn btn-ghost btn-sm btn-icon card-log-btn" onclick="openToolLog('{{.ID}}')" title="View install log">
