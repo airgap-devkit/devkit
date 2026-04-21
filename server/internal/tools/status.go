@@ -11,11 +11,11 @@ import (
 )
 
 type Receipt struct {
-	Exists      bool
-	Status      string
-	Version     string
-	Date        string
-	InstallPath string
+	Exists      bool   `json:"exists"`
+	Status      string `json:"status"`
+	Version     string `json:"version"`
+	Date        string `json:"date"`
+	InstallPath string `json:"install_path"`
 }
 
 type ToolStatus struct {
