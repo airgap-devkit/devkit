@@ -854,7 +854,13 @@ function _pkgActId(toolId, pkgKey) {
 function _renderPkgSkeleton(toolId, list, pkgs) {
   const cats = {};
   pkgs.forEach(p => { const c = p.category || 'General'; (cats[c] = cats[c] || []).push(p); });
-  list.innerHTML = Object.entries(cats).map(([cat, items]) => `
+  const header = `<div class="pkg-col-headers">
+    <span>Name</span>
+    <span>Description</span>
+    <span class="pkg-col-ver">Version</span>
+    <span class="pkg-col-act">Status</span>
+  </div>`;
+  list.innerHTML = header + Object.entries(cats).map(([cat, items]) => `
     <div class="pkg-cat-group">
       <div class="pkg-cat-label">${cat}</div>
       ${items.map(p => {
