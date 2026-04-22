@@ -1797,6 +1797,23 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Bundle package list ── */
 .bundle-pkg-list { display: flex; flex-direction: column; gap: 10px; }
+.pkg-col-headers {
+  display: grid;
+  grid-template-columns: minmax(110px, 170px) 1fr auto auto;
+  column-gap: 12px;
+  padding: 0 8px 4px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 4px;
+}
+.pkg-col-headers span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+.pkg-col-headers .pkg-col-ver  { text-align: right; }
+.pkg-col-headers .pkg-col-act  { text-align: right; min-width: 90px; }
 .pkg-cat-group { display: flex; flex-direction: column; gap: 1px; }
 .pkg-cat-label {
   font-size: 0.68rem;
