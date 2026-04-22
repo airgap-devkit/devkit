@@ -67,7 +67,30 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Check binary exists
+# Auto-rebuild if Go is available and source is newer than the binary
+# ---------------------------------------------------------------------------
+_source_newer_than_bin() {
+    local newer
+    newer=$(find "${SCRIPT_DIR}/server" \
+        \( -name "*.go" -o \( -path "*/web/*" -type f \) \) \
+        -newer "${SERVER_BIN}" -print -quit 2>/dev/null)
+    [[ -n "$newer" ]]
+}
+
+if command -v go &>/dev/null 2>&1; then
+    # Add common Go install locations to PATH (needed in Git Bash / MINGW64)
+    for _d in "/c/Program Files/Go/bin" "/c/Go/bin" "$HOME/go/bin" "/usr/local/go/bin"; do
+        [[ -x "$_d/go" || -x "$_d/go.exe" ]] && export PATH="$PATH:$_d" && break
+    done
+    if [[ ! -f "${SERVER_BIN}" ]] || _source_newer_than_bin; then
+        echo "  [i]  Source changed — rebuilding server binary..."
+        bash "${SCRIPT_DIR}/scripts/build-server.sh"
+        echo ""
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Check binary exists (fallback if Go is not available)
 # ---------------------------------------------------------------------------
 if [[ ! -f "${SERVER_BIN}" ]]; then
     echo ""
@@ -78,10 +101,7 @@ if [[ ! -f "${SERVER_BIN}" ]]; then
     echo "  [!!]  Server binary not found:"
     echo "        ${SERVER_BIN}"
     echo ""
-    echo "  To build it locally (requires Go 1.21+):"
-    echo "        bash scripts/build-server.sh"
-    echo ""
-    echo "  Or initialise the prebuilt submodule:"
+    echo "  Initialise the prebuilt submodule:"
     echo "        git submodule update --init --recursive prebuilt"
     echo ""
     echo "  Falling back to install-cli.sh..."
