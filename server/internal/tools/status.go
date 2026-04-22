@@ -57,12 +57,16 @@ func parseReceipt(path string) (Receipt, bool) {
 			continue
 		}
 		var key, val string
-		if ci := strings.Index(line, ":"); ci != -1 {
-			key = strings.ToLower(strings.TrimSpace(line[:ci]))
-			val = strings.TrimSpace(line[ci+1:])
-		} else if ei := strings.Index(line, "="); ei != -1 {
+		ei := strings.Index(line, "=")
+		ci := strings.Index(line, ":")
+		if ei != -1 && (ci == -1 || ei < ci) {
+			// '=' separator (receipt format: key=value)
 			key = strings.ToLower(strings.TrimSpace(line[:ei]))
 			val = strings.TrimSpace(line[ei+1:])
+		} else if ci != -1 {
+			// ':' separator (log format: Key: value)
+			key = strings.ToLower(strings.TrimSpace(line[:ci]))
+			val = strings.TrimSpace(line[ci+1:])
 		} else {
 			continue
 		}

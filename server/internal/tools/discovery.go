@@ -9,28 +9,41 @@ import (
 	"strings"
 )
 
+// PackageItem describes an individual item in a bundle (pip wheel or VS Code extension).
+type PackageItem struct {
+	Name        string `json:"name"`
+	ID          string `json:"id,omitempty"`          // e.g. ms-vscode.cpptools
+	File        string `json:"file,omitempty"`        // .vsix filename if known
+	Version     string `json:"version"`
+	Category    string `json:"category,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
 type Tool struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	Category     string   `json:"category"`
-	Platform     string   `json:"platform"`
-	Description  string   `json:"description"`
-	Setup        string   `json:"setup"`
-	ReceiptName  string   `json:"receipt_name"`
-	CheckCmd     string   `json:"check_cmd"`
-	Estimate     string   `json:"estimate"`
-	UsesPrebuilt bool     `json:"uses_prebuilt"`
-	SortOrder    int      `json:"sort_order"`
-	SetupArgs    []string `json:"setup_args"`
-	VersionLabel string   `json:"version_label"`
-	Source       string   `json:"source"`
-	UploadedBy   string   `json:"uploaded_by,omitempty"`
-	UploadedAt   string   `json:"uploaded_at,omitempty"`
-	Homepage     string   `json:"homepage,omitempty"`
-	License      string   `json:"license,omitempty"`
-	GithubRepo   string   `json:"github_repo,omitempty"`
-	AssetMatch   string   `json:"asset_match,omitempty"`
+	ID           string        `json:"id"`
+	Name         string        `json:"name"`
+	Version      string        `json:"version"`
+	Category     string        `json:"category"`
+	Platform     string        `json:"platform"`
+	Description  string        `json:"description"`
+	Setup        string        `json:"setup"`
+	ReceiptName  string        `json:"receipt_name"`
+	CheckCmd     string        `json:"check_cmd"`
+	Estimate     string        `json:"estimate"`
+	UsesPrebuilt bool          `json:"uses_prebuilt"`
+	SortOrder    int           `json:"sort_order"`
+	SetupArgs    []string      `json:"setup_args"`
+	VersionLabel string        `json:"version_label"`
+	InstallLabel string        `json:"install_label,omitempty"`
+	BundleType   string        `json:"bundle_type,omitempty"` // "pip" | "vscode"
+	Packages     []PackageItem `json:"packages,omitempty"`
+	Source       string        `json:"source"`
+	UploadedBy   string        `json:"uploaded_by,omitempty"`
+	UploadedAt   string        `json:"uploaded_at,omitempty"`
+	Homepage     string        `json:"homepage,omitempty"`
+	License      string        `json:"license,omitempty"`
+	GithubRepo   string        `json:"github_repo,omitempty"`
+	AssetMatch   string        `json:"asset_match,omitempty"`
 }
 
 var scanPatterns = []struct {

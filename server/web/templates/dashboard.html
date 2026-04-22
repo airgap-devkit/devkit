@@ -199,146 +199,171 @@ const drawer = {
 
 // ── Tool detail modal ──
 let _modalToolId = null;
+
+// Populate all modal DOM fields from a tool data object.
+// Called synchronously from cache on click, then again when background fetch returns.
+function _populateModal(d) {
+  const id = d.id || _modalToolId;
+  const r = d.receipt || {};
+  const installed = d.installed;
+  const isUser = d.source === 'user';
+
+  // Hero
+  document.getElementById('modal-name').textContent = d.name || id;
+  document.getElementById('modal-version').textContent = 'v' + (d.version || '—');
+  document.getElementById('modal-category-badge').textContent = d.category || 'Tool';
+
+  // Hero status badge
+  const heroStatus = document.getElementById('modal-status-hero');
+  const githubUpd = _availableUpdates[id];
+  const hasGitHubUpdate = githubUpd && githubUpd.available;
+
+  if (hasGitHubUpdate && d.update_available) {
+    heroStatus.innerHTML =
+      '<span class="badge badge-success badge-dot" style="margin-right:4px;" title="v' + d.version + ' is bundled and ready to install offline">Ready v' + d.version + '</span>' +
+      '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' is available on GitHub (requires internet)">GitHub v' + githubUpd.latest_version + '</span>';
+  } else if (hasGitHubUpdate) {
+    heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' available on GitHub">GitHub v' + githubUpd.latest_version + '</span>';
+  } else if (d.update_available) {
+    heroStatus.innerHTML = '<span class="badge badge-success badge-dot" title="v' + d.version + ' is bundled and ready to install on this machine offline">Ready v' + d.version + '</span>';
+  } else if (installed) {
+    heroStatus.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
+  } else if (!d.available) {
+    heroStatus.innerHTML = '<span class="badge badge-gray">Not Available</span>';
+  } else {
+    heroStatus.innerHTML = '<span class="badge badge-gray badge-dot">Available</span>';
+  }
+
+  // Hero tint
+  const hero = document.getElementById('modal-hero');
+  hero.className = 'modal-hero' + (installed ? (hasGitHubUpdate ? ' hero-upgrade' : ' hero-success') : '');
+
+  // Description
+  document.getElementById('modal-desc').textContent = d.description || '';
+
+  // Details grid
+  document.getElementById('modal-installed-ver').textContent = installed ? (r.version || d.version || '—') : '—';
+  document.getElementById('modal-avail-ver').textContent = d.version || '—';
+  document.getElementById('modal-platform').textContent =
+    d.platform === 'both' ? 'Windows & Linux' : (d.platform || '—');
+  document.getElementById('modal-estimate').textContent = d.estimate || '—';
+
+  // Installation details section
+  const installSection = document.getElementById('modal-install-section');
+  if (installed) {
+    installSection.style.display = '';
+    document.getElementById('modal-install-path').textContent = r.install_path || '(system PATH)';
+    document.getElementById('modal-install-date').textContent = r.date || '—';
+    const srcMap = { builtin: 'Bundled with DevKit', user: 'User Upload', system: 'System Install' };
+    document.getElementById('modal-source').textContent = srcMap[d.source] || d.source || 'Built-in';
+  } else {
+    installSection.style.display = 'none';
+  }
+
+  // Package info
+  document.getElementById('modal-id').textContent = d.id || id;
+  document.getElementById('modal-category').textContent = d.category || '—';
+
+  // check_cmd tooltip
+  const checkBtn = document.getElementById('modal-check-btn');
+  if (checkBtn) {
+    checkBtn.title = d.check_cmd
+      ? 'Runs: ' + d.check_cmd
+      : 'No check_cmd — will show receipt file instead';
+  }
+
+  // Upload metadata (user packages)
+  const uploaderPkgRow = document.getElementById('modal-uploader-pkg-row');
+  const uploadTimePkgRow = document.getElementById('modal-upload-time-pkg-row');
+  if (isUser && d.uploaded_by) {
+    uploaderPkgRow.style.display = '';
+    document.getElementById('modal-uploaded-by-pkg').textContent = d.uploaded_by;
+    uploadTimePkgRow.style.display = '';
+    document.getElementById('modal-uploaded-at-pkg').textContent = d.uploaded_at || '—';
+  } else {
+    uploaderPkgRow.style.display = 'none';
+    uploadTimePkgRow.style.display = 'none';
+  }
+
+  // Optional fields
+  const hpRow = document.getElementById('modal-homepage-pkg-row');
+  const licRow = document.getElementById('modal-license-pkg-row');
+  if (d.homepage) { hpRow.style.display = ''; document.getElementById('modal-homepage-pkg').textContent = d.homepage; }
+  else { hpRow.style.display = 'none'; }
+  if (d.license) { licRow.style.display = ''; document.getElementById('modal-license-pkg').textContent = d.license; }
+  else { licRow.style.display = 'none'; }
+
+  // Action buttons
+  const actions = document.getElementById('modal-actions');
+  actions.innerHTML = '';
+  if (d.available) {
+    if (installed) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn btn-danger btn-sm';
+      removeBtn.textContent = 'Remove';
+      removeBtn.onclick = () => { closeToolModal(); uninstallTool(id, d.name, removeBtn); };
+      actions.appendChild(removeBtn);
+      if (d.update_available) {
+        const updateBtn = document.createElement('button');
+        updateBtn.className = 'btn btn-primary btn-sm';
+        updateBtn.title = 'Installs the bundled v' + d.version + ' to this machine (offline — no internet required)';
+        const _iLabel = d.install_label || (/^various$/i.test((d.version||'').trim()) ? 'Install' : 'Install v' + d.version);
+        updateBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>' + _iLabel;
+        updateBtn.onclick = () => { closeToolModal(); installTool(id, d.name, updateBtn); };
+        actions.appendChild(updateBtn);
+      }
+    } else {
+      const installBtn = document.createElement('button');
+      installBtn.className = 'btn btn-primary';
+      const _iv = (d.version || '');
+      const _ivLabel = d.install_label || (/^various$/i.test(_iv.trim()) ? 'Install' : 'Install v' + _iv);
+      installBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>' + _ivLabel;
+      installBtn.onclick = () => { closeToolModal(); installTool(id, d.name, installBtn); };
+      actions.appendChild(installBtn);
+    }
+  }
+
+  // GitHub fetch button
+  const upd = _availableUpdates[id];
+  if (upd && upd.available) {
+    const updBtn = document.createElement('button');
+    updBtn.className = 'btn btn-upgrade btn-sm';
+    updBtn.title = 'Downloads ' + upd.asset_name + ' from GitHub and updates the local bundle (requires internet)';
+    updBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>Fetch v' + upd.latest_version + ' from GitHub';
+    updBtn.onclick = () => { closeToolModal(); downloadUpdate(id, upd.latest_version, updBtn); };
+    actions.appendChild(updBtn);
+  }
+}
+
 function showToolDetail(id) {
+  const prevId = _modalToolId;
   _modalToolId = id;
+
+  const modal = document.getElementById('tool-modal');
+  const alreadyOpen = modal.style.display === 'flex';
+  const newTool = prevId !== id;
+
+  // Populate immediately from pre-loaded cache — zero latency, no flash
+  const cached = window._toolCache && window._toolCache[id];
+  if (cached) _populateModal(cached);
+
+  // Show the modal right away
+  if (!alreadyOpen) modal.style.display = 'flex';
+
+  // Load secondary content (version history, console, bundle packages)
+  // on first open or when switching to a different tool
+  if (!alreadyOpen || newTool) {
+    _loadToolConsole(id);
+    _loadVersionHistory(id);
+    _loadBundlePackages(id, cached || {});
+  }
+
+  // Background fetch to refresh dynamic state (installed, receipt, update_available)
   fetch('/api/tool/' + encodeURIComponent(id))
     .then(r => r.json())
     .then(d => {
-      const r = d.receipt || {};
-      const installed = d.installed;
-      const isUser = d.source === 'user';
-
-      // Hero
-      document.getElementById('modal-name').textContent = d.name || id;
-      document.getElementById('modal-version').textContent = 'v' + (d.version || '—');
-      document.getElementById('modal-category-badge').textContent = d.category || 'Tool';
-
-      // Hero status badge (inline)
-      const heroStatus = document.getElementById('modal-status-hero');
-      // Determine GitHub update state too
-      const githubUpd = _availableUpdates[id];
-      const hasGitHubUpdate = githubUpd && githubUpd.available;
-
-      if (hasGitHubUpdate && d.update_available) {
-        // Both: a bundled install is pending AND an even newer one is on GitHub
-        heroStatus.innerHTML =
-          '<span class="badge badge-success badge-dot" style="margin-right:4px;" title="v' + d.version + ' is bundled and ready to install offline">Ready v' + d.version + '</span>' +
-          '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' is available on GitHub (requires internet)">GitHub v' + githubUpd.latest_version + '</span>';
-      } else if (hasGitHubUpdate) {
-        heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' available on GitHub">GitHub v' + githubUpd.latest_version + '</span>';
-      } else if (d.update_available) {
-        heroStatus.innerHTML = '<span class="badge badge-success badge-dot" title="v' + d.version + ' is bundled and ready to install on this machine offline">Ready v' + d.version + '</span>';
-      } else if (installed) {
-        heroStatus.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
-      } else if (!d.available) {
-        heroStatus.innerHTML = '<span class="badge badge-gray">Not Available</span>';
-      } else {
-        heroStatus.innerHTML = '<span class="badge badge-gray badge-dot">Available</span>';
-      }
-
-      // Hero tint based on status
-      const hero = document.getElementById('modal-hero');
-      hero.className = 'modal-hero' + (installed ? (hasGitHubUpdate ? ' hero-upgrade' : d.update_available ? ' hero-success' : ' hero-success') : '');
-
-      // Description
-      document.getElementById('modal-desc').textContent = d.description || '';
-
-      // Details grid
-      document.getElementById('modal-installed-ver').textContent = installed ? (r.version || d.version || '—') : '—';
-      document.getElementById('modal-avail-ver').textContent = d.version || '—';
-      document.getElementById('modal-platform').textContent =
-        d.platform === 'both' ? 'Windows & Linux' : (d.platform || '—');
-      document.getElementById('modal-estimate').textContent = d.estimate || '—';
-
-      // Installation details section
-      const installSection = document.getElementById('modal-install-section');
-      if (installed) {
-        installSection.style.display = '';
-        document.getElementById('modal-install-path').textContent = r.install_path || '(system PATH)';
-        document.getElementById('modal-install-date').textContent = r.date || '—';
-        const srcMap = { builtin: 'Bundled with DevKit', user: 'User Upload', system: 'System Install' };
-        document.getElementById('modal-source').textContent = srcMap[d.source] || d.source || 'Built-in';
-      } else {
-        installSection.style.display = 'none';
-      }
-
-      // Package info
-      document.getElementById('modal-id').textContent = d.id || id;
-      document.getElementById('modal-category').textContent = d.category || '—';
-
-      // Show check_cmd in Run Check button tooltip
-      const checkBtn = document.getElementById('modal-check-btn');
-      if (checkBtn) {
-        checkBtn.title = d.check_cmd
-          ? 'Runs: ' + d.check_cmd
-          : 'No check_cmd — will show receipt file instead';
-      }
-      // Load persistent console (in-memory if exists, else latest disk log)
-      _loadToolConsole(id);
-      // Load version history and update log
-      _loadVersionHistory(id);
-
-      // Upload metadata (user packages)
-      const uploaderPkgRow = document.getElementById('modal-uploader-pkg-row');
-      const uploadTimePkgRow = document.getElementById('modal-upload-time-pkg-row');
-      if (isUser && d.uploaded_by) {
-        uploaderPkgRow.style.display = '';
-        document.getElementById('modal-uploaded-by-pkg').textContent = d.uploaded_by;
-        uploadTimePkgRow.style.display = '';
-        document.getElementById('modal-uploaded-at-pkg').textContent = d.uploaded_at || '—';
-      } else {
-        uploaderPkgRow.style.display = 'none';
-        uploadTimePkgRow.style.display = 'none';
-      }
-
-      // Optional fields
-      const hpRow = document.getElementById('modal-homepage-pkg-row');
-      const licRow = document.getElementById('modal-license-pkg-row');
-      if (d.homepage) { hpRow.style.display = ''; document.getElementById('modal-homepage-pkg').textContent = d.homepage; }
-      else { hpRow.style.display = 'none'; }
-      if (d.license) { licRow.style.display = ''; document.getElementById('modal-license-pkg').textContent = d.license; }
-      else { licRow.style.display = 'none'; }
-
-      // Action buttons
-      const actions = document.getElementById('modal-actions');
-      actions.innerHTML = '';
-      if (d.available) {
-        if (installed) {
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'btn btn-danger btn-sm';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = () => { closeToolModal(); uninstallTool(id, d.name, removeBtn); };
-          actions.appendChild(removeBtn);
-          if (d.update_available) {
-            // "Install bundled" — runs setup.sh offline, upgrades local machine
-            const updateBtn = document.createElement('button');
-            updateBtn.className = 'btn btn-primary btn-sm';
-            updateBtn.title = 'Installs the bundled v' + d.version + ' to this machine (offline — no internet required)';
-            updateBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Install v' + d.version;
-            updateBtn.onclick = () => { closeToolModal(); installTool(id, d.name, updateBtn); };
-            actions.appendChild(updateBtn);
-          }
-        } else {
-          const installBtn = document.createElement('button');
-          installBtn.className = 'btn btn-primary';
-          installBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Install v' + (d.version || '');
-          installBtn.onclick = () => { closeToolModal(); installTool(id, d.name, installBtn); };
-          actions.appendChild(installBtn);
-        }
-      }
-
-      // GitHub fetch button — downloads newer version from internet to update the bundle
-      const upd = _availableUpdates[id];
-      if (upd && upd.available) {
-        const updBtn = document.createElement('button');
-        updBtn.className = 'btn btn-upgrade btn-sm';
-        updBtn.title = 'Downloads ' + upd.asset_name + ' from GitHub and updates the local bundle (requires internet)';
-        updBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>Fetch v' + upd.latest_version + ' from GitHub';
-        updBtn.onclick = () => { closeToolModal(); downloadUpdate(id, upd.latest_version, updBtn); };
-        actions.appendChild(updBtn);
-      }
-
-      document.getElementById('tool-modal').style.display = 'flex';
+      if (window._toolCache) window._toolCache[id] = d;
+      if (_modalToolId === id) _populateModal(d);
     })
     .catch(() => {});
 }
@@ -517,9 +542,41 @@ function exportConfig() {
   window.location.href = '/api/export';
 }
 
-// ── Open modal directly to console (called from card log icon) ──
+// ── Open install log in bottom drawer ──
 function openToolLog(id) {
-  showToolDetail(id);
+  // Fetch the latest saved log and stream it into the drawer
+  fetch('/api/tool/' + encodeURIComponent(id))
+    .then(r => r.json())
+    .then(d => {
+      drawer.init();
+      drawer.open((d.name || id) + ' — install log');
+      return fetch('/api/tool/' + encodeURIComponent(id) + '/log');
+    })
+    .then(r => r.json())
+    .then(ld => {
+      if (ld.ok && ld.log) {
+        ld.log.split('\n').forEach(line => drawer.append(line));
+      } else {
+        // Fall back to in-memory console entries if no disk log
+        const entries = _toolConsole[id] || [];
+        if (entries.length > 0) {
+          entries.forEach(e => {
+            drawer.append('── ' + e.time + ' · ' + e.source + ' ──');
+            // Strip HTML tags for the drawer
+            const div = document.createElement('div');
+            div.innerHTML = e.html;
+            (div.textContent || '').split('\n').forEach(line => drawer.append(line));
+          });
+        } else {
+          drawer.append('No install log found for this tool.');
+        }
+      }
+      drawer.setStatus(true);
+    })
+    .catch(() => {
+      drawer.append('Could not load log.');
+      drawer.setStatus(false);
+    });
 }
 
 // ── Persistent in-session console per tool ──
@@ -552,6 +609,8 @@ function _renderModalConsole() {
     </div>`
   ).join('');
   el.scrollTop = el.scrollHeight;
+  // Scroll each log block to its bottom so the latest lines are visible
+  el.querySelectorAll('.modal-log-pre').forEach(p => { p.scrollTop = p.scrollHeight; });
 }
 
 function clearModalConsole() {
@@ -639,6 +698,151 @@ function useVersion(id, ver, btn) {
       } else { alert('Error: ' + (d.error || 'Unknown')); btn.disabled = false; }
     })
     .catch(e => { alert('Error: ' + e); btn.disabled = false; });
+}
+
+// ── Bundle package list ──────────────────────────────────────────────────────
+
+// Unique prefix for pkg-action element IDs (avoids collisions across tools).
+function _pkgActId(toolId, pkgKey) {
+  return 'pka-' + toolId.replace(/[^a-z0-9]/gi, '-') + '-' + pkgKey;
+}
+
+// Render the static package skeleton (names/versions/descriptions) immediately
+// from devkit.json data — no API call, so it appears instantly.
+// Layout: 4-column grid  name | description | version | action
+function _renderPkgSkeleton(toolId, list, pkgs) {
+  const cats = {};
+  pkgs.forEach(p => { const c = p.category || 'General'; (cats[c] = cats[c] || []).push(p); });
+  list.innerHTML = Object.entries(cats).map(([cat, items]) => `
+    <div class="pkg-cat-group">
+      <div class="pkg-cat-label">${cat}</div>
+      ${items.map(p => {
+        const key = encodeURIComponent(p.id || p.name);
+        const actId = _pkgActId(toolId, key);
+        return `<div class="pkg-row">
+          <span class="pkg-row-name">${p.name}</span>
+          <span class="pkg-row-desc">${p.description || ''}</span>
+          <span class="pkg-row-ver">${p.version}</span>
+          <div class="pkg-row-actions" id="${actId}">
+            <span class="pkg-status-spinner"></span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+// Update only the action-button cells in an already-rendered skeleton.
+function _applyPkgStatus(toolId, pkgs) {
+  pkgs.forEach(p => {
+    const key = encodeURIComponent(p.id || p.name);
+    const actEl = document.getElementById(_pkgActId(toolId, key));
+    if (!actEl) return;
+    if (p.installed) {
+      actEl.innerHTML =
+        `<span class="badge badge-success" style="font-size:0.65rem;padding:1px 6px;margin-right:4px;">${p.installed_version || '✓'}</span>` +
+        `<button class="btn btn-ghost btn-sm pkg-action-btn" style="color:var(--danger);font-size:0.7rem;" onclick="removePkg('${toolId}','${key}','${p.name}',this)">Remove</button>`;
+    } else {
+      actEl.innerHTML =
+        `<button class="btn btn-primary btn-sm pkg-action-btn" style="font-size:0.7rem;" onclick="installPkg('${toolId}','${key}','${p.name}',this)">Install</button>`;
+    }
+  });
+}
+
+function _loadBundlePackages(id, toolData) {
+  const sec = document.getElementById('modal-pkg-section');
+  const list = document.getElementById('modal-pkg-list');
+  const titleEl = document.getElementById('modal-pkg-section-title');
+  if (!sec || !list) return;
+
+  if (!toolData || !toolData.bundle_type) { sec.style.display = 'none'; return; }
+
+  sec.style.display = '';
+  titleEl.textContent = toolData.bundle_type === 'vscode' ? 'Extensions' : 'Packages';
+
+  const staticPkgs = toolData.packages || [];
+  if (staticPkgs.length > 0) {
+    // Render names/versions/descriptions instantly from cached devkit.json data
+    _renderPkgSkeleton(id, list, staticPkgs);
+  } else {
+    list.innerHTML = '<span class="console-empty">No packages defined.</span>';
+    return;
+  }
+
+  // Fetch live install status; only update the action-button cells, not the whole list
+  fetch('/api/tool/' + encodeURIComponent(id) + '/packages/status')
+    .then(r => r.json())
+    .then(d => { _applyPkgStatus(id, d.packages || []); })
+    .catch(() => {
+      list.querySelectorAll('[id^="pka-"]').forEach(el => {
+        el.innerHTML = '<span style="font-size:0.65rem;color:var(--danger)">error</span>';
+      });
+    });
+}
+
+// Called by the ↻ Refresh button — resets action cells to spinner then re-fetches status.
+function _refreshBundlePackages(id) {
+  const list = document.getElementById('modal-pkg-list');
+  if (!list) return;
+  // If the skeleton is already rendered, just re-check status in place
+  if (list.querySelector('.pkg-row')) {
+    list.querySelectorAll('[id^="pka-"]').forEach(el => {
+      el.innerHTML = '<span class="pkg-status-spinner"></span>';
+    });
+    fetch('/api/tool/' + encodeURIComponent(id) + '/packages/status')
+      .then(r => r.json())
+      .then(d => { _applyPkgStatus(id, d.packages || []); })
+      .catch(() => {
+        list.querySelectorAll('[id^="pka-"]').forEach(el => {
+          el.innerHTML = '<span style="font-size:0.65rem;color:var(--danger)">error</span>';
+        });
+      });
+    return;
+  }
+  // Fallback: full re-render from cache then fetch
+  const cached = window._toolCache && window._toolCache[id];
+  _loadBundlePackages(id, cached || {});
+}
+
+function installPkg(toolId, pkgKey, pkgName, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Installing…';
+  drawer.init();
+  drawer.open('Installing ' + pkgName + '…');
+  const es = new EventSource('/install-pkg/' + encodeURIComponent(toolId) + '/' + pkgKey);
+  es.onmessage = e => {
+    const line = e.data;
+    if (line.startsWith('DONE:')) {
+      es.close();
+      drawer.setStatus(line === 'DONE:success');
+      btn.disabled = false;
+      btn.textContent = line === 'DONE:success' ? 'Installed' : 'Retry';
+      if (line === 'DONE:success') setTimeout(() => _refreshBundlePackages(toolId), 300);
+      return;
+    }
+    drawer.append(line);
+  };
+  es.onerror = () => { es.close(); drawer.setStatus(false); btn.disabled = false; btn.textContent = 'Retry'; };
+}
+
+function removePkg(toolId, pkgKey, pkgName, btn) {
+  if (!confirm('Remove ' + pkgName + '?')) return;
+  btn.disabled = true;
+  btn.textContent = 'Removing…';
+  drawer.init();
+  drawer.open('Removing ' + pkgName + '…');
+  const es = new EventSource('/remove-pkg/' + encodeURIComponent(toolId) + '/' + pkgKey);
+  es.onmessage = e => {
+    const line = e.data;
+    if (line.startsWith('DONE:')) {
+      es.close();
+      drawer.setStatus(line === 'DONE:success');
+      btn.disabled = false;
+      if (line === 'DONE:success') setTimeout(() => _refreshBundlePackages(toolId), 300);
+      return;
+    }
+    drawer.append(line);
+  };
+  es.onerror = () => { es.close(); drawer.setStatus(false); btn.disabled = false; };
 }
 
 function _loadToolConsole(id) {
@@ -770,7 +974,7 @@ function refreshCard(id) {
         if (d.available) {
           if (d.installed) {
             html += `<button class="btn btn-danger btn-sm" onclick="uninstallTool('${id}','${d.name}',this)">Remove</button>`;
-            if (d.update_available) html += `<button class="btn btn-primary btn-sm" title="Installs bundled v${d.version} to this machine (offline)" onclick="installTool('${id}','${d.name}',this)">Install v${d.version}</button>`;
+            if (d.update_available) html += `<button class="btn btn-primary btn-sm" title="Installs bundled v${d.version} to this machine (offline)" onclick="installTool('${id}','${d.name}',this)">${/^various$/i.test((d.version||'').trim()) ? 'Install' : 'Install v' + d.version}</button>`;
           } else {
             html += `<button class="btn btn-primary btn-sm" onclick="installTool('${id}','${d.name}',this)">Install</button>`;
           }
@@ -888,6 +1092,11 @@ function deletePackage(id, name, btn) {
     .then(d => { if (d.ok) { loadPackageList(); setTimeout(() => location.reload(), 600); } });
 }
 // Tab side-effects handled in the bottom script block via _origShowTab2
+</script>
+<script>
+// Pre-load all tool data so showToolDetail can open modals instantly (no fetch-then-show flash)
+window._toolCache = {};
+({{toJSON .Tools}} || []).forEach(function(t) { window._toolCache[t.id] = t; });
 </script>
 </head>
 <body>
@@ -1068,7 +1277,7 @@ function deletePackage(id, name, btn) {
             <div class="tool-card-header">
               <div>
                 <div class="tool-card-name">{{.Name}}</div>
-                <div class="tool-card-version">{{.Version}}</div>
+                <div class="tool-card-version">{{if .VersionLabel}}{{.VersionLabel}}{{else}}{{.Version}}{{end}}</div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
                 {{if .Installed}}
@@ -1094,7 +1303,69 @@ function deletePackage(id, name, btn) {
                   </button>
                   {{if .UpdateAvailable}}
                   <button class="btn btn-primary btn-sm" title="Installs bundled v{{.Version}} to this machine (offline)" onclick="installTool('{{.ID}}','{{.Name}}',this)">
-                    Install v{{.Version}}
+                    {{if or (eq .Version "various") (eq .Version "Various")}}Install{{else}}Install v{{.Version}}{{end}}
+                  </button>
+                  {{end}}
+                  <button class="btn btn-ghost btn-sm btn-icon card-log-btn" onclick="openToolLog('{{.ID}}')" title="View install log">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                  </button>
+                {{else}}
+                  <button class="btn btn-primary btn-sm" onclick="installTool('{{.ID}}','{{.Name}}',this)">
+                    Install
+                  </button>
+                {{end}}
+              {{else}}
+                <span class="text-muted text-xs">Not available on {{$.OS}}</span>
+              {{end}}
+              <span class="ml-auto text-xs text-muted">{{.Estimate}}</span>
+            </div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+
+      {{if .Bundles}}
+      <!-- ── Bundles section ── -->
+      <div class="tool-section mb-4 bundles-section" data-category="Bundles">
+        <div class="section-header">
+          <h2 class="section-title">Bundles</h2>
+          <hr class="section-divider">
+          <span class="section-count">{{len .Bundles}} packs</span>
+        </div>
+        <div class="bundle-grid">
+          {{range .Bundles}}
+          <div class="tool-card bundle-card{{if .Installed}} installed{{else if .UpdateAvailable}} update-available{{else if not .Available}} unavailable{{end}}" id="card-{{.ID | lower}}" data-tool-id="{{.ID}}" onclick="showToolDetail('{{.ID}}')" style="cursor:pointer;">
+            <div class="tool-card-header">
+              <div>
+                <div class="tool-card-name">{{.Name}}</div>
+                <div class="tool-card-version">{{if .VersionLabel}}{{.VersionLabel}}{{else}}{{.Version}}{{end}}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                {{if .Installed}}
+                  {{if .UpdateAvailable}}
+                    <span class="badge badge-success badge-dot" title="New bundle ready to install">Install Ready</span>
+                  {{else}}
+                    <span class="badge badge-success badge-dot">Installed</span>
+                  {{end}}
+                {{else if not .Available}}
+                  <span class="badge badge-gray">N/A</span>
+                {{else}}
+                  <span class="badge badge-gray badge-dot">Available</span>
+                {{end}}
+                <span class="badge badge-upgrade badge-dot card-update-badge" title="Newer version available on GitHub" style="display:none;">GitHub Update</span>
+              </div>
+            </div>
+            <div class="tool-card-desc">{{.Description}}</div>
+            <div class="tool-card-footer" onclick="event.stopPropagation()">
+              {{if .Available}}
+                {{if .Installed}}
+                  <button class="btn btn-danger btn-sm" onclick="uninstallTool('{{.ID}}','{{.Name}}',this)">
+                    Remove
+                  </button>
+                  {{if .UpdateAvailable}}
+                  <button class="btn btn-primary btn-sm" onclick="installTool('{{.ID}}','{{.Name}}',this)">
+                    Install
                   </button>
                   {{end}}
                   <button class="btn btn-ghost btn-sm btn-icon card-log-btn" onclick="openToolLog('{{.ID}}')" title="View install log">
@@ -1461,11 +1732,21 @@ function deletePackage(id, name, btn) {
         </div>
       </div>
 
+      <!-- Bundle Package List (only for bundle-type tools) -->
+      <div class="modal-section" id="modal-pkg-section" style="display:none;">
+        <div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span id="modal-pkg-section-title">Packages</span>
+          <button class="btn btn-ghost btn-sm" onclick="_refreshBundlePackages(_modalToolId)" style="font-size:0.72rem;padding:2px 7px;" title="Re-check installed status">↻ Refresh</button>
+        </div>
+        <div id="modal-pkg-list" class="bundle-pkg-list"></div>
+      </div>
+
       <!-- Persistent Console -->
       <div class="modal-section">
         <div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;">
           <span>Console</span>
-          <div style="display:flex;gap:5px;">
+          <div style="display:flex;gap:5px;align-items:center;">
+            <button class="btn btn-ghost btn-sm" id="modal-open-drawer-btn" onclick="openToolLog(_modalToolId)" title="Open full log in bottom panel" style="font-size:0.72rem;padding:2px 7px;">⌨ View in Terminal</button>
             <button class="btn btn-ghost btn-sm" id="modal-console-copy-btn" onclick="copyModalConsole()" style="font-size:0.72rem;padding:2px 7px;">Copy</button>
             <button class="btn btn-ghost btn-sm" onclick="clearModalConsole()" style="font-size:0.72rem;padding:2px 7px;">Clear</button>
           </div>
@@ -1481,13 +1762,9 @@ function deletePackage(id, name, btn) {
           <span>Version History</span>
           <span id="modal-ver-hist-count" class="text-xs text-muted"></span>
         </div>
-        <div id="modal-ver-history" class="ver-history-list">
-          <span class="console-empty">Loading…</span>
-        </div>
+        <div id="modal-ver-history" class="ver-history-list"></div>
         <div class="modal-section-title" style="margin-top:14px;">Update Log</div>
-        <div id="modal-update-log" class="update-history-log">
-          <span class="console-empty">No updates recorded for this tool.</span>
-        </div>
+        <div id="modal-update-log" class="update-history-log"></div>
       </div>
 
       <!-- Package metadata (always shown) -->
