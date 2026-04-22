@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -11,8 +12,15 @@ var funcMap = template.FuncMap{
 	"lower": strings.ToLower,
 	"title": strings.Title, //nolint:staticcheck
 	"join":  strings.Join,
-	"hasPrefix": strings.HasPrefix,
+	"hasPrefix":  strings.HasPrefix,
 	"trimPrefix": strings.TrimPrefix,
+	"toJSON": func(v any) template.JS {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return template.JS("null")
+		}
+		return template.JS(b)
+	},
 }
 
 func renderTemplate(webFS fs.FS, name string, w http.ResponseWriter, data any) error {

@@ -119,6 +119,9 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/api/tool/{id}/log", s.handleToolLog)
 	r.Get("/api/tool/{id}/logs", s.handleToolLogList)
 	r.Get("/api/tool/{id}/logs/{file}", s.handleToolLogFile)
+	r.Get("/api/tool/{id}/packages/status", s.handleBundlePackageStatus)
+	r.Get("/install-pkg/{id}/{pkg}", s.handleInstallPackage)
+	r.Get("/remove-pkg/{id}/{pkg}", s.handleRemovePackage)
 	r.Post("/packages/upload", s.handlePackageUpload)
 	r.Delete("/packages/{id}", s.handlePackageDelete)
 	r.Get("/shutdown", s.handleShutdown)
@@ -320,8 +323,13 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	ts := s.getTools()
 
 	categories := map[string][]tools.ToolStatus{}
+	var bundles []tools.ToolStatus
 	for _, t := range ts {
-		categories[t.Category] = append(categories[t.Category], t)
+		if t.Category == "Bundles" {
+			bundles = append(bundles, t)
+		} else {
+			categories[t.Category] = append(categories[t.Category], t)
+		}
 	}
 
 	installed := 0
@@ -353,6 +361,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"Config":         s.Config,
 		"Tools":          ts,
 		"Categories":     categories,
+		"Bundles":        bundles,
 		"Profiles":       s.profiles,
 		"InstalledCount": installed,
 		"TotalCount":     len(ts),

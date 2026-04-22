@@ -1346,7 +1346,7 @@ input, select, textarea { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 280px;
+  max-height: 420px;
   overflow-y: auto;
   margin-top: 4px;
   scroll-behavior: smooth;
@@ -1395,7 +1395,8 @@ input, select, textarea { font-family: inherit; }
 .console-entry .modal-log-pre {
   margin: 0;
   border-radius: 0;
-  max-height: 180px;
+  max-height: 260px;
+  overflow-y: auto;
   border: none;
   background: transparent;
   padding: 6px 8px;
@@ -1531,4 +1532,72 @@ input, select, textarea { font-family: inherit; }
 }
 .update-history-host { color: var(--accent); font-weight: 600; font-size: 0.75rem; }
 
+/* ── Bundle package list ── */
+.bundle-pkg-list { display: flex; flex-direction: column; gap: 10px; }
+.pkg-cat-group { display: flex; flex-direction: column; gap: 1px; }
+.pkg-cat-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 0 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+/* 4-column grid: name | description | version | action */
+.pkg-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 170px) 1fr auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  transition: background 0.1s;
+}
+.pkg-row:hover { background: var(--surface-2); }
+.pkg-row-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pkg-row-desc { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkg-row-ver  { font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); white-space: nowrap; text-align: right; }
+.pkg-row-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; min-width: 90px; }
+.pkg-action-btn { padding: 2px 9px !important; font-size: 0.7rem !important; }
+/* Per-row spinner shown while install status loads */
+.pkg-status-spinner {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
 /* ── Progress drawer Clear button ──*/
+
+/* ── Bundles section ── */
+.bundles-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 2px solid var(--border);
+}
+.bundles-section .section-title {
+  color: var(--accent);
+}
+.bundles-section .section-divider {
+  border-top-color: var(--border);
+  opacity: 0.6;
+}
+.bundle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 20px;
+}
+.bundle-card {
+  border-left: 3px solid var(--accent);
+}
+.bundle-card.installed {
+  border-left-color: var(--success);
+}
+@media (max-width: 600px) {
+  .bundle-grid { grid-template-columns: 1fr; }
+}
