@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -325,11 +326,15 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.mu.Lock()
-	if body.TeamName != "" {
+	if body.TeamName == "" {
+		s.Config.TeamName = "My Team"
+	} else {
 		s.Config.TeamName = body.TeamName
 	}
 	s.Config.OrgName = body.OrgName
-	if body.DevkitName != "" {
+	if body.DevkitName == "" {
+		s.Config.DevkitName = "AirGap DevKit"
+	} else {
 		s.Config.DevkitName = body.DevkitName
 	}
 	cfg := s.Config
@@ -451,6 +456,25 @@ func jsonOK(w http.ResponseWriter, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+func currentOSUsername() string {
+	if u, err := user.Current(); err == nil && u.Username != "" {
+		// On Windows this is often DOMAIN\username — strip the domain part.
+		parts := strings.SplitN(u.Username, `\`, 2)
+		return parts[len(parts)-1]
+	}
+	if name := os.Getenv("USER"); name != "" {
+		return name
+	}
+	if name := os.Getenv("USERNAME"); name != "" {
+		return name
+	}
+	h, _ := os.Hostname()
+	if h != "" {
+		return h
+	}
+	return "unknown"
+}
+
 // ─── route handlers ──────────────────────────────────────────────────────────
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -478,6 +502,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hostname, _ := os.Hostname()
+	osUsername := currentOSUsername()
 	privilege := "user"
 	if runtime.GOOS == "windows" {
 		// simple heuristic: check if we can write to Program Files
@@ -507,6 +532,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"OSLabel":        osLabel(s.OS),
 		"Prefix":         s.currentPrefix(),
 		"Hostname":       hostname,
+		"OSUsername":     osUsername,
 		"Privilege":      privilege,
 		"Year":           time.Now().Year(),
 		"AppVersion":     AppVersion,
@@ -1248,10 +1274,7 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 		rc.Close()
 	}
 
-	hostname, _ := os.Hostname()
-	if hostname == "" {
-		hostname = "unknown"
-	}
+	uploadedBy := currentOSUsername()
 	uploadedAt := time.Now().UTC().Format("2006-01-02 15:04 UTC")
 
 	// Generate devkit.json if not included in the zip
@@ -1267,7 +1290,7 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 			"setup":        "setup.sh",
 			"receipt_name": toolID,
 			"source":       "user",
-			"uploaded_by":  hostname,
+			"uploaded_by":  uploadedBy,
 			"uploaded_at":  uploadedAt,
 		}
 		mjson, _ := json.MarshalIndent(manifest, "", "  ")

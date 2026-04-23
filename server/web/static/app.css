@@ -161,6 +161,7 @@ input, select, textarea { font-family: inherit; }
   z-index: 100;
   box-shadow: var(--shadow-sm);
   animation: fade-in-down 0.3s ease both;
+  overflow: visible;
 }
 .navbar-brand {
   display: flex;
@@ -194,6 +195,25 @@ input, select, textarea { font-family: inherit; }
   padding: 2px 8px;
   border-radius: 20px;
   border: 1px solid #bfdbfe;
+}
+.navbar-team-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.navbar-team-badge:hover {
+  background: var(--accent-dim);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  text-decoration: none;
 }
 .navbar-spacer { flex: 1; }
 .navbar-actions { display: flex; align-items: center; gap: 22px; }
@@ -296,11 +316,14 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Navbar logo & OS icons ── */
 .navbar-logo {
-  height: 36px;
+  height: 62px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
+  margin-top: -6px;
+  margin-bottom: -6px;
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
 }
 .os-icon-sm {
   height: 14px;
@@ -977,26 +1000,66 @@ input, select, textarea { font-family: inherit; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* ── Teams tab ── */
-.profiles-list-editor { display: flex; flex-direction: column; gap: 8px; }
-.profile-list-row {
-  display: flex;
-  align-items: center;
+/* ── Profiles tab — card grid ── */
+.profiles-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 14px;
-  padding: 12px 14px;
+}
+.profile-card-item {
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
-  transition: box-shadow 0.15s;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s, transform 0.12s;
 }
-.profile-list-row:hover { box-shadow: var(--shadow-sm); }
-.profile-list-swatch {
-  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+.profile-card-item:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
 }
-.profile-list-info { flex: 1; min-width: 0; }
-.profile-list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
-.profile-list-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 1px; }
-.profile-list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.profile-card-accent { height: 4px; flex-shrink: 0; }
+.profile-card-body {
+  padding: 14px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.profile-card-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.profile-card-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.profile-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  flex: 1;
+  line-height: 1.45;
+}
+.profile-card-meta {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.profile-card-actions {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface);
+}
 
 /* Profile editor modal */
 .color-picker { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
@@ -1109,6 +1172,9 @@ input, select, textarea { font-family: inherit; }
 .mt-2   { margin-top: 8px; }
 .mt-3   { margin-top: 12px; }
 .mt-4   { margin-top: 16px; }
+.mb-1   { margin-bottom: 4px; }
+.mb-2   { margin-bottom: 8px; }
+.mb-3   { margin-bottom: 12px; }
 .mb-4   { margin-bottom: 16px; }
 .ml-auto { margin-left: auto; }
 .text-muted   { color: var(--text-muted); }
