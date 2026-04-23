@@ -34,6 +34,12 @@ func Load(repoRoot string) Config {
 		return cfg
 	}
 	_ = json.Unmarshal(data, &cfg)
+	if cfg.TeamName == "" {
+		cfg.TeamName = "My Team"
+	}
+	if cfg.DevkitName == "" {
+		cfg.DevkitName = "AirGap DevKit"
+	}
 	return cfg
 }
 

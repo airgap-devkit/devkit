@@ -1187,14 +1187,16 @@ function runHealthCheck() {
         }
 
         const firstLine = (r.output || r.error || '').split('\n')[0].trim();
-        const ms = r.duration_ms ? `<span class="text-muted">${r.duration_ms}</span>` : '';
+        const durationCell = r.duration_ms
+          ? `<span style="font-variant-numeric:tabular-nums;">${r.duration_ms}</span><span class="text-muted" style="font-size:0.65rem;margin-left:2px;">ms</span>`
+          : `<span class="text-muted">—</span>`;
 
         tr.innerHTML = `
-          <td style="padding:5px 8px;font-weight:500;">${r.name}</td>
-          <td style="padding:5px 8px;color:var(--text-muted);font-size:0.75rem;">${r.category}</td>
-          <td style="padding:5px 8px;">${statusCell}</td>
-          <td style="padding:5px 8px;color:var(--text-muted);font-size:0.75rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.output||'').replace(/"/g,'&quot;')}">${firstLine}</td>
-          <td style="padding:5px 8px;text-align:right;font-size:0.7rem;color:var(--text-muted);">${ms}</td>`;
+          <td style="padding:7px 10px;font-weight:500;">${r.name}</td>
+          <td style="padding:7px 10px;color:var(--text-muted);font-size:0.75rem;">${r.category}</td>
+          <td style="padding:7px 10px;">${statusCell}</td>
+          <td style="padding:7px 10px;color:var(--text-muted);font-size:0.75rem;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.output||'').replace(/"/g,'&quot;')}">${firstLine}</td>
+          <td style="padding:7px 10px;text-align:right;font-size:0.75rem;color:var(--text-body);">${durationCell}</td>`;
         tbody.appendChild(tr);
       });
 
@@ -1706,9 +1708,10 @@ window._toolCache = {};
 <nav class="navbar">
   <a href="/" class="navbar-brand">
     <img src="/static/img/airgap-devkit-logo-transparent.png" alt="AirGap DevKit" class="navbar-logo">
-    {{.Config.DevkitName}}
+    AirGap DevKit
   </a>
   <span class="navbar-version">v{{.AppVersion}}</span>
+  {{if .Config.TeamName}}<a class="navbar-team-badge" onclick="showTab('teams');return false;" href="#" title="Go to Teams">{{.Config.TeamName}}</a>{{end}}
   <div class="navbar-center">
     <div class="navbar-stat">
       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>
@@ -2039,47 +2042,18 @@ window._toolCache = {};
 
     <!-- ── Tab: Profiles ── -->
     <div id="panel-profiles" class="tab-panel">
-      <div class="card mb-4">
-        <div class="card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span class="card-title">Quick Install Profiles</span>
-        </div>
-        <div class="card-body">
-          <p class="text-muted text-sm mb-4">Select a profile to install a curated set of tools in one click. All installations run offline using bundled binaries.</p>
-          <div class="profiles-grid">
-            {{range $id, $p := .Profiles}}
-            <div class="profile-card profile-{{$p.Color}}" onclick="installProfile('{{$id}}','{{$p.Name}}')">
-              <div class="profile-card-icon">
-                {{if eq $p.Color "blue"}}🔧{{else if eq $p.Color "green"}}⚙️{{else if eq $p.Color "purple"}}📦{{else}}⚡{{end}}
-              </div>
-              <div class="profile-card-name">{{$p.Name}}</div>
-              <div class="profile-card-desc">{{$p.Description}}</div>
-              <div class="profile-card-tools">{{len $p.ToolIDs}} tools</div>
-            </div>
-            {{end}}
-          </div>
-        </div>
-      </div>
-
       <div class="card">
         <div class="card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m0-3l-3-3m0 0l-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75"/></svg>
-          <span class="card-title">Import Team Config</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="card-title">Profiles</span>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openProfileEditor(null)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            New Profile
+          </button>
         </div>
         <div class="card-body">
-          <p class="text-muted text-sm mb-4">Import a <code>team-config.json</code> exported from another machine to replicate the same tool selection and install prefix.</p>
-          <label class="upload-zone import-zone" for="import-file"
-                 ondragover="event.preventDefault();this.classList.add('dragover')"
-                 ondragleave="this.classList.remove('dragover')"
-                 ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0]){document.getElementById('import-file').files=event.dataTransfer.files;importConfig(document.getElementById('import-file'))}">
-            <div class="upload-zone-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m0-3l-3-3m0 0l-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75"/></svg>
-            </div>
-            <div class="upload-zone-text">Drop <strong>team-config.json</strong> here</div>
-            <div class="upload-zone-sub">or click to browse &nbsp;·&nbsp; Accepts .json</div>
-          </label>
-          <input type="file" id="import-file" accept=".json" class="hidden" onchange="importConfig(this)">
-          <div id="import-status" class="mt-2"></div>
+          <p class="text-muted text-sm mb-4">Install a curated set of tools in one click, or create and customize your own profiles. All installations run offline using bundled binaries.</p>
+          <div id="profiles-list" class="profiles-cards-grid"></div>
         </div>
       </div>
     </div>
@@ -2199,19 +2173,26 @@ window._toolCache = {};
         </div>
       </div>
 
-      <!-- Profiles -->
+      <!-- Import Team Config -->
       <div class="card mb-4">
         <div class="card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span class="card-title">Install Profiles</span>
-          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openProfileEditor(null)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            New Profile
-          </button>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m0-3l-3-3m0 0l-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75"/></svg>
+          <span class="card-title">Import Team Config</span>
         </div>
         <div class="card-body">
-          <p class="text-muted text-sm mb-4">Profiles let you install a curated set of tools in one click. Create custom ones for different developer roles on your team.</p>
-          <div id="profiles-list" class="profiles-list-editor"></div>
+          <p class="text-muted text-sm mb-4">Import a <code>team-config.json</code> exported from another machine to replicate the same tool selection, profiles, and install prefix.</p>
+          <label class="upload-zone import-zone" for="import-file"
+                 ondragover="event.preventDefault();this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0]){document.getElementById('import-file').files=event.dataTransfer.files;importConfig(document.getElementById('import-file'))}">
+            <div class="upload-zone-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m0-3l-3-3m0 0l-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75"/></svg>
+            </div>
+            <div class="upload-zone-text">Drop <strong>team-config.json</strong> here</div>
+            <div class="upload-zone-sub">or click to browse &nbsp;·&nbsp; Accepts .json</div>
+          </label>
+          <input type="file" id="import-file" accept=".json" class="hidden" onchange="importConfig(this)">
+          <div id="import-status" class="mt-2"></div>
         </div>
       </div>
 
@@ -2226,7 +2207,7 @@ window._toolCache = {};
             <div class="export-explain-icon">📤</div>
             <div>
               <div class="export-explain-title">Export Team Config</div>
-              <p class="export-explain-desc">Downloads a <code>team-config.json</code> file containing your team name, all custom profiles, currently installed tool IDs, and install prefix. Share this file with teammates so they can replicate your exact setup by importing it on the <strong>Quick Profiles</strong> tab.</p>
+              <p class="export-explain-desc">Downloads a <code>team-config.json</code> file containing your team name, all custom profiles, currently installed tool IDs, and install prefix. Share this file with teammates so they can replicate your exact setup by importing it on the <strong>Teams</strong> tab.</p>
               <div class="export-explain-what">
                 <div class="export-explain-item"><span class="badge badge-accent">✓</span> Team name &amp; org</div>
                 <div class="export-explain-item"><span class="badge badge-accent">✓</span> All profiles (including custom)</div>
@@ -2263,7 +2244,7 @@ window._toolCache = {};
               </div>
             </div>
             <div class="setting-row">
-              <div>
+              <div style="min-width:180px;max-width:320px;">
                 <div class="setting-label">Team Name</div>
                 <div class="setting-desc">Set in <code>devkit.config.json</code> at the repo root.</div>
               </div>
@@ -2272,12 +2253,21 @@ window._toolCache = {};
               </div>
             </div>
             <div class="setting-row">
-              <div>
+              <div style="min-width:180px;max-width:320px;">
                 <div class="setting-label">Hostname</div>
                 <div class="setting-desc">Machine this devkit is running on.</div>
               </div>
               <div class="setting-control">
                 <span class="badge badge-gray font-mono">{{.Hostname}}</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div style="min-width:180px;max-width:320px;">
+                <div class="setting-label">User Name</div>
+                <div class="setting-desc">Current OS login name. Used as the <strong>Source</strong> when you upload packages — read-only.</div>
+              </div>
+              <div class="setting-control">
+                <span class="badge badge-gray font-mono">{{.OSUsername}}</span>
               </div>
             </div>
           </div>
@@ -2295,21 +2285,23 @@ window._toolCache = {};
           <span class="card-title">Tool Health Check</span>
           <div class="ml-auto" id="health-summary-badge"></div>
         </div>
-        <div class="card-body">
-          <p class="text-sm text-muted mb-3">Runs every installed tool's check command in parallel and reports pass / fail.</p>
-          <button class="btn btn-primary btn-sm" id="health-run-btn" onclick="runHealthCheck()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"/></svg>
-            Validate All Installed Tools
-          </button>
-          <div id="health-results" style="margin-top:1rem;display:none;">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <p class="text-sm text-muted" style="margin:0;flex:1;min-width:200px;">Runs every installed tool's check command in parallel and reports pass / fail.</p>
+            <button class="btn btn-primary btn-sm" id="health-run-btn" onclick="runHealthCheck()" style="flex-shrink:0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"/></svg>
+              Validate All Installed Tools
+            </button>
+          </div>
+          <div id="health-results" style="display:none;">
             <table class="w-full text-sm" style="border-collapse:collapse;" id="health-table">
               <thead>
-                <tr style="border-bottom:1px solid var(--border);">
-                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Tool</th>
-                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
-                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Status</th>
-                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Output</th>
-                  <th style="text-align:right;padding:4px 8px;font-weight:600;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">ms</th>
+                <tr style="border-bottom:2px solid var(--border);">
+                  <th style="text-align:left;padding:6px 10px;font-weight:700;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Tool</th>
+                  <th style="text-align:left;padding:6px 10px;font-weight:700;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
+                  <th style="text-align:left;padding:6px 10px;font-weight:700;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Status</th>
+                  <th style="text-align:left;padding:6px 10px;font-weight:700;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Output</th>
+                  <th style="text-align:right;padding:6px 10px;font-weight:700;color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;" title="Time each check took to run">Duration</th>
                 </tr>
               </thead>
               <tbody id="health-tbody"></tbody>
@@ -2394,13 +2386,13 @@ window._toolCache = {};
 <!-- ── Profile Editor Modal ── -->
 <div id="profile-modal" class="modal-overlay" onclick="closeProfileEditor()" style="display:none;">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;">
-    <div class="modal-hero" style="background:var(--surface-2);">
+    <div class="modal-hero" style="background:var(--surface-2);padding:20px 24px;">
       <div class="modal-hero-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div class="modal-hero-info">
         <div class="modal-hero-name" id="peditor-title">New Profile</div>
-        <div class="modal-hero-version text-muted">Configure tools and metadata for this install profile</div>
+        <div class="modal-hero-version text-muted" style="margin-top:5px;">Configure tools and metadata for this install profile</div>
       </div>
       <button class="btn btn-ghost btn-sm btn-icon" onclick="closeProfileEditor()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -2409,7 +2401,7 @@ window._toolCache = {};
     <div class="modal-body" style="gap:14px;">
       <input type="hidden" id="peditor-id">
       <div class="modal-details-grid">
-        <div class="modal-detail-card" style="grid-column:1/-1;">
+        <div class="modal-detail-card">
           <div class="modal-detail-label">Profile ID <span class="text-muted" style="font-weight:400;text-transform:none;">(slug, no spaces)</span></div>
           <input class="input mt-1" id="peditor-id-input" type="text" placeholder="e.g. cpp-senior" style="font-family:var(--font-mono);font-size:0.85rem;">
         </div>
@@ -2417,20 +2409,20 @@ window._toolCache = {};
           <div class="modal-detail-label">Display Name</div>
           <input class="input mt-1" id="peditor-name" type="text" placeholder="e.g. C++ Senior Dev">
         </div>
-        <div class="modal-detail-card">
-          <div class="modal-detail-label">Color</div>
-          <div class="color-picker" id="peditor-color-picker">
-            <label class="color-opt" data-color="blue"><input type="radio" name="peditor-color" value="blue" checked><span class="color-swatch" style="background:#2563eb"></span>Blue</label>
-            <label class="color-opt" data-color="green"><input type="radio" name="peditor-color" value="green"><span class="color-swatch" style="background:#16a34a"></span>Green</label>
-            <label class="color-opt" data-color="purple"><input type="radio" name="peditor-color" value="purple"><span class="color-swatch" style="background:#7c3aed"></span>Purple</label>
-            <label class="color-opt" data-color="gray"><input type="radio" name="peditor-color" value="gray"><span class="color-swatch" style="background:#64748b"></span>Gray</label>
-            <label class="color-opt" data-color="orange"><input type="radio" name="peditor-color" value="orange"><span class="color-swatch" style="background:#ea580c"></span>Orange</label>
-          </div>
+      </div>
+      <div class="modal-detail-card">
+        <div class="modal-detail-label">Color</div>
+        <div class="color-picker" id="peditor-color-picker" style="flex-wrap:nowrap;">
+          <label class="color-opt" data-color="blue"><input type="radio" name="peditor-color" value="blue" checked><span class="color-swatch" style="background:#2563eb"></span>Blue</label>
+          <label class="color-opt" data-color="green"><input type="radio" name="peditor-color" value="green"><span class="color-swatch" style="background:#16a34a"></span>Green</label>
+          <label class="color-opt" data-color="purple"><input type="radio" name="peditor-color" value="purple"><span class="color-swatch" style="background:#7c3aed"></span>Purple</label>
+          <label class="color-opt" data-color="gray"><input type="radio" name="peditor-color" value="gray"><span class="color-swatch" style="background:#64748b"></span>Gray</label>
+          <label class="color-opt" data-color="orange"><input type="radio" name="peditor-color" value="orange"><span class="color-swatch" style="background:#ea580c"></span>Orange</label>
         </div>
       </div>
-      <div class="modal-detail-card" style="width:100%;">
+      <div class="modal-detail-card">
         <div class="modal-detail-label">Description</div>
-        <input class="input mt-1" id="peditor-desc" type="text" placeholder="Short description of this profile's purpose">
+        <textarea class="input mt-1" id="peditor-desc" rows="3" placeholder="Short description of this profile's purpose" style="resize:vertical;min-height:64px;"></textarea>
       </div>
       <div class="modal-section">
         <div class="modal-section-title">Tools in this profile <span id="peditor-tool-count" class="text-muted" style="font-weight:400;text-transform:none;font-size:0.75rem;"></span></div>
@@ -2720,14 +2712,24 @@ function loadProfilesList() {
       }
       el.innerHTML = entries.map(([id, p]) => {
         const safeName = (p.name || id).replace(/"/g, '&quot;');
+        const color = _profileColors[p.color] || '#64748b';
+        const toolCount = (p.tool_ids || []).length;
         return `
-          <div class="profile-list-row" id="prow-${id}">
-            <div class="profile-list-swatch" style="background:${_profileColors[p.color]||'#64748b'}"></div>
-            <div class="profile-list-info">
-              <div class="profile-list-name">${p.name || id}</div>
-              <div class="profile-list-desc">${p.description || ''} <span class="text-muted">· ${(p.tool_ids||[]).length} tools</span></div>
+          <div class="profile-card-item" id="prow-${id}">
+            <div class="profile-card-accent" style="background:${color}"></div>
+            <div class="profile-card-body">
+              <div class="profile-card-name">
+                <span class="profile-card-dot" style="background:${color}"></span>
+                ${p.name || id}
+              </div>
+              <div class="profile-card-desc">${p.description || ''}</div>
+              <div class="profile-card-meta">
+                <span class="badge badge-gray">${toolCount} tool${toolCount !== 1 ? 's' : ''}</span>
+                <span class="badge badge-gray" style="text-transform:capitalize;">${p.color || 'gray'}</span>
+              </div>
             </div>
-            <div class="profile-list-actions">
+            <div class="profile-card-actions">
+              <button class="btn btn-primary btn-sm" style="flex:1" onclick="installProfile('${id}','${safeName}')">Install</button>
               <button class="btn btn-ghost btn-sm" onclick="openProfileEditorById('${id}')">Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteProfile('${id}','${safeName}')">Delete</button>
             </div>
@@ -2902,7 +2904,7 @@ const _origShowTab2 = showTab;
 showTab = function(id) {
   _origShowTab2(id);
   if (id === 'packages') renderPackageManager();
-  if (id === 'teams')    loadProfilesList();
+  if (id === 'profiles') loadProfilesList();
   if (id === 'logs')     _renderLogsTab();
 };
 
