@@ -1,0 +1,314 @@
+# =============================================================================
+# AirGap DevKit — GitLab CI/CD Pipeline
+# See .ci/gitlab/SETUP.md for setup instructions and variable reference.
+#
+# Override any variable below via:
+#   CI/CD > Pipelines > Run pipeline > Add variables
+# or via GitLab CI/CD Settings > Variables for persistent defaults.
+# =============================================================================
+
+# ── Default variables (all overridable per-run) ───────────────────────────────
+variables:
+  # Identity
+  TEAM_NAME:    "My Team"
+  ORG_NAME:     ""
+  DEVKIT_NAME:  "AirGap DevKit"
+
+  # Install
+  PROFILE:      "minimal"        # minimal | cpp-dev | devops | full
+  TARGET_OS:    "linux"          # linux | windows | both
+  SERVER_HOST:  "127.0.0.1"
+  SERVER_PORT:  "9090"
+  ADMIN_INSTALL: "false"
+
+  # Package upload — set UPLOAD_PACKAGE=true and PACKAGE_FILE_PATH to activate
+  UPLOAD_PACKAGE:    "false"
+  PACKAGE_FILE_PATH: ""          # absolute path on the runner to a .zip file
+
+  # Team config
+  EXPORT_TEAM_CONFIG:  "false"
+  IMPORT_TEAM_CONFIG:  ""        # raw JSON body for POST /api/import
+
+  # Custom profile — set to JSON body for POST /api/profiles to activate
+  SAVE_PROFILE_JSON: ""
+
+  # Tests
+  RUN_VALIDATE:    "true"
+  RUN_SMOKE_TESTS: "true"
+
+  # Atlassian — set ATLASSIAN_UPDATE=true and supply issue/page IDs to activate
+  ATLASSIAN_UPDATE:    "false"
+  JIRA_ISSUE_KEY:      ""        # e.g. DEVKIT-42
+  CONFLUENCE_PAGE_ID:  ""        # numeric page ID
+
+  # Internal
+  GIT_SUBMODULE_STRATEGY: recursive
+
+# ── Stages ────────────────────────────────────────────────────────────────────
+stages:
+  - validate
+  - configure
+  - install
+  - server-ops
+  - test
+  - atlassian
+
+# ── Workflow rules — run on default branch pushes, MRs, and manual triggers ──
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ── Shared config applied to every job ───────────────────────────────────────
+default:
+  interruptible: true
+
+# =============================================================================
+# VALIDATE
+# =============================================================================
+validate:manifests:
+  stage: validate
+  tags: [linux]
+  rules:
+    - if: $RUN_VALIDATE == "true"
+    - when: never
+  script:
+    - bash tests/validate-manifests.sh --verbose
+
+# =============================================================================
+# CONFIGURE
+# Patches devkit.config.json with pipeline variables and saves it as an
+# artifact so downstream jobs pick up the same values.
+# =============================================================================
+configure:
+  stage: configure
+  tags: [linux]
+  script:
+    - |
+      python3 - <<'PYEOF'
+      import json, os
+      with open("devkit.config.json") as f:
+          cfg = json.load(f)
+      team   = os.environ.get("TEAM_NAME", "").strip()
+      org    = os.environ.get("ORG_NAME", "").strip()
+      dk     = os.environ.get("DEVKIT_NAME", "").strip()
+      host   = os.environ.get("SERVER_HOST", "127.0.0.1").strip()
+      port   = int(os.environ.get("SERVER_PORT", "9090"))
+      prof   = os.environ.get("PROFILE", "minimal").strip()
+      if team:  cfg["team_name"]       = team
+      if org is not None: cfg["org_name"] = org
+      if dk:    cfg["devkit_name"]     = dk
+      cfg["hostname"]        = host
+      cfg["port"]            = port
+      cfg["default_profile"] = prof
+      with open("devkit.config.json", "w") as f:
+          json.dump(cfg, f, indent=2)
+      print(f"Configured: team={cfg['team_name']}, profile={cfg['default_profile']}, port={cfg['port']}")
+      PYEOF
+  artifacts:
+    paths:
+      - devkit.config.json
+    expire_in: 1 hour
+
+# =============================================================================
+# INSTALL
+# =============================================================================
+install:linux:
+  stage: install
+  tags: [linux]
+  needs: [configure]
+  rules:
+    - if: $TARGET_OS == "linux" || $TARGET_OS == "both"
+    - when: never
+  script:
+    - |
+      FLAGS="--yes --profile ${PROFILE}"
+      [ "${ADMIN_INSTALL}" = "true" ] && FLAGS="${FLAGS} --admin"
+      bash install-cli.sh ${FLAGS}
+  artifacts:
+    paths:
+      - "**/INSTALL_RECEIPT.txt"
+    expire_in: 7 days
+    when: always
+
+install:windows:
+  stage: install
+  tags: [windows]
+  needs: [configure]
+  rules:
+    - if: $TARGET_OS == "windows" || $TARGET_OS == "both"
+    - when: never
+  script:
+    - bash install-cli.sh --yes --profile "${PROFILE}"
+  artifacts:
+    paths:
+      - "**/INSTALL_RECEIPT.txt"
+    expire_in: 7 days
+    when: always
+
+# =============================================================================
+# SERVER OPERATIONS
+# Start the devkit server, exercise the API (config push, optional package
+# upload / profile save / team import / export), collect health snapshot,
+# then cleanly stop the server.
+# =============================================================================
+server-ops:
+  stage: server-ops
+  tags: [linux]
+  needs: [configure]
+  script:
+    # Start server
+    - nohup bash launch.sh --no-browser > devkit-server.log 2>&1 &
+    - SERVER_PID=$!
+    - echo "Server PID ${SERVER_PID}"
+    - |
+      echo "Waiting for http://${SERVER_HOST}:${SERVER_PORT}/health ..."
+      for i in $(seq 1 30); do
+        if curl -sf "http://${SERVER_HOST}:${SERVER_PORT}/health" >/dev/null 2>&1; then
+          echo "Server ready (attempt ${i})"
+          break
+        fi
+        sleep 2
+        if [ "${i}" -eq 30 ]; then
+          echo "ERROR: server did not start within 60s"
+          cat devkit-server.log
+          exit 1
+        fi
+      done
+
+    # Push team identity
+    - |
+      printf '{"team_name":"%s","org_name":"%s","devkit_name":"%s"}' \
+        "${TEAM_NAME}" "${ORG_NAME}" "${DEVKIT_NAME}" > /tmp/dk-config.json
+      curl -sf -X POST \
+           -H 'Content-Type: application/json' \
+           -d @/tmp/dk-config.json \
+           "http://${SERVER_HOST}:${SERVER_PORT}/api/config"
+      echo "Team identity pushed"
+
+    # Upload package bundle (optional)
+    - |
+      if [ "${UPLOAD_PACKAGE}" = "true" ]; then
+        if [ -z "${PACKAGE_FILE_PATH}" ]; then
+          echo "ERROR: UPLOAD_PACKAGE=true but PACKAGE_FILE_PATH is empty"; exit 1
+        fi
+        if [ ! -f "${PACKAGE_FILE_PATH}" ]; then
+          echo "ERROR: '${PACKAGE_FILE_PATH}' not found on runner"; exit 1
+        fi
+        curl -sf -X POST \
+             -F "package=@${PACKAGE_FILE_PATH}" \
+             "http://${SERVER_HOST}:${SERVER_PORT}/packages/upload"
+        echo "Package uploaded: ${PACKAGE_FILE_PATH}"
+      fi
+
+    # Save custom profile (optional)
+    - |
+      if [ -n "${SAVE_PROFILE_JSON}" ]; then
+        echo "${SAVE_PROFILE_JSON}" | \
+        curl -sf -X POST \
+             -H 'Content-Type: application/json' \
+             -d @- \
+             "http://${SERVER_HOST}:${SERVER_PORT}/api/profiles"
+        echo "Custom profile saved"
+      fi
+
+    # Import team config (optional)
+    - |
+      if [ -n "${IMPORT_TEAM_CONFIG}" ]; then
+        echo "${IMPORT_TEAM_CONFIG}" | \
+        curl -sf -X POST \
+             -H 'Content-Type: application/json' \
+             -d @- \
+             "http://${SERVER_HOST}:${SERVER_PORT}/api/import"
+        echo "Team config imported"
+      fi
+
+    # Export team config (optional)
+    - |
+      if [ "${EXPORT_TEAM_CONFIG}" = "true" ]; then
+        curl -sf "http://${SERVER_HOST}:${SERVER_PORT}/api/export" \
+             -o team-config-export.json
+        echo "Team config exported"
+      fi
+
+    # Tool health snapshot (always)
+    - |
+      curl -sf "http://${SERVER_HOST}:${SERVER_PORT}/api/health/tools" \
+           -o tool-health.json
+      echo "Tool health:"
+      cat tool-health.json
+
+    # Stop server
+    - kill ${SERVER_PID} 2>/dev/null || true
+  after_script:
+    - kill $(cat /proc/*/cmdline 2>/dev/null | tr '\0' ' ' | grep 'devkit-server' | awk '{print $1}' | head -1) 2>/dev/null || true
+    - rm -f /tmp/dk-config.json /tmp/dk-profile.json /tmp/dk-import.json
+  artifacts:
+    paths:
+      - devkit-server.log
+      - tool-health.json
+      - team-config-export.json
+    expire_in: 14 days
+    when: always
+
+# =============================================================================
+# SMOKE TESTS
+# =============================================================================
+test:linux:
+  stage: test
+  tags: [linux]
+  rules:
+    - if: $RUN_SMOKE_TESTS == "true" && ($TARGET_OS == "linux" || $TARGET_OS == "both")
+    - when: never
+  script:
+    - bash tests/run-tests.sh --verbose
+    - bash tests/check-installed-tools.sh --verbose
+  allow_failure: false
+
+test:windows:
+  stage: test
+  tags: [windows]
+  rules:
+    - if: $RUN_SMOKE_TESTS == "true" && ($TARGET_OS == "windows" || $TARGET_OS == "both")
+    - when: never
+  script:
+    - bash tests/run-tests.sh --verbose
+  allow_failure: false
+
+# =============================================================================
+# ATLASSIAN
+# Update Jira issue and/or Confluence page with build results.
+# Requires CI/CD secret variables: ATLASSIAN_BASE_URL, ATLASSIAN_USER_EMAIL,
+# ATLASSIAN_API_TOKEN  (set as masked variables in GitLab CI/CD Settings).
+# =============================================================================
+atlassian:update:
+  stage: atlassian
+  tags: [linux]
+  rules:
+    - if: $ATLASSIAN_UPDATE == "true" && ($JIRA_ISSUE_KEY != "" || $CONFLUENCE_PAGE_ID != "")
+    - when: never
+  script:
+    - |
+      BUILD_STATUS="${CI_JOB_STATUS:-UNKNOWN}"
+      BUILD_URL="${CI_PIPELINE_URL}"
+
+      if [ -n "${JIRA_ISSUE_KEY}" ]; then
+        bash .ci/atlassian/jira-update.sh \
+          --issue   "${JIRA_ISSUE_KEY}" \
+          --status  "${BUILD_STATUS}" \
+          --url     "${BUILD_URL}" \
+          --profile "${PROFILE}" \
+          --team    "${TEAM_NAME}"
+      fi
+
+      if [ -n "${CONFLUENCE_PAGE_ID}" ]; then
+        bash .ci/atlassian/confluence-update.sh \
+          --page-id "${CONFLUENCE_PAGE_ID}" \
+          --status  "${BUILD_STATUS}" \
+          --url     "${BUILD_URL}" \
+          --profile "${PROFILE}" \
+          --team    "${TEAM_NAME}" \
+          --build   "${CI_PIPELINE_IID}"
+      fi

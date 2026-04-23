@@ -1,0 +1,39 @@
+{
+  "_comment": "Atlassian integration configuration template. Copy this file and fill in your values. Store secrets (API tokens) in Jenkins Credentials or GitLab CI/CD masked variables — never commit them.",
+
+  "base_url": "https://YOUR-ORG.atlassian.net",
+  "user_email": "ci-bot@your-org.com",
+  "api_token": "REPLACE_WITH_ATLASSIAN_API_TOKEN",
+
+  "jira": {
+    "project_key": "DEVKIT",
+    "default_issue_type": "Task",
+    "devkit_label": "devkit-deployed",
+    "transitions": {
+      "SUCCESS":  "Done",
+      "FAILURE":  "In Progress",
+      "UNSTABLE": "In Review"
+    },
+    "custom_fields": {
+      "build_url_field":  "",
+      "profile_field":    "",
+      "team_field":       ""
+    }
+  },
+
+  "confluence": {
+    "space_key": "DEVKIT",
+    "pages": {
+      "status_page_id":   "REPLACE_WITH_PAGE_ID",
+      "packages_page_id": "REPLACE_WITH_PAGE_ID",
+      "teams_page_id":    "REPLACE_WITH_PAGE_ID"
+    }
+  },
+
+  "credential_names": {
+    "_comment": "Names of the secret variables/credentials to configure in Jenkins/GitLab",
+    "base_url":    "ATLASSIAN_BASE_URL",
+    "user_email":  "ATLASSIAN_USER_EMAIL",
+    "api_token":   "ATLASSIAN_API_TOKEN"
+  }
+}
