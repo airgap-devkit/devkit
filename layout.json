@@ -1,0 +1,49 @@
+{
+  "category_order": [
+    "Build Tools",
+    "Developer Tools",
+    "Frameworks",
+    "Languages",
+    "Toolchains",
+    "Bundles"
+  ],
+  "category_names": {},
+  "tool_order": {
+    "Build Tools": [
+      "cmake",
+      "lcov"
+    ],
+    "Bundles": [
+      "pip-packages",
+      "vscode-extensions"
+    ],
+    "Developer Tools": [
+      "test-filezill",
+      "7zip",
+      "git",
+      "servy",
+      "conan",
+      "sqlite",
+      "filezilla",
+      "matlab",
+      "gdb",
+      "git-bundle",
+      "notepadpp",
+      "putty",
+      "sourcetree"
+    ],
+    "Frameworks": [
+      "grpc"
+    ],
+    "Languages": [
+      "python",
+      "dotnet"
+    ],
+    "Toolchains": [
+      "llvm",
+      "clang-style-formatter",
+      "ninja",
+      "gcc"
+    ]
+  }
+}

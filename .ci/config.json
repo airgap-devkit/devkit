@@ -1,0 +1,55 @@
+{
+  "_doc": "Shared CI/CD configuration defaults. Jenkins reads this via readJSON in the Configure stage. GitLab uses it as a reference — set matching variables in Settings → CI/CD → Variables.",
+
+  "identity": {
+    "team_name":    "My Team",
+    "org_name":     "",
+    "devkit_name":  "AirGap DevKit",
+    "theme_color":  "#2563eb"
+  },
+
+  "install": {
+    "default_profile": "minimal",
+    "target_os":       "linux",
+    "server_host":     "127.0.0.1",
+    "server_port":     9090,
+    "admin_install":   false
+  },
+
+  "profiles": {
+    "minimal":  ["toolchains/clang", "cmake", "python", "style-formatter"],
+    "cpp-dev":  ["toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite", "7zip"],
+    "devops":   ["cmake", "python", "conan", "sqlite", "7zip"],
+    "full":     ["__all__"]
+  },
+
+  "tests": {
+    "run_validate":    true,
+    "run_smoke_tests": true
+  },
+
+  "artifacts": {
+    "keep_builds":    30,
+    "keep_artifacts": 10,
+    "expire_days":    14
+  },
+
+  "atlassian": {
+    "enabled": false,
+    "base_url": "",
+    "jira": {
+      "project_key":        "DEVKIT",
+      "default_issue_type": "Task",
+      "label":              "devkit-deployed",
+      "transitions": {
+        "SUCCESS":  "Done",
+        "FAILURE":  "In Progress",
+        "UNSTABLE": "In Review"
+      }
+    },
+    "confluence": {
+      "space_key":      "DEVKIT",
+      "status_page_id": ""
+    }
+  }
+}
