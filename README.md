@@ -5,8 +5,9 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v0.2.0-alpha.1** — DevKit Manager is now a single pre-compiled Go binary.
-No Python, no pip, no runtime dependencies required to run the UI.
+**v0.2.0-alpha.2** — DevKit Manager is a single pre-compiled Go binary with
+built-in session token authentication and optional HTTPS. No Python, no pip,
+no runtime dependencies required to run the UI.
 
 ---
 
@@ -28,7 +29,9 @@ bash launch.sh
 ```
 
 The script selects the correct pre-compiled binary for your platform, starts the
-server, and opens **`http://127.0.0.1:9090`** in your browser automatically.
+server, and opens the browser automatically. On first run a session token is
+generated and saved to `.devkit-token`; the browser is authenticated
+automatically via a one-time bootstrap redirect.
 
 > Keep the terminal open while you use the DevKit Manager — it is the server.
 > Press **Ctrl+C** to stop.
@@ -61,6 +64,7 @@ bash launch.sh                      # launch UI and open browser
 bash launch.sh --port 9090          # custom port (one session only)
 bash launch.sh --host 0.0.0.0       # bind to all interfaces (LAN / remote access)
 bash launch.sh --no-browser         # start server, don't open browser
+bash launch.sh --tls                # enable HTTPS with a self-signed certificate
 bash launch.sh --cli                # skip UI, run install-cli.sh directly
 bash launch.sh --rebuild            # rebuild binary from source, then launch
 ```
@@ -96,11 +100,13 @@ The manager is a self-contained Go binary with an embedded web UI. Features:
 
 | Feature | Description |
 |---------|-------------|
+| **Token authentication** | Every request requires a session token (header, cookie, or query param). Token is auto-generated on first run and saved to `.devkit-token`. |
+| **HTTPS / TLS** | Pass `--tls` to serve over HTTPS with an auto-generated self-signed certificate (`devkit-tls.crt` / `devkit-tls.key`). |
 | **Tool dashboard** | Install/uninstall status per tool; one-click install and rebuild |
 | **Profile installs** | Batch install via built-in or custom profiles |
 | **Custom profiles** | Create, save, and delete named profiles (`profiles.json`) |
 | **Team config** | Export (`GET /api/export`) and import (`POST /api/import`) full config snapshots |
-| **Package upload** | Push `.zip` bundle archives to the server (`POST /packages/upload`) |
+| **Package upload** | Push `.zip` bundle archives to the server (`POST /packages/upload`); 256 MB total / 64 MB per-file limit enforced |
 | **Install prefix** | View, override, or reset the install path without editing files |
 | **Dashboard layout** | Reorder tool categories; changes persisted in `layout.json` |
 | **Tool meta overrides** | Override display name, description, or icon per tool |
@@ -110,9 +116,29 @@ The manager is a self-contained Go binary with an embedded web UI. Features:
 | **Network status** | `GET /api/network` — latency probe to detect accidental internet access |
 | **Update checker** | `GET /api/updates` — compares pinned manifest versions against latest releases |
 
+### Authentication
+
+All API requests (except `GET /health` and static assets) require the session
+token. Pass it via any of:
+
+```bash
+# Header (recommended for scripts/CI)
+curl -H "X-DevKit-Token: <token>" http://127.0.0.1:9090/api/tools
+
+# Cookie (set automatically by the browser after the bootstrap redirect)
+
+# Query param (used internally by the bootstrap redirect)
+curl "http://127.0.0.1:9090/api/tools?devkit_token=<token>"
+```
+
+The token is printed to the terminal on startup and saved to `.devkit-token`
+in the repo root (readable by the current user only).
+
 ### API Endpoints (selected)
 
 ```
+GET  /health                         — server liveness check (no token required)
+GET  /auth/bootstrap                 — exchange URL token for session cookie, redirect to UI
 GET  /api/tools                      — full tool list with install status
 GET  /api/tool/{id}                  — single tool detail
 GET  /api/health/tools               — binary health check for all installed tools
@@ -131,7 +157,6 @@ DELETE /api/prefix                   — reset to auto-detected prefix
 GET  /api/layout                     — current dashboard layout
 POST /api/layout                     — save layout
 DELETE /api/layout                   — reset to defaults
-GET  /health                         — server liveness check
 ```
 
 ---
@@ -158,9 +183,13 @@ Validate → Configure → Install → Server Operations → Smoke Tests → Atl
 | **Validate** | Checks all `devkit.json` and `manifest.json` files for syntax and required fields |
 | **Configure** | Patches `devkit.config.json` with pipeline parameters (team, profile, port) |
 | **Install** | Runs `install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
-| **Server Operations** | Starts the server; pushes team identity; handles package upload, config import/export |
+| **Server Operations** | Starts the server; reads token from `.devkit-token`; pushes team identity; handles package upload, config import/export |
 | **Smoke Tests** | Runs `tests/run-tests.sh` to verify all installed tools respond |
 | **Atlassian** | Posts build result to a Jira issue and overwrites a Confluence status page |
+
+> **CI note:** All DevKit Manager API calls from pipelines must include the
+> `X-DevKit-Token` header. The token is available at `.devkit-token` after
+> the server has started.
 
 ### Key Pipeline Parameters
 
@@ -277,9 +306,8 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | RHEL 8 | Bash 4.x | Bash 4.x |
 
 The DevKit Manager binary (`prebuilt/bin/`) has no runtime dependencies.
-Python is no longer required to run the UI. It is still needed to install
-`tools/dev-tools/devkit-ui/` (the legacy FastAPI UI, if used), and is bundled
-as an optional tool in `tools/languages/python/`.
+Python is not required to run the UI. It is bundled as an optional installable
+tool in `tools/languages/python/`.
 
 To **rebuild** the server binary from source: Go 1.21+ is required.
 
@@ -304,12 +332,21 @@ bash launch.sh --rebuild
 ```bash
 bash -n <script.sh> && echo "OK"          # syntax-check before running
 bash launch.sh --no-browser               # dev mode, logs in terminal
+bash launch.sh --tls --no-browser         # HTTPS mode
+
+# Health check (no token required)
 curl -s http://127.0.0.1:9090/health
-curl -s http://127.0.0.1:9090/api/tools
+
+# API calls — pass token via header
+TOKEN=$(cat .devkit-token)
+curl -s -H "X-DevKit-Token: $TOKEN" http://127.0.0.1:9090/api/tools
+
 bash tests/run-tests.sh --verbose
 bash install-cli.sh --yes --profile cpp-dev
 bash scripts/generate-sbom.sh
 bash scripts/status.sh                    # print install status of all tools
+bash scripts/pkg.sh list                  # list all bundled tools and versions
+bash scripts/pkg.sh set-version cmake 3.31.0
 ```
 
 ---
@@ -402,6 +439,8 @@ airgap-cpp-devkit/
 |   +-- go.mod / go.sum
 |   +-- internal/
 |   |   +-- api/                           <- HTTP handlers, routes, SSE, bundling
+|   |   |   +-- auth.go                    <- session token middleware and bootstrap handler
+|   |   |   +-- version.go                 <- AppVersion constant
 |   |   +-- config/                        <- devkit.config.json loader
 |   |   +-- tools/                         <- tool discovery and status
 |   +-- web/                               <- embedded web UI (templates, assets)
@@ -422,6 +461,7 @@ airgap-cpp-devkit/
 |   +-- generate-sbom.sh                   <- regenerates all SBOM timestamps
 |   +-- fetch-vscode-extensions.py         <- mirrors .vsix files for offline use
 |   +-- status.sh                          <- prints install status of all tools
+|   +-- pkg.sh                             <- package management helper (list, add, remove, set-version)
 |
 +-- tests/
 |   +-- run-tests.sh                       <- post-install smoke tests
