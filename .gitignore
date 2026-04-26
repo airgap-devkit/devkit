@@ -57,6 +57,13 @@ mintty*.png
 CLAUDE.md
 .claude/
 
+# Auth token (generated at runtime, contains a secret — never commit)
+.devkit-token
+
+# TLS certs (generated at runtime)
+devkit-tls.crt
+devkit-tls.key
+
 # devkit-ui local overrides
 tools/dev-tools/devkit-ui/.devkit-prefix
 tools/dev-tools/git-bundle/tests/test_repos/
