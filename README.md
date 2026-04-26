@@ -1,11 +1,11 @@
 # airgap-cpp-devkit
 
-**Author: Nima Shafie**
+**Author: Nima Shafie** · [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) [![GitHub Actions](https://github.com/NimaShafie/airgap-cpp-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/NimaShafie/airgap-cpp-devkit/actions)
 
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v0.2.0-alpha.2** — DevKit Manager is a single pre-compiled Go binary with
+**v1.0.0-rc.1** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -511,3 +511,21 @@ airgap-cpp-devkit/
     +-- toolchains/gcc/linux/
     +-- toolchains/gcc/windows/
 ```
+
+---
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the CLA, coding conventions, and PR checklist. Security vulnerabilities go to [SECURITY.md](SECURITY.md) — not to public issues.
+
+---
+
+## License
+
+Copyright (C) 2026 Nima Shafie \<nimzshafie@gmail.com\>
+
+This project is licensed under the **GNU Affero General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
+
+**Dual licensing:** Organizations that cannot accept AGPL obligations (e.g., closed-source enterprise deployments) may obtain a commercial license. Contact **nimzshafie@gmail.com** for details.
+
+> AGPL v3 requires that modifications to this software — including when run as a network service — be made available under the same license. If that is not acceptable for your use case, a commercial license removes this requirement.
