@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/NimaShafie/airgap-cpp-devkit/security/advisories/new
+    about: Report security issues privately via GitHub Security Advisories, or email nimzshafie@gmail.com per SECURITY.md — do not open a public issue.
+  - name: Question / Discussion
+    url: https://github.com/NimaShafie/airgap-cpp-devkit/discussions
+    about: Ask questions and discuss the project in GitHub Discussions.
+  - name: Commercial Licensing
+    url: mailto:nimzshafie@gmail.com
+    about: Contact for commercial licenses, support SLAs, or custom deployment assistance.

@@ -2,8 +2,8 @@ package api
 
 // AppVersion is the canonical application version.
 // Scheme: MAJOR.MINOR.PATCH[-PRERELEASE]
-//   MAJOR 0  — pre-1.0; not yet in official production release
+//   MAJOR    — increments on breaking/significant milestone releases
 //   MINOR    — increments with each feature milestone
 //   PATCH    — increments for bug-fix-only drops
 //   PRERELEASE — alpha.N → beta.N → rc.N (dropped on stable release)
-const AppVersion = "0.2.0-alpha.2"
+const AppVersion = "1.0.0-rc.1"
