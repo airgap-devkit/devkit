@@ -112,6 +112,31 @@ else
     echo "  --no-build: skipping Go compile, using existing prebuilt/"
 fi
 
+# ── 4b. commit & push prebuilt submodule ──────────────────────────────────────
+# Must happen before the parent repo is updated so CI can always fetch the pointer.
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Syncing prebuilt submodule to remote"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+(
+    cd "$REPO_ROOT/prebuilt"
+    if [[ "$NO_BUILD" == false ]]; then
+        git add bin/
+        if ! git diff --staged --quiet; then
+            git commit -m "chore: v$GO_VERSION binaries"
+            echo "  Committed new server binaries to prebuilt"
+        fi
+    fi
+    pending=$(git log --oneline "origin/main..HEAD" 2>/dev/null | wc -l | tr -d '[:space:]')
+    if [[ "$pending" -gt 0 ]]; then
+        echo "  Pushing $pending unpushed commit(s) to prebuilt origin/main ..."
+        git push origin main
+        echo "  Pushed prebuilt → origin/main"
+    else
+        echo "  prebuilt already up to date with origin/main"
+    fi
+)
+
 # ── 5. stage binaries ─────────────────────────────────────────────────────────
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
