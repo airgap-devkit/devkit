@@ -136,6 +136,10 @@ _check_python_import() {
     _skip "${label} (python not installed)"
     return
   fi
+  if ! _receipt_exists "pip-packages"; then
+    _skip "${label} (pip-packages not installed)"
+    return
+  fi
   if [[ ! -f "${py_bin}" ]]; then
     _fail "${label} (python binary missing at ${py_bin})"
     return
@@ -239,20 +243,6 @@ else
   _skip "sqlite3 (not installed)"
 fi
 
-# 7zip
-if [[ "${OS}" == "windows" ]]; then
-  SEVENZ="${PREFIX}/7zip/7za.exe"
-  [[ -f "${SEVENZ}" ]] && _ok "7zip 7za.exe" || _skip "7zip (not installed)"
-else
-  if command -v 7zz &>/dev/null; then
-    VER="$(7zz | head -2 | tail -1 | awk '{print $3}' 2>/dev/null || echo "unknown")"
-    _ok "7zip (7zz) ${VER}"
-    (( PASS++ )) || true
-  else
-    _skip "7zip (not installed)"
-  fi
-fi
-
 # Servy (Windows only)
 if [[ "${OS}" == "windows" ]]; then
   SERVY_BIN="${PREFIX}/servy/servy-cli.exe"
@@ -279,6 +269,8 @@ echo "  [7] Python Sanity Check"
 _sep
 if ! _receipt_exists "python"; then
   _skip "full package import test (python not installed)"
+elif ! _receipt_exists "pip-packages"; then
+  _skip "full package import test (pip-packages not installed)"
 elif [[ -f "${PY_BIN}" ]]; then
   SANITY_OUT="$("${PY_BIN}" -c "
 import sqlite3, numpy, pandas, streamlit, sqlalchemy

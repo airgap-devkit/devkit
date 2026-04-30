@@ -18,8 +18,8 @@
 
   "profiles": {
     "minimal":  ["toolchains/clang", "cmake", "python", "style-formatter"],
-    "cpp-dev":  ["toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite", "7zip"],
-    "devops":   ["cmake", "python", "conan", "sqlite", "7zip"],
+    "cpp-dev":  ["toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite"],
+    "devops":   ["cmake", "python", "conan", "sqlite"],
     "full":     ["__all__"]
   },
 

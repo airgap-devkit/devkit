@@ -855,11 +855,42 @@ input, select, textarea { font-family: inherit; }
 }
 .stat-chip-clickable {
   cursor: pointer;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .15s, box-shadow .15s, background-color .15s;
 }
 .stat-chip-clickable:hover {
   border-color: var(--accent);
   box-shadow: var(--shadow), 0 0 0 2px var(--accent-dim);
+}
+.stat-chip-active {
+  border-color: var(--accent) !important;
+  background: var(--accent-dim) !important;
+}
+.stat-chip-active .stat-chip-val,
+.stat-chip-active .stat-chip-label {
+  color: var(--accent-text);
+}
+
+/* ── Filter reset button ── */
+.filter-reset-btn {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background-color .15s;
+  white-space: nowrap;
+}
+.filter-reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent-dim);
 }
 
 /* ── Copyright footer (inside .main, scrolls with content) ── */
@@ -1896,16 +1927,16 @@ input, select, textarea { font-family: inherit; }
   display: grid;
   grid-template-columns: minmax(110px, 170px) 1fr auto auto;
   column-gap: 12px;
-  align-items: center;
-  padding: 5px 8px;
+  align-items: start;
+  padding: 6px 8px;
   border-radius: var(--radius);
   transition: background 0.1s;
 }
 .pkg-row:hover { background: var(--surface-2); }
-.pkg-row-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pkg-row-desc { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pkg-row-ver  { font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); white-space: nowrap; text-align: right; }
-.pkg-row-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; min-width: 90px; }
+.pkg-row-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
+.pkg-row-desc { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.35; cursor: default; }
+.pkg-row-ver  { font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); white-space: nowrap; text-align: right; padding-top: 2px; }
+.pkg-row-actions { display: flex; align-items: flex-start; gap: 4px; justify-content: flex-end; min-width: 90px; padding-top: 1px; }
 .pkg-action-btn { padding: 2px 9px !important; font-size: 0.7rem !important; }
 /* Per-row spinner shown while install status loads */
 .pkg-status-spinner {

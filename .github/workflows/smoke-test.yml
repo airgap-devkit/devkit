@@ -88,11 +88,21 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/receipts
-          find / -name "INSTALL_RECEIPT.txt" -not -path "*/.git/*" \
+          # Search known install prefixes only; 'find /' exits 1 on permission
+          # errors and breaks the step under GitHub Actions' -eo pipefail.
+          SEARCH=(
+            "${HOME}/.local/share/airgap-cpp-devkit"
+            "/opt/airgap-cpp-devkit"
+          )
+          if [[ -n "${LOCALAPPDATA:-}" ]]; then
+            WIN="$(cygpath -u "${LOCALAPPDATA}" 2>/dev/null || true)/airgap-cpp-devkit"
+            [[ -d "${WIN}" ]] && SEARCH+=("${WIN}")
+          fi
+          find "${SEARCH[@]}" -name "INSTALL_RECEIPT.txt" -not -path "*/.git/*" \
             2>/dev/null | while read -r f; do
               dest="/tmp/receipts/$(echo "$f" | tr '/' '_').txt"
               cp "$f" "$dest" 2>/dev/null || true
-            done
+            done || true
 
       - name: Upload receipts
         if: always()

@@ -40,13 +40,59 @@ function showTab(tabId) {
   document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
 }
 
-// ── Sidebar category filter ──
+// ── Filter state ──
+let _activeCatFilter = 'all';
+let _activeStatusFilter = 'all'; // 'all' | 'installed'
+
 function filterCategory(cat) {
-  document.querySelectorAll('.tool-section').forEach(sec => {
-    sec.style.display = (cat === 'all' || sec.dataset.category === cat) ? '' : 'none';
-  });
+  _activeCatFilter = cat;
+  applyFilters();
+}
+
+function filterStatus(status) {
+  _activeStatusFilter = status;
+  applyFilters();
+}
+
+function resetFilters() {
+  _activeCatFilter = 'all';
+  _activeStatusFilter = 'all';
+  applyFilters();
+}
+
+function applyFilters() {
+  const cat = _activeCatFilter;
+  const status = _activeStatusFilter;
+
+  // Sidebar active state
   document.querySelectorAll('.sidebar-link[data-cat]').forEach(lnk => {
     lnk.classList.toggle('active', lnk.dataset.cat === cat);
+  });
+
+  // Stat chip active states
+  const installedChip = document.getElementById('chip-installed');
+  const availableChip = document.getElementById('chip-available');
+  if (installedChip) installedChip.classList.toggle('stat-chip-active', status === 'installed');
+  if (availableChip) availableChip.classList.toggle('stat-chip-active', status === 'all');
+
+  // Reset button visibility
+  const resetBtn = document.getElementById('filter-reset-btn');
+  if (resetBtn) resetBtn.style.display = (cat !== 'all' || status !== 'all') ? '' : 'none';
+
+  // Apply card-level + section-level visibility
+  document.querySelectorAll('.tool-section').forEach(sec => {
+    const isFav = !!sec.dataset.favSection;
+    const catMatch = isFav || cat === 'all' || sec.dataset.category === cat;
+    let visibleCards = 0;
+    sec.querySelectorAll('.tool-card').forEach(card => {
+      let statusMatch = true;
+      if (status === 'installed') {
+        statusMatch = card.classList.contains('installed') || card.classList.contains('update-available');
+      }
+      card.style.display = statusMatch ? '' : 'none';
+      if (statusMatch) visibleCards++;
+    });
+    sec.style.display = (catMatch && (status === 'all' || visibleCards > 0)) ? '' : 'none';
   });
 }
 
@@ -229,6 +275,19 @@ const drawer = {
   }
 };
 
+// ── HTML / JS escaping helpers ──
+function escHtml(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+// Safe for use inside onclick="f('...')" — escapes for JS then for HTML attribute.
+function escJs(s) {
+  return (s == null ? '' : String(s))
+    .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
 // ── Tool detail modal ──
 let _modalToolId = null;
 
@@ -242,22 +301,28 @@ function _populateModal(d) {
 
   // Hero
   document.getElementById('modal-name').textContent = d.name || id;
-  document.getElementById('modal-version').textContent = 'v' + (d.version || '—');
+  const _rawVer = d.version || '—';
+  const _isVarious = /^various$/i.test(_rawVer.trim());
+  document.getElementById('modal-version').textContent = _isVarious ? 'Various' : 'v' + _rawVer;
   document.getElementById('modal-category-badge').textContent = d.category || 'Tool';
 
   // Hero status badge
   const heroStatus = document.getElementById('modal-status-hero');
   const githubUpd = _availableUpdates[id];
   const hasGitHubUpdate = githubUpd && githubUpd.available;
+  const _readyLabel = _isVarious ? 'Ready' : 'Ready v' + _rawVer;
+  const _readyTitle = _isVarious ? 'Bundle is ready to install offline' : 'v' + _rawVer + ' is bundled and ready to install on this machine offline';
 
   if (hasGitHubUpdate && d.update_available) {
+    const _ghv = escHtml(githubUpd.latest_version);
     heroStatus.innerHTML =
-      '<span class="badge badge-success badge-dot" style="margin-right:4px;" title="v' + d.version + ' is bundled and ready to install offline">Ready v' + d.version + '</span>' +
-      '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' is available on GitHub (requires internet)">GitHub v' + githubUpd.latest_version + '</span>';
+      '<span class="badge badge-success badge-dot" style="margin-right:4px;" title="' + escHtml(_readyTitle) + '">' + escHtml(_readyLabel) + '</span>' +
+      '<span class="badge badge-upgrade badge-dot" title="v' + _ghv + ' is available on GitHub (requires internet)">GitHub v' + _ghv + '</span>';
   } else if (hasGitHubUpdate) {
-    heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot" title="v' + githubUpd.latest_version + ' available on GitHub">GitHub v' + githubUpd.latest_version + '</span>';
+    const _ghv = escHtml(githubUpd.latest_version);
+    heroStatus.innerHTML = '<span class="badge badge-upgrade badge-dot" title="v' + _ghv + ' available on GitHub">GitHub v' + _ghv + '</span>';
   } else if (d.update_available) {
-    heroStatus.innerHTML = '<span class="badge badge-success badge-dot" title="v' + d.version + ' is bundled and ready to install on this machine offline">Ready v' + d.version + '</span>';
+    heroStatus.innerHTML = '<span class="badge badge-success badge-dot" title="' + _readyTitle + '">' + _readyLabel + '</span>';
   } else if (installed) {
     heroStatus.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
   } else if (!d.available) {
@@ -361,7 +426,7 @@ function _populateModal(d) {
     const updBtn = document.createElement('button');
     updBtn.className = 'btn btn-upgrade btn-sm';
     updBtn.title = 'Downloads ' + upd.asset_name + ' from GitHub and updates the local bundle (requires internet)';
-    updBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>Fetch v' + upd.latest_version + ' from GitHub';
+    updBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>Fetch v' + escHtml(upd.latest_version) + ' from GitHub';
     updBtn.onclick = () => { closeToolModal(); downloadUpdate(id, upd.latest_version, updBtn); };
     actions.appendChild(updBtn);
   }
@@ -866,9 +931,9 @@ function _renderPkgSkeleton(toolId, list, pkgs) {
       ${items.map(p => {
         const key = encodeURIComponent(p.id || p.name);
         const actId = _pkgActId(toolId, key);
-        return `<div class="pkg-row">
-          <span class="pkg-row-name">${p.name}</span>
-          <span class="pkg-row-desc">${p.description || ''}</span>
+        return `<div class="pkg-row" title="${escHtml(p.description)}">
+          <span class="pkg-row-name">${escHtml(p.name)}</span>
+          <span class="pkg-row-desc">${escHtml(p.description)}</span>
           <span class="pkg-row-ver">${p.version}</span>
           <div class="pkg-row-actions" id="${actId}">
             <span class="pkg-status-spinner"></span>
@@ -886,11 +951,11 @@ function _applyPkgStatus(toolId, pkgs) {
     if (!actEl) return;
     if (p.installed) {
       actEl.innerHTML =
-        `<span class="badge badge-success" style="font-size:0.65rem;padding:1px 6px;margin-right:4px;">${p.installed_version || '✓'}</span>` +
-        `<button class="btn btn-ghost btn-sm pkg-action-btn" style="color:var(--danger);font-size:0.7rem;" onclick="removePkg('${toolId}','${key}','${p.name}',this)">Remove</button>`;
+        `<span class="badge badge-success" style="font-size:0.65rem;padding:1px 6px;margin-right:4px;">${escHtml(p.installed_version) || '✓'}</span>` +
+        `<button class="btn btn-ghost btn-sm pkg-action-btn" style="color:var(--danger);font-size:0.7rem;" onclick="removePkg('${toolId}','${key}','${escJs(p.name)}',this)">Remove</button>`;
     } else {
       actEl.innerHTML =
-        `<button class="btn btn-primary btn-sm pkg-action-btn" style="font-size:0.7rem;" onclick="installPkg('${toolId}','${key}','${p.name}',this)">Install</button>`;
+        `<button class="btn btn-primary btn-sm pkg-action-btn" style="font-size:0.7rem;" onclick="installPkg('${toolId}','${key}','${escJs(p.name)}',this)">Install</button>`;
     }
   });
 }
@@ -1108,7 +1173,7 @@ function refreshCard(id) {
       // Update status badge
       const badgeWrap = el.querySelector('.tool-card-header > div:last-child');
       if (badgeWrap) {
-        if (d.update_available) badgeWrap.innerHTML = '<span class="badge badge-success badge-dot" title="v' + d.version + ' bundled and ready to install (offline)">Install Ready</span>';
+        if (d.update_available) badgeWrap.innerHTML = '<span class="badge badge-success badge-dot" title="v' + escHtml(d.version) + ' bundled and ready to install (offline)">Install Ready</span>';
         else if (d.installed)   badgeWrap.innerHTML = '<span class="badge badge-success badge-dot">Installed</span>';
         else if (!d.available)  badgeWrap.innerHTML = '<span class="badge badge-gray">N/A</span>';
         else                    badgeWrap.innerHTML = '<span class="badge badge-gray badge-dot">Available</span>';
@@ -1803,22 +1868,22 @@ window._toolCache = {};
 
     <!-- Stats Strip -->
     <div class="stats-strip">
-      <div class="stat-chip">
-        <div class="stat-chip-icon chip-blue">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>
-        </div>
-        <div>
-          <div class="stat-chip-val">{{.InstalledCount}}</div>
-          <div class="stat-chip-label">Installed</div>
-        </div>
-      </div>
-      <div class="stat-chip">
+      <div class="stat-chip stat-chip-clickable stat-chip-active" id="chip-available" onclick="filterStatus('all')" title="Show all tools">
         <div class="stat-chip-icon chip-green">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>
         </div>
         <div>
           <div class="stat-chip-val">{{.TotalCount}}</div>
           <div class="stat-chip-label">Available</div>
+        </div>
+      </div>
+      <div class="stat-chip stat-chip-clickable" id="chip-installed" onclick="filterStatus('installed')" title="Show only installed tools">
+        <div class="stat-chip-icon chip-blue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>
+        </div>
+        <div>
+          <div class="stat-chip-val">{{.InstalledCount}}</div>
+          <div class="stat-chip-label">Installed</div>
         </div>
       </div>
       <div class="stat-chip">
@@ -1843,6 +1908,10 @@ window._toolCache = {};
           </div>
         </div>
       </div>
+      <button id="filter-reset-btn" class="filter-reset-btn" onclick="resetFilters()" title="Clear active filter" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        Reset filter
+      </button>
     </div>
 
     <!-- Tabs -->
@@ -2144,6 +2213,48 @@ window._toolCache = {};
     <!-- ── Tab: Teams ── -->
     <div id="panel-teams" class="tab-panel">
 
+      <!-- Team Config Repository -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+          <span class="card-title">Team Config Repository</span>
+          <span id="team-repo-badge" class="badge" style="margin-left:auto;display:none;"></span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted text-sm mb-4">
+            Connect a Git repo (hosted on your internal Bitbucket, GitHub, GitLab, etc.) that holds your
+            team's <code>team-config.json</code> and optional custom tool definitions.
+            The devkit syncs from it automatically on every launch — all teammates just point
+            to the same URL.
+          </p>
+          <div class="settings-grid">
+            <div class="setting-row">
+              <label class="setting-label" for="repo-url-input">Repository URL</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input class="input" id="repo-url-input" type="text"
+                       value="{{.Config.TeamConfigRepo}}"
+                       placeholder="https://gitlab.internal/acme/devkit-config.git"
+                       style="flex:1">
+                <button class="btn btn-primary btn-sm" onclick="saveRepoURL()" style="white-space:nowrap">Save & Sync</button>
+              </div>
+            </div>
+          </div>
+          <!-- Sync status strip -->
+          <div id="team-sync-status" class="mt-4" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span id="team-sync-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;flex-shrink:0;"></span>
+              <span id="team-sync-label" class="text-sm text-muted"></span>
+              <button class="btn btn-ghost btn-sm" onclick="syncTeamRepo()" id="team-sync-btn" style="margin-left:auto;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                Sync Now
+              </button>
+            </div>
+            <div id="team-sync-commit" class="text-sm text-muted mt-1" style="font-family:monospace;display:none;"></div>
+          </div>
+          <div id="team-repo-msg" class="mt-2 text-sm" style="display:none;"></div>
+        </div>
+      </div>
+
       <!-- Identity -->
       <div class="card mb-4">
         <div class="card-header">
@@ -2274,6 +2385,7 @@ window._toolCache = {};
         </div>
         <div class="card-footer">
           Edit <code>devkit.config.json</code> in the repo root to change team_name, devkit_name, theme_color, and default_profile.
+          Connect a team config repo from the <strong>Teams</strong> tab.
           Restart the server to apply changes.
         </div>
       </div>
@@ -2690,6 +2802,113 @@ function saveTeamIdentity() {
     })
     .catch(() => { statusEl.textContent = '✗ Connection error'; });
 }
+
+function saveRepoURL() {
+  const url = document.getElementById('repo-url-input').value.trim();
+  const msg = document.getElementById('team-repo-msg');
+  msg.style.display = '';
+  msg.style.color = '';
+  msg.textContent = url ? 'Saving and starting sync…' : 'Saving…';
+  fetch('/api/config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      team_name:        document.getElementById('team-name-input').value.trim(),
+      org_name:         document.getElementById('org-name-input').value.trim(),
+      devkit_name:      document.getElementById('devkit-name-input').value.trim(),
+      team_config_repo: url
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      msg.textContent = url ? '✓ Saved — sync running in background' : '✓ Saved';
+      setTimeout(() => { msg.style.display = 'none'; }, 3000);
+      if (url) setTimeout(refreshTeamStatus, 2000);
+    } else {
+      msg.style.color = 'var(--danger, #dc2626)';
+      msg.textContent = '✗ ' + (d.error || 'Failed');
+    }
+  })
+  .catch(() => {
+    msg.style.color = 'var(--danger, #dc2626)';
+    msg.textContent = '✗ Connection error';
+  });
+}
+
+function syncTeamRepo() {
+  const btn = document.getElementById('team-sync-btn');
+  btn.disabled = true;
+  fetch('/api/team/sync', {method: 'POST'})
+    .then(r => r.json())
+    .then(() => {
+      setTimeout(() => { btn.disabled = false; refreshTeamStatus(); }, 3000);
+    })
+    .catch(() => { btn.disabled = false; });
+}
+
+function refreshTeamStatus() {
+  fetch('/api/team/status')
+    .then(r => r.json())
+    .then(d => {
+      const strip = document.getElementById('team-sync-status');
+      const dot   = document.getElementById('team-sync-dot');
+      const label = document.getElementById('team-sync-label');
+      const commit = document.getElementById('team-sync-commit');
+      const badge = document.getElementById('team-repo-badge');
+      if (!d.configured) { strip.style.display = 'none'; badge.style.display = 'none'; return; }
+      strip.style.display = '';
+      if (d.error) {
+        dot.style.background = 'var(--danger, #dc2626)';
+        label.textContent = 'Sync error: ' + d.error;
+        badge.textContent = 'Error';
+        badge.className = 'badge badge-danger';
+        badge.style.display = '';
+      } else if (d.last_sync && d.last_sync !== '0001-01-01T00:00:00Z') {
+        dot.style.background = 'var(--success, #16a34a)';
+        const ago = _timeAgo(new Date(d.last_sync));
+        label.textContent = 'Synced ' + ago;
+        badge.textContent = 'Connected';
+        badge.className = 'badge badge-success';
+        badge.style.display = '';
+      } else {
+        dot.style.background = 'var(--warning, #d97706)';
+        label.textContent = 'Sync pending…';
+        badge.textContent = 'Connecting';
+        badge.className = 'badge badge-warning';
+        badge.style.display = '';
+      }
+      if (d.commit) {
+        commit.style.display = '';
+        commit.textContent = 'HEAD: ' + d.commit;
+      } else {
+        commit.style.display = 'none';
+      }
+    })
+    .catch(() => {});
+}
+
+function _timeAgo(date) {
+  const secs = Math.floor((Date.now() - date) / 1000);
+  if (secs < 60) return 'just now';
+  if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+  if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
+  return Math.floor(secs / 86400) + 'd ago';
+}
+
+// Poll team status when on Teams tab
+(function() {
+  const orig = window.showTab;
+  window.showTab = function(tabId) {
+    orig(tabId);
+    if (tabId === 'teams') refreshTeamStatus();
+  };
+  // Also refresh on load if repo is configured
+  if ({{if .Config.TeamConfigRepo}}true{{else}}false{{end}}) {
+    refreshTeamStatus();
+    setInterval(refreshTeamStatus, 30000);
+  }
+})();
 
 // ── Profile list renderer ─────────────────────────────────────────────────────
 

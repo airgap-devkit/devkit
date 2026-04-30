@@ -24,7 +24,6 @@
 #   - style-formatter  (pre-commit hook)
 #
 # OPTIONAL tools (prompted):
-#   - 7zip               26.00  (Windows + Linux, admin + user)
 #   - servy              7.9    (Windows only)
 #   - conan              2.27.1 (Windows + Linux, no Python required)
 #   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
@@ -48,7 +47,7 @@
 #   --yes             Non-interactive: use defaults, skip confirmation screen
 #   --profile <name>  Pre-select tools for a team profile (skips prompts):
 #                       cpp-dev   -- clang, cmake, python, conan, vscode, sqlite
-#                       devops    -- cmake, python, conan, sqlite, 7zip
+#                       devops    -- cmake, python, conan, sqlite
 #                       minimal   -- clang, cmake, python only (no optionals)
 #                       full      -- all optional tools enabled
 # =============================================================================
@@ -153,15 +152,14 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Cross-platform:"
     echo "    [6] conan          2.27.1   C/C++ package manager            [~5s]"
     echo "    [7] sqlite         3.53.0   Database inspection CLI          [~3s]"
-    echo "    [8] 7zip           26.00    Archive tool                     [~2s]"
-    echo "    [9] vscode-ext              C/C++, TestMate, Python          [~30s]"
-    echo "   [10] matlab                  Toolbox verification             [~2s]"
+    echo "    [8] vscode-ext              C/C++, TestMate, Python          [~30s]"
+    echo "    [9] matlab                  Toolbox verification             [~2s]"
     if [[ "${OS}" == "windows" ]]; then
     echo ""
     echo "  Windows-only:"
-    echo "   [11] servy          7.9      Windows service manager          [~3s]"
-    echo "   [12] winlibs-gcc   15.2.0   GCC + MinGW-w64                [~8min]"
-    echo "   [13] grpc           1.80.0   C++ framework (needs VS)       [~20min]"
+    echo "   [10] servy          7.9      Windows service manager          [~3s]"
+    echo "   [11] winlibs-gcc   15.2.0   GCC + MinGW-w64                [~8min]"
+    echo "   [12] grpc           1.80.0   C++ framework (needs VS)       [~20min]"
     fi
     echo ""
     echo "  Tip: use --profile <name> to skip prompts"
@@ -205,7 +203,6 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
 
     # --- Optional tools ---
-    INSTALL_7ZIP=false
     INSTALL_SERVY=false
     INSTALL_CONAN=false
     INSTALL_VSCODE=false
@@ -220,19 +217,18 @@ if [[ "${AUTO_YES}" == "false" ]]; then
         case "${PROFILE}" in
             cpp-dev)
                 INSTALL_CONAN=true; INSTALL_VSCODE=true
-                INSTALL_SQLITE=true; INSTALL_7ZIP=true
-                echo "  [OK] Profile: cpp-dev (conan, vscode, sqlite, 7zip)"
+                INSTALL_SQLITE=true
+                echo "  [OK] Profile: cpp-dev (conan, vscode, sqlite)"
                 ;;
             devops)
                 INSTALL_CONAN=true; INSTALL_SQLITE=true
-                INSTALL_7ZIP=true
-                echo "  [OK] Profile: devops (conan, sqlite, 7zip)"
+                echo "  [OK] Profile: devops (conan, sqlite)"
                 ;;
             minimal)
                 echo "  [OK] Profile: minimal (required tools only)"
                 ;;
             full)
-                INSTALL_7ZIP=true; INSTALL_CONAN=true
+                INSTALL_CONAN=true
                 INSTALL_VSCODE=true; INSTALL_SQLITE=true
                 INSTALL_MATLAB=true
                 if [[ "${OS}" == "windows" ]]; then
@@ -260,10 +256,6 @@ if [[ "${AUTO_YES}" == "false" ]]; then
         printf "  Install sqlite 3.53.0 CLI?     Database inspection tool    [~3s]  [y/N]: "
         read -r reply
         [[ "${reply^^}" == "Y" ]] && INSTALL_SQLITE=true
-
-        printf "  Install 7zip 26.00?            Archive tool                [~2s]  [y/N]: "
-        read -r reply
-        [[ "${reply^^}" == "Y" ]] && INSTALL_7ZIP=true
 
         printf "  Install vscode-extensions?     C/C++, Python (needs 'code')[~30s] [y/N]: "
         read -r reply
@@ -312,7 +304,6 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Tools to install:"
     echo "    [OK] tools/toolchains/clang, cmake 4.3.1, python 3.14.4, style-formatter"
     [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.4"
-    [[ "${INSTALL_7ZIP}"    == "true" ]]  && echo "    [OK] 7zip 26.00"
     [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.9 (Windows only)"
     [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.27.1"
     [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] tools/dev-tools/vscode-extensions"
@@ -333,7 +324,6 @@ else
     else
         export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
     fi
-    INSTALL_7ZIP=false
     INSTALL_SERVY=false
     INSTALL_CONAN=false
     INSTALL_VSCODE=false
@@ -346,11 +336,11 @@ else
     # Apply profile if given with --yes
     if [[ -n "${PROFILE}" ]]; then
         case "${PROFILE}" in
-            cpp-dev)  INSTALL_CONAN=true; INSTALL_VSCODE=true; INSTALL_SQLITE=true; INSTALL_7ZIP=true ;;
-            devops)   INSTALL_CONAN=true; INSTALL_SQLITE=true; INSTALL_7ZIP=true ;;
+            cpp-dev)  INSTALL_CONAN=true; INSTALL_VSCODE=true; INSTALL_SQLITE=true ;;
+            devops)   INSTALL_CONAN=true; INSTALL_SQLITE=true ;;
             minimal)  ;;
             full)
-                INSTALL_7ZIP=true; INSTALL_CONAN=true; INSTALL_VSCODE=true
+                INSTALL_CONAN=true; INSTALL_VSCODE=true
                 INSTALL_SQLITE=true; INSTALL_MATLAB=true
                 [[ "${OS}" == "windows" ]] && { INSTALL_SERVY=true; INSTALL_WINLIBS=true; INSTALL_GRPC=true; }
                 ;;
@@ -457,7 +447,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # Step 1: prebuilt submodule
 # ---------------------------------------------------------------------------
-echo "  [1/13] Checking prebuilt submodule..."
+echo "  [1/12] Checking prebuilt submodule..."
 if ! git -C "${REPO_ROOT}" submodule status prebuilt 2>/dev/null | grep -q "^[^-]"; then
     im_progress_start "Initialising prebuilt submodule"
     git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt
@@ -470,7 +460,7 @@ fi
 # Step 2: tools/toolchains/clang
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [2/13] Installing tools/toolchains/llvm (required)..."
+echo "  [2/12] Installing tools/toolchains/llvm (required)..."
 _run_bootstrap "toolchains/llvm" \
     "${REPO_ROOT}/tools/toolchains/llvm/setup.sh"
 
@@ -478,7 +468,7 @@ _run_bootstrap "toolchains/llvm" \
 # Step 3: cmake
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [3/13] Installing cmake 4.3.1 (required)..."
+echo "  [3/12] Installing cmake 4.3.1 (required)..."
 _run_bootstrap "cmake" \
     "${REPO_ROOT}/tools/build-tools/cmake/setup.sh"
 
@@ -486,7 +476,7 @@ _run_bootstrap "cmake" \
 # Step 4: python
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [4/13] Installing python 3.14.4 (required)..."
+echo "  [4/12] Installing python 3.14.4 (required)..."
 _run_bootstrap "python" \
     "${REPO_ROOT}/tools/languages/python/setup.sh"
 
@@ -495,12 +485,12 @@ _run_bootstrap "python" \
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]]; then
     echo ""
-    echo "  [5/13] Installing lcov 2.4 (required on Linux)..."
+    echo "  [5/12] Installing lcov 2.4 (required on Linux)..."
     _run_bootstrap "lcov" \
         "${REPO_ROOT}/tools/build-tools/lcov/setup.sh"
 else
     echo ""
-    echo "  [5/13] lcov -- skipped (Linux only)"
+    echo "  [5/12] lcov -- skipped (Linux only)"
     SKIPPED_TOOLS+=("lcov (Linux only)")
 fi
 
@@ -508,27 +498,15 @@ fi
 # Step 6: style-formatter
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [6/13] Installing style-formatter (required)..."
+echo "  [6/12] Installing style-formatter (required)..."
 _run_bootstrap_no_prefix "style-formatter" \
     "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/bootstrap.sh"
 
 # ---------------------------------------------------------------------------
-# Step 7: 7zip (optional)
+# Step 7: servy (optional, Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [7/13] 7-Zip 26.00 (optional)..."
-if [[ "${INSTALL_7ZIP}" == "true" ]]; then
-    _run_setup "7zip" "${REPO_ROOT}/tools/dev-tools/7zip/setup.sh"
-else
-    echo "  [--]  Skipped: 7zip"
-    SKIPPED_TOOLS+=("7zip")
-fi
-
-# ---------------------------------------------------------------------------
-# Step 8: servy (optional, Windows only)
-# ---------------------------------------------------------------------------
-echo ""
-echo "  [8/13] Servy 7.9 (optional, Windows only)..."
+echo "  [7/12] Servy 7.9 (optional, Windows only)..."
 if [[ "${INSTALL_SERVY}" == "true" ]]; then
     _run_setup "servy" "${REPO_ROOT}/tools/dev-tools/servy/setup.sh"
 else
@@ -537,10 +515,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 9: conan (optional, both platforms)
+# Step 8: conan (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [9/13] Conan 2.27.1 (optional)..."
+echo "  [8/12] Conan 2.27.1 (optional)..."
 if [[ "${INSTALL_CONAN}" == "true" ]]; then
     _run_setup "conan" "${REPO_ROOT}/tools/dev-tools/conan/setup.sh"
 else
@@ -549,10 +527,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 10: tools/dev-tools/vscode-extensions (optional)
+# Step 9: tools/dev-tools/vscode-extensions (optional)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [10/13] VS Code extensions (optional)..."
+echo "  [9/12] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
     _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
         "${REPO_ROOT}/tools/dev-tools/vscode-extensions/setup.sh"
@@ -562,10 +540,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 11: optional platform tools (Windows only)
+# Step 10: optional platform tools (Windows only)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [11/13] Optional platform tools..."
+echo "  [10/12] Optional platform tools..."
 if [[ "${OS}" == "windows" ]]; then
     if [[ "${INSTALL_WINLIBS}" == "true" ]]; then
         _run_bootstrap_winlibs "winlibs-gcc-ucrt" \
@@ -590,10 +568,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 12: SQLite CLI (optional, both platforms)
+# Step 11: SQLite CLI (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [12/13] SQLite 3.53.0 CLI (optional)..."
+echo "  [11/12] SQLite 3.53.0 CLI (optional)..."
 if [[ "${INSTALL_SQLITE}" == "true" ]]; then
     _run_setup "sqlite" "${REPO_ROOT}/tools/dev-tools/sqlite/setup.sh"
 else
@@ -602,10 +580,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 13: MATLAB verification (optional, both platforms)
+# Step 12: MATLAB verification (optional, both platforms)
 # ---------------------------------------------------------------------------
 echo ""
-echo "  [13/13] MATLAB toolbox verification (optional)..."
+echo "  [12/12] MATLAB toolbox verification (optional)..."
 if [[ "${INSTALL_MATLAB}" == "true" ]]; then
     _run_bootstrap_no_prefix "matlab" \
         "${REPO_ROOT}/tools/dev-tools/matlab/setup.sh"

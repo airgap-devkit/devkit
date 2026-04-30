@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-04-19T00:00:00Z",
+    "created": "2026-04-29T06:16:27Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
@@ -75,14 +75,6 @@
     {
       "externalDocumentId": "DocumentRef-build-tools-lcov",
       "spdxDocument": "https://airgap-cpp-devkit.internal/tools/build-tools/lcov/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-7zip",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/7zip/sbom.spdx.json",
       "checksum": {
         "algorithm": "SHA1",
         "checksumValue": "0000000000000000000000000000000000000000"
@@ -307,19 +299,6 @@
       "comment": "CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64. Single .tar.xz per platform, no split required."
     },
     {
-      "SPDXID": "SPDXRef-7zip",
-      "name": "dev-tools/7zip",
-      "versionInfo": "26.00",
-      "supplier": "Organization: airgap-cpp-devkit",
-      "downloadLocation": "https://airgap-cpp-devkit.internal",
-      "filesAnalyzed": false,
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "primaryPackagePurpose": "APPLICATION",
-      "comment": "7-Zip 26.00. Windows: NSIS installer .exe. Linux: .tar.xz binary. Source included."
-    },
-    {
       "SPDXID": "SPDXRef-conan",
       "name": "dev-tools/conan",
       "versionInfo": "2.27.1",
@@ -542,11 +521,6 @@
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-build-tools-cmake"
-    },
-    {
-      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
-      "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-7zip"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",

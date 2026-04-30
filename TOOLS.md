@@ -62,7 +62,6 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **7-Zip** | 26.00 | Windows + Linux | Yes | `tools/dev-tools/7zip/` |
 | **FileZilla** | 3.70.4 | Windows + Linux | Yes | `tools/dev-tools/filezilla/` |
 | **GDB** | 17.1 | Linux | No (source build ~25 min) | `tools/dev-tools/gdb/` |
 | **Notepad++** | 8.9.3 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
@@ -206,9 +205,6 @@ All .zip archives use deflate level 9 compression.
 | SQLite 3.53.0 Windows CLI (.zip) | 6.2MB | 1 | -- single file |
 | SQLite 3.53.0 Linux CLI (.zip) | 4.1MB | 1 | -- single file |
 | SQLite 3.26.0 RHEL 8 (.rpm) | 668KB | 1 | -- single file |
-| 7-Zip 26.00 Windows installer (.exe) | 1.6MB | 1 | -- single file |
-| 7-Zip 26.00 Windows extra (.7z) | 1.6MB | 1 | -- single file |
-| 7-Zip 26.00 Linux (.tar.xz) | 1.5MB | 1 | -- single file |
 
 ---
 
@@ -226,7 +222,6 @@ All .zip archives use deflate level 9 compression.
 | gRPC 1.80.0 | Yes | - | Windows MSVC build only |
 | Python 3.14.4 | Yes | Yes | Different packages per platform |
 | .NET SDK 10.0.202 | Yes | Yes | Portable, no installer |
-| 7-Zip 26.00 | Yes | Yes | Admin + user install |
 | FileZilla 3.70.4 | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
 | GDB 17.1 | - | Yes | Linux source build; requires gcc, make, readline-devel |
 | Notepad++ 8.9.3 | Yes | - | Windows only; portable zip (no admin) + installer available |
@@ -250,8 +245,8 @@ Use `--profile <name>` with `install-cli.sh` to pre-select tools without prompts
 
 | Profile | Tools selected |
 |---------|---------------|
-| `cpp-dev` | conan, vscode-extensions, sqlite, 7zip |
-| `devops` | conan, sqlite, 7zip |
+| `cpp-dev` | conan, vscode-extensions, sqlite |
+| `devops` | conan, sqlite |
 | `minimal` | required tools only (clang, cmake, python, style-formatter) |
 | `full` | all optional tools |
 
@@ -286,7 +281,6 @@ bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
 bash tools/build-tools/lcov/setup.sh                 # lcov 2.4 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
 bash tools/dev-tools/conan/setup.sh                  # Conan 2.27.1
-bash tools/dev-tools/7zip/setup.sh                   # 7-Zip 26.00
 bash tools/dev-tools/servy/setup.sh                  # Servy 7.9 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification

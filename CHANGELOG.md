@@ -11,6 +11,42 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.1.0] — 2026-04-30
+
+### Added
+- **First-run setup wizard** — `/setup` page with animated gradient UI; server redirects all requests there until setup is complete (`setup_complete` flag in `devkit.config.json`)
+- **Team Config Repository sync** — configure a git repo URL in Settings; devkit auto-syncs team config on every launch and provides a manual sync button with last-sync status indicator
+- `server/internal/team/` package — `CloneOrPull`, `LoadConfig`, `LastCommit` helpers for team config git sync
+- `setupCheck` middleware — enforces setup wizard flow on first launch before any dashboard access
+- `validateRepoURL` — server-side validation for team config repo URL input
+- `sanitizeDisplayName` — sanitization for display name fields
+- `GET /api/team/status` and `POST /api/team/sync` API endpoints for team config sync
+- Dashboard installed/all filter — clickable stat chip to toggle between all tools and installed-only view
+- `escHtml` and `escJs` helper functions in dashboard JS to prevent XSS in dynamic content
+- GitHub update version badges in the dashboard update checker UI
+- `scripts/release.sh` — atomic version bump, Go binary build, Python wheel build, and optional PyPI upload
+- `scripts/download-prebuilt.sh` — download prebuilt binaries from GitHub releases
+- `packages/python/` — PyPI package source (`pyproject.toml`, `__main__.py`, `__init__.py`, stage-binaries script)
+- `dist/` to `.gitignore` — wheel build artifacts are no longer tracked
+- `.github/profile/README.md` — GitHub org profile landing page
+
+### Changed
+- `devkit.config.json` schema: added `team_config_repo` (string) and `setup_complete` (bool) fields
+- `/api/config` accepts `team_config_repo`; triggers background sync when the repo URL changes
+- Removed `7zip` from the built-in `cpp-dev` and `devops` profile tool lists
+- `.gitignore`: fixed `.pyirc` typo → `.pypirc`; added `dist/` build artifact exclusion
+- `README.md`: updated version reference to v1.1.0
+
+---
+
+## [1.0.1-rc.2] — 2026-04-26
+
+### Changed
+- `.gitignore` — added `.devkit-token` and TLS certificate exclusions
+- Updated `prebuilt/` submodule to v1.0.1-rc.2 binaries
+
+---
+
 ## [1.0.0-rc.1] — 2026-04-25
 
 ### Added
@@ -79,7 +115,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-[Unreleased]: https://github.com/nimzshafie/airgap-cpp-devkit/compare/v0.2.0-alpha.2...HEAD
-[0.2.0-alpha.2]: https://github.com/nimzshafie/airgap-cpp-devkit/compare/v0.2.0-alpha.1...v0.2.0-alpha.2
-[0.2.0-alpha.1]: https://github.com/nimzshafie/airgap-cpp-devkit/compare/v0.1.0...v0.2.0-alpha.1
-[0.1.0]: https://github.com/nimzshafie/airgap-cpp-devkit/releases/tag/v0.1.0
+[Unreleased]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.0.1-rc.2...v1.1.0
+[1.0.1-rc.2]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.0.0-rc.1...v1.0.1-rc.2
+[1.0.0-rc.1]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v0.2.0-alpha.2...v1.0.0-rc.1
+[0.2.0-alpha.2]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v0.2.0-alpha.1...v0.2.0-alpha.2
+[0.2.0-alpha.1]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v0.1.0...v0.2.0-alpha.1
+[0.1.0]: https://github.com/NimaShafie/airgap-cpp-devkit/releases/tag/v0.1.0

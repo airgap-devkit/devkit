@@ -21,6 +21,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	devconfig "github.com/nimzshafie/airgap-devkit/server/internal/config"
 	"github.com/nimzshafie/airgap-devkit/server/internal/export"
+	"github.com/nimzshafie/airgap-devkit/server/internal/team"
 	"github.com/nimzshafie/airgap-devkit/server/internal/tools"
 )
 
@@ -38,6 +39,7 @@ type Server struct {
 	prefix        string
 	profiles      map[string]Profile
 	metaOverrides map[string]ToolMetaOverride
+	teamStatus    team.Status
 }
 
 type ToolMetaOverride struct {
@@ -87,9 +89,9 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 			"minimal": {ID: "minimal", Name: "Minimal", Description: "Required tools only", Color: "gray",
 				ToolIDs: []string{"toolchains/clang", "cmake", "python", "style-formatter"}},
 			"cpp-dev": {ID: "cpp-dev", Name: "C++ Developer", Description: "Core C++ development tools", Color: "blue",
-				ToolIDs: []string{"toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite", "7zip"}},
+				ToolIDs: []string{"toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite"}},
 			"devops": {ID: "devops", Name: "DevOps", Description: "Infrastructure and automation tools", Color: "green",
-				ToolIDs: []string{"cmake", "python", "conan", "sqlite", "7zip"}},
+				ToolIDs: []string{"cmake", "python", "conan", "sqlite"}},
 			"full": {ID: "full", Name: "Full Install", Description: "All available tools", Color: "purple",
 				ToolIDs: allIDs},
 		},
@@ -107,6 +109,12 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 	s.metaOverrides = make(map[string]ToolMetaOverride)
 	s.loadMetaOverrides()
 
+	// Background team config sync on startup
+	if cfg.TeamConfigRepo != "" {
+		s.teamStatus = team.Status{Configured: true, RepoURL: cfg.TeamConfigRepo}
+		go s.syncTeamConfig()
+	}
+
 	return s, nil
 }
 
@@ -123,11 +131,29 @@ func responseHeaders(next http.Handler) http.Handler {
 	})
 }
 
+func (s *Server) setupCheck(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Path
+		if s.Config.SetupComplete ||
+			p == "/setup" || p == "/api/setup" ||
+			strings.HasPrefix(p, "/auth/") ||
+			strings.HasPrefix(p, "/static/") ||
+			p == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		http.Redirect(w, r, "/setup", http.StatusFound)
+	})
+}
+
 func (s *Server) Routes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(responseHeaders)
 	r.Use(s.tokenAuth)
+	r.Use(s.setupCheck)
 	r.Get("/auth/bootstrap", s.handleAuthBootstrap)
+	r.Get("/setup", s.handleSetup)
+	r.Post("/api/setup", s.handleSaveSetup)
 	r.Get("/", s.handleDashboard)
 	r.Get("/logs", s.handleLogs)
 	r.Get("/health", s.handleHealth)
@@ -149,6 +175,8 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/api/profiles", s.handleSaveProfile)
 	r.Delete("/api/profiles/{id}", s.handleDeleteProfile)
 	r.Post("/api/config", s.handleSaveConfig)
+	r.Get("/api/team/status", s.handleTeamStatus)
+	r.Post("/api/team/sync", s.handleTeamSync)
 	r.Get("/install/{id}", s.handleInstall)
 	r.Delete("/uninstall/{id}", s.handleUninstall)
 	r.Get("/install-profile/{id}", s.handleInstallProfile)
@@ -339,12 +367,17 @@ func (s *Server) handleResetToolMeta(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		TeamName   string `json:"team_name"`
-		OrgName    string `json:"org_name"`
-		DevkitName string `json:"devkit_name"`
+		TeamName       string `json:"team_name"`
+		OrgName        string `json:"org_name"`
+		DevkitName     string `json:"devkit_name"`
+		TeamConfigRepo string `json:"team_config_repo"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonErr(w, "invalid body", 400)
+		return
+	}
+	if err := validateRepoURL(body.TeamConfigRepo); err != nil {
+		jsonErr(w, err.Error(), 400)
 		return
 	}
 	s.mu.Lock()
@@ -359,12 +392,20 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 	} else {
 		s.Config.DevkitName = body.DevkitName
 	}
+	repoChanged := body.TeamConfigRepo != s.Config.TeamConfigRepo
+	s.Config.TeamConfigRepo = body.TeamConfigRepo
 	cfg := s.Config
 	s.mu.Unlock()
 
 	if err := devconfig.Save(s.RepoRoot, cfg); err != nil {
 		jsonErr(w, "failed to save config: "+err.Error(), 500)
 		return
+	}
+	if repoChanged && body.TeamConfigRepo != "" {
+		s.mu.Lock()
+		s.teamStatus = team.Status{Configured: true, RepoURL: body.TeamConfigRepo}
+		s.mu.Unlock()
+		go s.syncTeamConfig()
 	}
 	jsonOK(w, map[string]any{"ok": true})
 }
@@ -936,10 +977,6 @@ type runCheckResult struct {
 	CheckCmd string // the command that was actually run
 }
 
-// runCheckCmd executes the check for a tool and returns the result.
-// Uses check_binary for a direct exec (no bash, no shell escaping) when set;
-// otherwise resolves check_cmd_windows / check_cmd_linux / check_cmd and runs
-// it through bash so shell metacharacters work consistently across platforms.
 func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 	if t.Source == "user" {
 		return runCheckResult{
@@ -951,7 +988,6 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 
 	checkCmd := t.ResolvedCheckCmd(runtime.GOOS)
 
-	// Native binary probe — bypasses bash entirely, no shell-escape issues.
 	if t.CheckBinary != "" {
 		args := t.CheckArgs
 		if len(args) == 0 {
@@ -1233,6 +1269,12 @@ const (
 
 var reSlug = regexp.MustCompile(`[^a-z0-9\-]`)
 
+var reUnsafeName = regexp.MustCompile(`['"\\<>]`)
+
+func sanitizeDisplayName(s string) string {
+	return strings.TrimSpace(reUnsafeName.ReplaceAllString(s, ""))
+}
+
 func slugify(name string) string {
 	s := strings.ToLower(strings.TrimSpace(name))
 	s = reSlug.ReplaceAllString(s, "-")
@@ -1293,7 +1335,6 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract zip — reject any entry whose resolved path escapes destDir.
 	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
 	for _, f := range zr.File {
 		target := filepath.Join(destDir, filepath.Clean(f.Name))
@@ -1365,6 +1406,37 @@ echo "✓ %s installed to $TOOL_DIR"
 		_ = os.WriteFile(setupSh, []byte(setupContent), 0o755)
 	}
 
+	// Sanitize the devkit.json (whether auto-generated or user-provided).
+	// Enforce the slug-safe toolID as the id, strip JS-unsafe chars from name
+	// and all package item names/descriptions, and stamp upload metadata.
+	if raw, readErr := os.ReadFile(devkitJSON); readErr == nil {
+		var meta map[string]any
+		if json.Unmarshal(raw, &meta) == nil {
+			meta["id"] = toolID
+			meta["source"] = "user"
+			meta["uploaded_by"] = uploadedBy
+			meta["uploaded_at"] = uploadedAt
+			if n, ok := meta["name"].(string); ok {
+				meta["name"] = sanitizeDisplayName(n)
+			}
+			if pkgs, ok := meta["packages"].([]any); ok {
+				for _, p := range pkgs {
+					if pm, ok := p.(map[string]any); ok {
+						if n, ok := pm["name"].(string); ok {
+							pm["name"] = sanitizeDisplayName(n)
+						}
+						if d, ok := pm["description"].(string); ok {
+							pm["description"] = sanitizeDisplayName(d)
+						}
+					}
+				}
+			}
+			if mjson, err := json.MarshalIndent(meta, "", "  "); err == nil {
+				_ = os.WriteFile(devkitJSON, mjson, 0o600)
+			}
+		}
+	}
+
 	// Reload tool list
 	s.mu.Lock()
 	if loaded, err := tools.Load(s.RepoRoot); err == nil {
@@ -1384,7 +1456,6 @@ func (s *Server) handlePackageDelete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	userPkgRoot := filepath.Clean(filepath.Join(s.RepoRoot, "user-packages"))
 	destDir := filepath.Join(userPkgRoot, id)
-	// Reject any id that escapes the user-packages/ directory (e.g. "../tools").
 	if !strings.HasPrefix(destDir, userPkgRoot+string(os.PathSeparator)) {
 		jsonErr(w, "invalid package id", 400)
 		return
@@ -1403,4 +1474,158 @@ func (s *Server) handlePackageDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Unlock()
 	jsonOK(w, map[string]any{"ok": true, "id": id})
+}
+
+// ── Setup (first-launch) ─────────────────────────────────────────────────────
+
+func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
+	if s.Config.SetupComplete {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	type setupData struct {
+		Config devconfig.Config
+	}
+	if err := renderTemplate(s.webFS, "setup.html", w, setupData{Config: s.Config}); err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+}
+
+func (s *Server) handleSaveSetup(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		TeamName       string `json:"team_name"`
+		OrgName        string `json:"org_name"`
+		DevkitName     string `json:"devkit_name"`
+		TeamConfigRepo string `json:"team_config_repo"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonErr(w, "invalid body", 400)
+		return
+	}
+	if err := validateRepoURL(body.TeamConfigRepo); err != nil {
+		jsonErr(w, err.Error(), 400)
+		return
+	}
+
+	s.mu.Lock()
+	if body.TeamName != "" {
+		s.Config.TeamName = body.TeamName
+	}
+	s.Config.OrgName = body.OrgName
+	if body.DevkitName != "" {
+		s.Config.DevkitName = body.DevkitName
+	}
+	s.Config.TeamConfigRepo = body.TeamConfigRepo
+	s.Config.SetupComplete = true
+	cfg := s.Config
+	s.mu.Unlock()
+
+	if err := devconfig.Save(s.RepoRoot, cfg); err != nil {
+		jsonErr(w, "failed to save config: "+err.Error(), 500)
+		return
+	}
+
+	if body.TeamConfigRepo != "" {
+		s.mu.Lock()
+		s.teamStatus = team.Status{Configured: true, RepoURL: body.TeamConfigRepo}
+		s.mu.Unlock()
+		go s.syncTeamConfig()
+	}
+
+	jsonOK(w, map[string]any{"ok": true, "redirect": "/"})
+}
+
+var reGitSSH = regexp.MustCompile(`^[a-zA-Z0-9._\-]+@[a-zA-Z0-9._\-]+:[a-zA-Z0-9._\-/~][a-zA-Z0-9._\-/~]*$`)
+
+func validateRepoURL(u string) error {
+	if u == "" {
+		return nil
+	}
+	for _, prefix := range []string{"https://", "http://", "ssh://", "git://"} {
+		if strings.HasPrefix(u, prefix) {
+			return nil
+		}
+	}
+	if reGitSSH.MatchString(u) {
+		return nil
+	}
+	return fmt.Errorf("unsupported git URL scheme — use https://, ssh://, git://, or git@host:path")
+}
+
+// ── Team config repo ─────────────────────────────────────────────────────────
+
+func (s *Server) syncTeamConfig() {
+	s.mu.RLock()
+	repoURL := s.Config.TeamConfigRepo
+	s.mu.RUnlock()
+
+	if repoURL == "" {
+		return
+	}
+
+	destDir := team.Dir(s.RepoRoot)
+	commit, err := team.CloneOrPull(repoURL, destDir)
+
+	s.mu.Lock()
+	s.teamStatus.Configured = true
+	s.teamStatus.RepoURL = repoURL
+	s.teamStatus.LastSync = time.Now().UTC()
+	s.teamStatus.Commit = commit
+	if err != nil {
+		s.teamStatus.Error = err.Error()
+	} else {
+		s.teamStatus.Error = ""
+	}
+	s.mu.Unlock()
+
+	if err != nil {
+		return
+	}
+
+	// Apply team-config.json if present (same logic as /api/import)
+	tc, err := team.LoadConfig(destDir)
+	if err != nil {
+		return
+	}
+	if tc.Prefix != "" && filepath.IsAbs(tc.Prefix) && filepath.Clean(tc.Prefix) == tc.Prefix {
+		_ = os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(tc.Prefix), 0o600)
+		s.mu.Lock()
+		s.prefix = tc.Prefix
+		s.mu.Unlock()
+	}
+	// Merge custom profiles from team config
+	if len(tc.Profiles) > 0 {
+		s.mu.Lock()
+		for id, p := range tc.Profiles {
+			s.profiles[id] = Profile{
+				ID:          p.ID,
+				Name:        p.Name,
+				Description: p.Description,
+				ToolIDs:     p.ToolIDs,
+				Color:       p.Color,
+			}
+		}
+		_ = s.saveProfiles()
+		s.mu.Unlock()
+	}
+}
+
+func (s *Server) handleTeamStatus(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	st := s.teamStatus
+	s.mu.RUnlock()
+	jsonOK(w, st)
+}
+
+func (s *Server) handleTeamSync(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	repoURL := s.Config.TeamConfigRepo
+	s.mu.RUnlock()
+
+	if repoURL == "" {
+		jsonErr(w, "no team_config_repo configured", 400)
+		return
+	}
+	go s.syncTeamConfig()
+	jsonOK(w, map[string]any{"ok": true, "message": "sync started"})
 }

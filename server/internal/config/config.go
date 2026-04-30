@@ -15,6 +15,8 @@ type Config struct {
 	Hostname       string `json:"hostname"`
 	Port           int    `json:"port"`
 	DefaultProfile string `json:"default_profile"`
+	TeamConfigRepo string `json:"team_config_repo"`
+	SetupComplete  bool   `json:"setup_complete"`
 }
 
 func Load(repoRoot string) Config {

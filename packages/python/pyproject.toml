@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airgap-devkit"
+version = "1.0.1rc2"
+description = "Air-gapped developer toolkit — install and manage developer tools in network-restricted environments"
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.8"
+keywords = ["airgap", "developer-tools", "offline", "cpp", "devkit"]
+classifiers = [
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Topic :: Software Development",
+    "Topic :: System :: Installation/Setup",
+]
+
+[project.scripts]
+airgap-devkit = "airgap_devkit.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+airgap_devkit = ["bin/*"]
