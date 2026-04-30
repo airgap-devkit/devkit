@@ -1,0 +1,3 @@
+# Binaries are staged here at build time from prebuilt/bin/ — do not commit them.
+# Run: bash packages/python/scripts/stage-binaries.sh
+devkit-server-*

@@ -20,6 +20,7 @@ type PackageItem struct {
 }
 
 type Tool struct {
+	Hidden       bool          `json:"hidden"`
 	ID           string        `json:"id"`
 	Name         string        `json:"name"`
 	Version      string        `json:"version"`
@@ -87,7 +88,7 @@ func Load(repoRoot string) ([]Tool, error) {
 				fmt.Fprintf(os.Stderr, "[devkit] warning: cannot parse %s: %v\n", path, err)
 				continue
 			}
-			if t.ID == "" || seen[t.ID] {
+			if t.ID == "" || seen[t.ID] || t.Hidden {
 				continue
 			}
 			seen[t.ID] = true

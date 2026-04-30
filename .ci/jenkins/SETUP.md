@@ -115,8 +115,8 @@ To generate an Atlassian API token: https://id.atlassian.com/manage-profile/secu
 | Profile | Tools |
 |---------|-------|
 | `minimal` | clang, cmake, python, style-formatter |
-| `cpp-dev` | clang, cmake, python, conan, vscode-extensions, sqlite, 7zip |
-| `devops` | cmake, python, conan, sqlite, 7zip |
+| `cpp-dev` | clang, cmake, python, conan, vscode-extensions, sqlite |
+| `devops` | cmake, python, conan, sqlite |
 | `full` | all available tools |
 
 ---

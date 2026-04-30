@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Config.DevkitName}} — Setup</title>
+<link rel="icon" type="image/png" href="/static/img/airgap-devkit-favicon.png">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+/* ─── page shell ──────────────────────────────────────────────── */
+.setup-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 5%,  rgba(37,99,235,.10) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 85% 95%, rgba(37,99,235,.07) 0%, transparent 55%),
+    var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* floating ambient orbs */
+.setup-wrap::before,
+.setup-wrap::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.setup-wrap::before {
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, rgba(37,99,235,.07) 0%, transparent 70%);
+  top: -140px; left: -100px;
+  animation: orb 10s ease-in-out infinite;
+}
+.setup-wrap::after {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(37,99,235,.05) 0%, transparent 70%);
+  bottom: -110px; right: -70px;
+  animation: orb 12s ease-in-out infinite reverse;
+  animation-delay: -5s;
+}
+@keyframes orb {
+  0%, 100% { transform: translate(0, 0)    scale(1);    }
+  33%       { transform: translate(20px,-15px) scale(1.05); }
+  66%       { transform: translate(-12px,10px) scale(.97); }
+}
+
+/* ─── card ────────────────────────────────────────────────────── */
+.setup-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.75rem 3rem;
+  width: 100%;
+  max-width: 520px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.55) inset,
+    0 8px 48px rgba(0,0,0,.10),
+    0 2px 8px rgba(0,0,0,.06);
+  position: relative;
+  z-index: 1;
+  animation: cardIn .55s cubic-bezier(.22,.68,0,1.15) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(32px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+
+/* inner gradient wash */
+.setup-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(140deg, rgba(37,99,235,.05) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* ─── logo ────────────────────────────────────────────────────── */
+.setup-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+  animation: fadeUp .4s .08s both;
+}
+.setup-logo img {
+  width: 36px; height: 36px;
+  filter: drop-shadow(0 2px 8px rgba(37,99,235,.30));
+  transition: transform .3s ease;
+}
+.setup-logo img:hover { transform: rotate(-6deg) scale(1.08); }
+.setup-logo-text { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+
+/* ─── progress dots ───────────────────────────────────────────── */
+.setup-progress {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 1.6rem;
+  animation: fadeUp .4s .12s both;
+}
+.setup-dot {
+  height: 4px;
+  border-radius: 99px;
+  transition: all .35s ease;
+}
+.setup-dot.active  { width: 28px; background: var(--accent); }
+.setup-dot.pending { width: 14px; background: var(--border); }
+
+/* ─── heading ─────────────────────────────────────────────────── */
+.setup-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -.025em;
+  line-height: 1.2;
+  margin-bottom: .45rem;
+  animation: fadeUp .4s .16s both;
+}
+.setup-sub {
+  font-size: .875rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  animation: fadeUp .4s .20s both;
+}
+
+/* ─── divider ─────────────────────────────────────────────────── */
+.setup-divider {
+  height: 1px;
+  background: linear-gradient(to right, var(--border), transparent);
+  margin: 1.75rem 0;
+  animation: fadeUp .4s .24s both;
+}
+
+/* ─── sections ────────────────────────────────────────────────── */
+.setup-section { margin-bottom: 1.75rem; }
+.setup-section:nth-child(1) { animation: fadeUp .4s .26s both; }
+.setup-section:nth-child(2) { animation: fadeUp .4s .30s both; }
+.setup-section:nth-child(3) { animation: fadeUp .4s .34s both; }
+
+.setup-section-label {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.setup-section-label::before {
+  content: '';
+  display: block;
+  width: 3px; height: 13px;
+  background: linear-gradient(to bottom, var(--accent), rgba(37,99,235,.4));
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── fields ──────────────────────────────────────────────────── */
+.setup-field { margin-bottom: 1rem; }
+.setup-field label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-body);
+  margin-bottom: .38rem;
+}
+.setup-field .field-sub {
+  font-size: .74rem;
+  color: var(--text-muted);
+  margin-top: .3rem;
+  line-height: 1.4;
+}
+
+/* input polish */
+.setup-card .input {
+  transition: border-color .18s, box-shadow .18s, transform .15s;
+}
+.setup-card .input:focus {
+  box-shadow: 0 0 0 3px rgba(37,99,235,.13);
+  transform: translateY(-1px);
+}
+
+/* ─── repo option cards ───────────────────────────────────────── */
+.repo-option-group { display: flex; flex-direction: column; gap: .7rem; }
+.repo-option {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  padding: 1rem 1.15rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s, transform .18s;
+}
+.repo-option:hover {
+  border-color: var(--accent);
+  background: rgba(37,99,235,.03);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37,99,235,.09);
+}
+.repo-option.selected {
+  border-color: var(--accent);
+  background: rgba(37,99,235,.05);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.10), 0 4px 12px rgba(37,99,235,.07);
+}
+.repo-option input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+  transform: scale(1.15);
+}
+.repo-option-body { flex: 1; }
+.repo-option-title {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-body);
+}
+.repo-option-desc {
+  font-size: .77rem;
+  color: var(--text-muted);
+  margin-top: .2rem;
+  line-height: 1.45;
+}
+
+/* ─── repo URL reveal (smooth height) ────────────────────────── */
+.repo-url-wrap {
+  margin-top: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height .32s ease, opacity .25s ease, margin-top .2s;
+}
+.repo-url-wrap.visible {
+  max-height: 120px;
+  opacity: 1;
+  margin-top: .85rem;
+}
+
+/* ─── actions ─────────────────────────────────────────────────── */
+.setup-actions {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  margin-top: 2rem;
+  animation: fadeUp .4s .38s both;
+}
+.setup-status { font-size: .82rem; color: var(--text-muted); }
+.setup-status.error { color: var(--danger); }
+
+/* button shimmer */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,.22) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform .55s ease;
+}
+.btn-primary:hover::after   { transform: translateX(120%); }
+.btn-primary:active { transform: scale(.97); }
+
+/* ─── fade-up keyframe ────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ─── dark theme tuning ───────────────────────────────────────── */
+[data-theme="dark"] .setup-card {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.04) inset,
+    0 8px 48px rgba(0,0,0,.55),
+    0 2px 8px rgba(0,0,0,.35);
+}
+[data-theme="dark"] .setup-wrap::before {
+  background: radial-gradient(circle, rgba(59,130,246,.07) 0%, transparent 70%);
+}
+[data-theme="dark"] .setup-wrap::after {
+  background: radial-gradient(circle, rgba(59,130,246,.04) 0%, transparent 70%);
+}
+[data-theme="dark"] .repo-option.selected {
+  background: rgba(59,130,246,.08);
+}
+</style>
+</head>
+<body>
+<div class="setup-wrap">
+  <div class="setup-card">
+
+    <!-- Logo -->
+    <div class="setup-logo">
+      <img src="/static/img/airgap-devkit-logo.png" alt="Logo" onerror="this.style.display='none'">
+      <span class="setup-logo-text">{{.Config.DevkitName}}</span>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="setup-progress">
+      <div class="setup-dot active"></div>
+      <div class="setup-dot pending"></div>
+    </div>
+
+    <div class="setup-title">Welcome — let's get you set up</div>
+    <div class="setup-sub">
+      This takes 30 seconds. Tell us about your team and optionally connect a
+      config repository so everyone on your team stays in sync automatically.
+    </div>
+
+    <!-- Identity -->
+    <div class="setup-section">
+      <div class="setup-section-label">Identity</div>
+
+      <div class="setup-field">
+        <label for="s-team-name">Team Name</label>
+        <input class="input" id="s-team-name" type="text" placeholder="e.g. Platform Engineering" value="{{.Config.TeamName}}">
+      </div>
+      <div class="setup-field">
+        <label for="s-org-name">Organization</label>
+        <input class="input" id="s-org-name" type="text" placeholder="e.g. Acme Corp" value="{{.Config.OrgName}}">
+      </div>
+      <div class="setup-field">
+        <label for="s-devkit-name">DevKit Name</label>
+        <input class="input" id="s-devkit-name" type="text" placeholder="e.g. AirGap DevKit" value="{{.Config.DevkitName}}">
+        <div class="field-sub">The name shown in the UI and exported configs.</div>
+      </div>
+    </div>
+
+    <div class="setup-divider"></div>
+
+    <!-- Team Config Repo -->
+    <div class="setup-section">
+      <div class="setup-section-label">
+        Team Config Repository
+        <span style="font-size:.7rem;font-weight:400;text-transform:none;letter-spacing:0;margin-left:.1rem;">(optional)</span>
+      </div>
+
+      <div class="repo-option-group">
+        <label class="repo-option selected" id="opt-solo-label">
+          <input type="radio" name="repo-mode" value="solo" checked onchange="setRepoMode('solo')">
+          <div class="repo-option-body">
+            <div class="repo-option-title">Solo / No team repo</div>
+            <div class="repo-option-desc">Skip for now. You can connect a repo later from the Teams tab.</div>
+          </div>
+        </label>
+
+        <label class="repo-option" id="opt-repo-label">
+          <input type="radio" name="repo-mode" value="repo" onchange="setRepoMode('repo')">
+          <div class="repo-option-body">
+            <div class="repo-option-title">Connect a team config repo</div>
+            <div class="repo-option-desc">
+              Point to a Git repo (internal Bitbucket, GitHub, GitLab, etc.) that holds your team's
+              <code>team-config.json</code> and any custom tool definitions. The devkit will sync
+              from it automatically on every launch.
+            </div>
+            <div class="repo-url-wrap" id="repo-url-wrap">
+              <input class="input" id="s-repo-url" type="text"
+                     placeholder="https://gitlab.internal/acme/devkit-config.git"
+                     value="{{.Config.TeamConfigRepo}}"
+                     oninput="validateURL(this)">
+              <div class="field-sub" id="repo-url-hint">
+                Must be a git-cloneable URL accessible from this machine.
+              </div>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn btn-primary" onclick="submitSetup()" id="setup-btn">
+        Continue to Dashboard
+      </button>
+      <span class="setup-status" id="setup-status"></span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  var t = localStorage.getItem('devkit-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+
+function setRepoMode(mode) {
+  document.getElementById('opt-solo-label').classList.toggle('selected', mode === 'solo');
+  document.getElementById('opt-repo-label').classList.toggle('selected', mode === 'repo');
+  document.getElementById('repo-url-wrap').classList.toggle('visible', mode === 'repo');
+}
+
+(function() {
+  var url = document.getElementById('s-repo-url').value.trim();
+  if (url) {
+    document.querySelector('[name="repo-mode"][value="repo"]').checked = true;
+    setRepoMode('repo');
+  }
+})();
+
+function validateURL(input) {
+  var hint = document.getElementById('repo-url-hint');
+  var v = input.value.trim();
+  if (v && !v.match(/^(https?|git|ssh):\/\//)) {
+    hint.style.color = 'var(--warning)';
+    hint.textContent = 'URL should start with https://, git://, or ssh://';
+  } else {
+    hint.style.color = '';
+    hint.textContent = 'Must be a git-cloneable URL accessible from this machine.';
+  }
+}
+
+function submitSetup() {
+  var btn    = document.getElementById('setup-btn');
+  var status = document.getElementById('setup-status');
+  var mode   = document.querySelector('[name="repo-mode"]:checked').value;
+  var repoURL = mode === 'repo' ? document.getElementById('s-repo-url').value.trim() : '';
+
+  if (mode === 'repo' && !repoURL) {
+    status.textContent = 'Please enter a repository URL or choose Solo mode.';
+    status.className = 'setup-status error';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = repoURL ? 'Connecting…' : 'Saving…';
+  status.textContent = '';
+  status.className = 'setup-status';
+
+  fetch('/api/setup', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      team_name:        document.getElementById('s-team-name').value.trim(),
+      org_name:         document.getElementById('s-org-name').value.trim(),
+      devkit_name:      document.getElementById('s-devkit-name').value.trim(),
+      team_config_repo: repoURL
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      status.textContent = repoURL ? 'Connected — syncing repo in background…' : 'Saved!';
+      status.className = 'setup-status';
+      setTimeout(() => { window.location.href = d.redirect || '/'; }, 800);
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Continue to Dashboard';
+      status.textContent = d.error || 'Something went wrong.';
+      status.className = 'setup-status error';
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.textContent = 'Continue to Dashboard';
+    status.textContent = 'Network error — please try again.';
+    status.className = 'setup-status error';
+  });
+}
+</script>
+</body>
+</html>

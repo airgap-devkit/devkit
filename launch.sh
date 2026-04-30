@@ -118,7 +118,6 @@ _free_port() {
     [[ -z "$pids" ]] && return 0
     echo "  [!!]  Port ${port} in use — killing: ${pids}"
     for pid in $pids; do
-        # Reject non-numeric tokens that could be injected by malformed netstat output.
         [[ "$pid" =~ ^[0-9]+$ ]] || continue
         if [[ "$PLATFORM" == "windows" ]]; then
             taskkill.exe //PID "$pid" //F 2>/dev/null || true
@@ -158,8 +157,6 @@ _free_port "${EFFECTIVE_PORT}"
 
 chmod +x "${SERVER_BIN}" 2>/dev/null || true
 
-# Let the binary open the browser — it constructs the /auth/bootstrap URL
-# that includes the session token, so the browser lands authenticated.
 exec "${SERVER_BIN}" \
     --tools    "${SCRIPT_DIR}/tools" \
     --prebuilt "${SCRIPT_DIR}/prebuilt" \

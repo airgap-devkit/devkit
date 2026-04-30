@@ -5,7 +5,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.0.0-rc.1** — DevKit Manager is a single pre-compiled Go binary with
+**v1.1.0** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -43,8 +43,8 @@ override it for a single session.
 
 1. Pick a **profile** for a one-click batch install:
    - **Minimal** — core tools only (clang, cmake, python, style-formatter)
-   - **C++ Developer** — full C++ stack (clang, cmake, python, conan, VS Code extensions, sqlite, 7zip)
-   - **DevOps** — infrastructure tools (cmake, python, conan, sqlite, 7zip)
+   - **C++ Developer** — full C++ stack (clang, cmake, python, conan, VS Code extensions, sqlite)
+   - **DevOps** — infrastructure tools (cmake, python, conan, sqlite)
    - **Full** — every available tool
 2. Or click **Install** next to any individual tool.
 3. Custom profiles can be created and saved from the Settings panel.
@@ -286,7 +286,6 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.202 — Windows + Linux, no installer | No |
 | [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python | No |
 | [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT for Windows | No |
-| [`tools/dev-tools/7zip/`](tools/dev-tools/7zip/README.md) | 7-Zip 26.00 — admin + user install, Windows + Linux | No |
 | [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 7.9 — Windows service manager (no-op on Linux) | No |
 | [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 — C/C++ package manager, no Python required | No |
 | [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.80.0 for Windows — prebuilt or source build (~40 min) | No |
@@ -474,7 +473,6 @@ airgap-cpp-devkit/
 +-- prebuilt/                              <- SUBMODULE (separate repo, optional)
 |   +-- bin/                               <- devkit-server binaries (Linux + Windows)
 |   +-- build-tools/cmake/                 <- CMake 4.3.1
-|   +-- dev-tools/7zip/                    <- 7-Zip 26.00
 |   +-- dev-tools/conan/                   <- Conan 2.27.1
 |   +-- dev-tools/filezilla/               <- FileZilla 3.70.4
 |   +-- dev-tools/notepadpp/               <- Notepad++ 8.9.3
@@ -493,7 +491,6 @@ airgap-cpp-devkit/
 +-- tools/                                 <- SUBMODULE (airgap-devkit/tools)
     +-- build-tools/cmake/
     +-- build-tools/lcov/
-    +-- dev-tools/7zip/
     +-- dev-tools/conan/
     +-- dev-tools/filezilla/
     +-- dev-tools/gdb/

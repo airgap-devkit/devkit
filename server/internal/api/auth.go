@@ -25,11 +25,6 @@ func loadOrCreateToken(repoRoot string) (string, error) {
 	return token, nil
 }
 
-// tokenAuth enforces token authentication on every request except health,
-// bootstrap, and static assets. The token is accepted via:
-//   - X-DevKit-Token header
-//   - devkit_token cookie
-//   - ?devkit_token= query param
 func (s *Server) tokenAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
@@ -56,8 +51,6 @@ func (s *Server) tokenAuth(next http.Handler) http.Handler {
 	})
 }
 
-// handleAuthBootstrap validates the token from the URL and sets a session
-// cookie, then redirects to the requested path.
 func (s *Server) handleAuthBootstrap(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("token") != s.token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)

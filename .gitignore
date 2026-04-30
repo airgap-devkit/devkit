@@ -60,6 +60,9 @@ CLAUDE.md
 # Auth token (generated at runtime)
 .devkit-token
 
+# Cloned team config repo (runtime artifact — teams define this in devkit.config.json)
+.devkit-team-config/
+
 # TLS certs (generated at runtime)
 devkit-tls.crt
 devkit-tls.key
@@ -69,3 +72,9 @@ tools/dev-tools/devkit-ui/.devkit-prefix
 tools/dev-tools/git-bundle/tests/test_repos/
 devkit.config.json
 temp_installs/
+
+# PyPI credentials and build artifacts
+dist/
+.pypirc
+.pyirc
+*.egg-info/
