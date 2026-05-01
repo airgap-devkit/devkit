@@ -604,6 +604,9 @@ function copyLog() {
 
 // ── Install via SSE ──
 function installTool(id, name, btn) {
+  // Hide any leftover manual install hint from a prior failed attempt
+  const _hint = document.getElementById('manual-install-hint');
+  if (_hint) _hint.style.display = 'none';
   drawer.init();
   drawer.open('Installing ' + name + '…');
   btn.disabled = true;
@@ -633,6 +636,14 @@ function installTool(id, name, btn) {
           refreshCard(id);
           setTimeout(() => refreshCard(id), 1200);
         }, 300);
+      } else {
+        // Offer manual install fallback when the automated install fails
+        const hint = document.getElementById('manual-install-hint');
+        if (hint) {
+          hint.dataset.toolId = id;
+          hint.dataset.toolName = name;
+          hint.style.display = 'flex';
+        }
       }
       return;
     }
@@ -2748,6 +2759,10 @@ window._toolCache = {};
       <span class="badge badge-gray badge-dot" id="progress-status-dot">Ready</span>
       <span id="progress-status-text" class="text-sm text-muted">Waiting for action...</span>
     </div>
+    <div id="manual-install-hint" style="display:none;padding:7px 12px;border-top:1px solid var(--border);background:var(--surface);align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:0.74rem;color:var(--text-muted);">Install failed?</span>
+      <button class="btn btn-ghost btn-sm" style="font-size:0.72rem;" onclick="_showManualInstall()">Show manual install commands</button>
+    </div>
   </div>
 </div>
 
@@ -3166,7 +3181,176 @@ drawer.setIdle();
 // Sync main padding to drawer height on load and whenever the window resizes
 _syncMainPadding();
 window.addEventListener('resize', _syncMainPadding);
+
+// ── Manual install fallback modal ──────────────────────────────────────────
+let _mimData = null;
+let _mimPlatform = (navigator.platform || '').toLowerCase().includes('win') ? 'windows' : 'linux';
+
+function _showManualInstall() {
+  const hint = document.getElementById('manual-install-hint');
+  if (!hint) return;
+  const id   = hint.dataset.toolId;
+  const name = hint.dataset.toolName;
+  if (!id) return;
+
+  fetch('/api/tool/' + encodeURIComponent(id) + '/manual-install')
+    .then(r => r.json())
+    .then(d => {
+      _mimData = d;
+      _renderMimModal();
+      document.getElementById('mim-modal').style.display = 'flex';
+    })
+    .catch(e => { alert('Could not load manual install info: ' + e); });
+}
+
+function _closeManualModal() {
+  document.getElementById('mim-modal').style.display = 'none';
+}
+
+function _mimTab(platform) {
+  _mimPlatform = platform;
+  _renderMimModal();
+}
+
+function _mimCopyBlock(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  });
+}
+
+function _renderMimModal() {
+  const d = _mimData;
+  if (!d) return;
+  const p = d[_mimPlatform];
+
+  // Tab highlight
+  ['windows', 'linux'].forEach(t => {
+    const btn = document.getElementById('mim-tab-' + t);
+    if (btn) {
+      btn.className = 'btn btn-sm ' + (t === _mimPlatform ? 'btn-primary' : 'btn-ghost');
+    }
+  });
+
+  document.getElementById('mim-tool-name').textContent    = d.tool_name  || d.tool_id;
+  document.getElementById('mim-tool-version').textContent = d.version ? 'v' + d.version : '';
+
+  const body = document.getElementById('mim-body');
+  const platformLabel = _mimPlatform === 'windows' ? 'Git Bash (MINGW64)' : 'bash';
+
+  let html = '';
+
+  // Step 1
+  html += `<div class="mim-step">
+    <div class="mim-step-num">1</div>
+    <div class="mim-step-body">
+      <div class="mim-step-title">Open ${escHtml(platformLabel)} and navigate to the devkit root</div>
+      <pre class="mim-code">cd /path/to/airgap-devkit  <span class="mim-comment"># the folder that contains launch.sh</span></pre>
+    </div></div>`;
+
+  // Step 2: env vars
+  html += `<div class="mim-step">
+    <div class="mim-step-num">2</div>
+    <div class="mim-step-body">
+      <div class="mim-step-title">Export required environment variables</div>
+      <pre class="mim-code">${escHtml(p.env_block)}</pre>
+      <button class="btn btn-ghost btn-sm mim-copy-btn" onclick="_mimCopyBlock(${JSON.stringify(p.env_block)},this)">Copy</button>
+    </div></div>`;
+
+  // Step 3: run setup.sh
+  html += `<div class="mim-step">
+    <div class="mim-step-num">3</div>
+    <div class="mim-step-body">
+      <div class="mim-step-title">Run the setup script</div>
+      <pre class="mim-code">${escHtml(p.install_cmd)}</pre>
+      <button class="btn btn-ghost btn-sm mim-copy-btn" onclick="_mimCopyBlock(${JSON.stringify(p.install_cmd)},this)">Copy</button>
+      <div class="mim-step-sub">Custom prefix: <code>${escHtml(p.custom_prefix_ex)}</code></div>
+    </div></div>`;
+
+  // Split files section
+  if (d.split_parts && d.split_parts.length > 0) {
+    html += `<div class="mim-split-section">
+      <div class="mim-split-title">Split archives (${d.split_parts.length} archive${d.split_parts.length > 1 ? 's' : ''})</div>
+      <p class="mim-split-note">setup.sh reassembles these automatically. Use the commands below only if you need to extract manually.</p>`;
+    for (const sp of d.split_parts) {
+      const cmd = _mimPlatform === 'windows' ? sp.win_assemble_cmd : sp.linux_assemble_cmd;
+      html += `<div class="mim-split-item">
+        <div class="mim-split-meta">${escHtml(sp.archive_name)} &middot; ${sp.part_count} parts &middot; <span class="font-mono">${escHtml(sp.parts_dir)}</span></div>
+        <pre class="mim-code">${escHtml(cmd)}</pre>
+        <button class="btn btn-ghost btn-sm mim-copy-btn" onclick="_mimCopyBlock(${JSON.stringify(cmd)},this)">Copy</button>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Notes
+  if (p.notes && p.notes.length > 0) {
+    html += `<ul class="mim-notes">`;
+    for (const note of p.notes) {
+      html += `<li>${escHtml(note)}</li>`;
+    }
+    html += `</ul>`;
+  }
+
+  body.innerHTML = html;
+}
 </script>
+
+<!-- ── Manual Install Fallback Modal ── -->
+<div id="mim-modal" class="modal-overlay" onclick="_closeManualModal()" style="display:none;">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;max-height:88vh;overflow-y:auto;">
+
+    <div class="modal-hero">
+      <div class="modal-hero-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/></svg>
+      </div>
+      <div class="modal-hero-info">
+        <div class="modal-hero-name" id="mim-tool-name">Manual Install</div>
+        <div class="modal-hero-meta">
+          <span id="mim-tool-version" class="modal-hero-version"></span>
+          <span class="badge badge-gray" style="font-size:0.68rem;padding:2px 7px;">Fallback</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="_closeManualModal()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 14px;">
+        Run these commands directly in a terminal when the web UI cannot complete the installation.
+      </p>
+
+      <!-- Platform tabs -->
+      <div style="display:flex;gap:6px;margin-bottom:16px;">
+        <button class="btn btn-sm btn-primary" id="mim-tab-windows" onclick="_mimTab('windows')">Windows (Git Bash)</button>
+        <button class="btn btn-sm btn-ghost"   id="mim-tab-linux"   onclick="_mimTab('linux')">Linux</button>
+      </div>
+
+      <div id="mim-body"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+.mim-step { display:flex; gap:12px; margin-bottom:16px; }
+.mim-step-num { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--primary,#2563eb); color:#fff; font-size:0.72rem; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+.mim-step-body { flex:1; min-width:0; }
+.mim-step-title { font-size:0.82rem; font-weight:600; color:var(--text); margin-bottom:6px; }
+.mim-step-sub { font-size:0.72rem; color:var(--text-muted); margin-top:6px; word-break:break-all; }
+.mim-step-sub code { font-family:monospace; background:var(--code-bg,var(--surface-2,#f3f4f6)); padding:1px 4px; border-radius:3px; font-size:0.72rem; }
+.mim-code { background:var(--code-bg,var(--surface-2,#1e1e2e)); color:var(--code-fg,var(--text)); font-family:monospace; font-size:0.76rem; padding:10px 12px; border-radius:6px; white-space:pre-wrap; word-break:break-all; margin:0 0 6px; border:1px solid var(--border); }
+.mim-comment { color:var(--text-muted,#6b7280); }
+.mim-copy-btn { font-size:0.7rem !important; padding:2px 8px !important; margin-bottom:2px; }
+.mim-split-section { border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin:16px 0; background:var(--surface); }
+.mim-split-title { font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mim-split-note { font-size:0.74rem; color:var(--text-muted); margin:0 0 10px; }
+.mim-split-item { margin-bottom:12px; }
+.mim-split-meta { font-size:0.72rem; color:var(--text-muted); margin-bottom:4px; }
+.mim-notes { font-size:0.76rem; color:var(--text-muted); margin:14px 0 0; padding-left:18px; }
+.mim-notes li { margin-bottom:4px; }
+</style>
 
 </body>
 </html>
