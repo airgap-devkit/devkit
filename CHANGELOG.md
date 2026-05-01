@@ -11,6 +11,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.2.0] — 2026-05-01
+
+### Added
+- **Manual install fallback** — when the devkit-ui cannot complete an installation, a "Show manual install commands" button appears in the terminal drawer; clicking it opens a modal with tabbed Windows / Linux steps, pre-filled copy-ready shell commands, and split-archive reassembly instructions generated from `GET /api/tool/{id}/manual-install`
+- `GET /api/tool/{id}/manual-install` API endpoint — returns platform-specific env block, install command, custom prefix example, split-archive reassembly commands, and per-platform notes
+- `scanPrebuiltParts` — server-side scanner that finds `.part-*` files in `prebuilt/` and builds `cat | tar` reassembly commands for each split archive
+- `scripts/manual-install.sh` — CLI fallback installer; `--list` enumerates tools, `--tool <id>` installs, `--prefix` sets a custom path, `--verify-only` confirms split parts are present
+- `docs/manual-install.md` — step-by-step manual install guide for Windows (Git Bash) and Linux, with tool-specific examples, manual split-archive reassembly commands, receipt creation, PATH wiring, and troubleshooting table
+- `.github/workflows/rhel8-test.yml` — CI workflow that builds `Dockerfile.rhel8-test` and runs the full install + smoke-test suite inside UBI 8.10 (RHEL 8 / glibc 2.28); triggers on install-related path changes, weekly Monday schedule, and `workflow_dispatch`
+
+### Fixed
+- `install-cli.sh` — added `--admin` flag (selects system-wide install prefix); `Jenkinsfile` and `.gitlab-ci.yml` both pass `--admin` when `ADMIN_INSTALL=true` but the flag was previously unrecognised, crashing the install step
+- `Jenkinsfile` and `.gitlab-ci.yml` server-ops stage — all API calls now include `X-DevKit-Token` header; `auth.go` requires the token for every route except `/health`, `/auth/bootstrap`, and `/static/`, so every `curl` to `/api/config`, `/api/health/tools`, etc. was returning 401
+- `.gitlab-ci.yml` — replace fragile `/proc/*/cmdline` PID scan in `after_script` with a `.server.pid` file (`after_script` runs in a fresh shell and cannot access variables set in the main script)
+
+---
+
 ## [1.1.0] — 2026-04-30
 
 ### Added
