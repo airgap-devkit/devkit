@@ -82,5 +82,5 @@ dist/
 # Runtime install logs
 devkit-logs/
 
-# Security scan output — reference only, never commit
+# Local scan reports (generated, not committed)
 airgap-devkit-security/

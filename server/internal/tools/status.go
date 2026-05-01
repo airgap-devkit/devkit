@@ -115,9 +115,6 @@ func normaliseDate(raw string) string {
 
 // probeSystemInstall runs check_cmd to detect a system-installed tool (no receipt).
 // Returns the version string extracted from output, or "" if not found.
-// On Windows, cmd.exe is used as the launcher so that PATH-registered tools resolve,
-// but the original check_cmd tokens are passed as discrete arguments rather than
-// string-concatenated to avoid cmd.exe injection via shell metacharacters.
 func probeSystemInstall(checkCmd, goos string) string {
 	if checkCmd == "" {
 		return ""
@@ -128,7 +125,6 @@ func probeSystemInstall(checkCmd, goos string) string {
 	}
 	var cmd *exec.Cmd
 	if goos == "windows" {
-		// Pass cmd + /c + original argv as separate args, never as a single shell string.
 		cmd = exec.Command("cmd", append([]string{"/c"}, parts...)...)
 	} else {
 		cmd = exec.Command(parts[0], parts[1:]...)

@@ -33,7 +33,6 @@ func renderTemplate(webFS fs.FS, name string, w http.ResponseWriter, r *http.Req
 	for k, v := range baseFuncMap {
 		fm[k] = v
 	}
-	// Expose nonce as a template function so inline <script nonce="{{nonce}}"> works.
 	fm["nonce"] = func() string { return nonce }
 
 	tmpl, err := template.New(name).Funcs(fm).ParseFS(webFS, "templates/"+name)
