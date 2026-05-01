@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -192,6 +193,7 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/api/tool/{id}/versions/{ver}/use", s.handleUseVersion)
 	r.Get("/api/tools", s.handleAPITools)
 	r.Get("/api/tool/{id}", s.handleAPITool)
+	r.Get("/api/tool/{id}/manual-install", s.handleManualInstall)
 	r.Get("/api/prefix", s.handleGetPrefix)
 	r.Post("/api/prefix", s.handleSetPrefix)
 	r.Delete("/api/prefix", s.handleResetPrefix)
@@ -1662,4 +1664,147 @@ func (s *Server) handleTeamSync(w http.ResponseWriter, r *http.Request) {
 	}
 	go s.syncTeamConfig()
 	jsonOK(w, map[string]any{"ok": true, "message": "sync started"})
+}
+
+// ── Manual install fallback ─────────────────────────────────────────────────
+
+type manualPlatformInfo struct {
+	DefaultPrefix  string   `json:"default_prefix"`
+	EnvBlock       string   `json:"env_block"`
+	InstallCmd     string   `json:"install_cmd"`
+	CustomPrefixEx string   `json:"custom_prefix_ex"`
+	Notes          []string `json:"notes"`
+}
+
+type splitPartInfo struct {
+	ArchiveName      string `json:"archive_name"`
+	PartsDir         string `json:"parts_dir"`
+	PartCount        int    `json:"part_count"`
+	WinAssembleCmd   string `json:"win_assemble_cmd"`
+	LinuxAssembleCmd string `json:"linux_assemble_cmd"`
+}
+
+type manualInstallResponse struct {
+	ToolID       string             `json:"tool_id"`
+	ToolName     string             `json:"tool_name"`
+	Version      string             `json:"version"`
+	SetupScript  string             `json:"setup_script"`
+	UsesPrebuilt bool               `json:"uses_prebuilt"`
+	SplitParts   []splitPartInfo    `json:"split_parts,omitempty"`
+	Windows      manualPlatformInfo `json:"windows"`
+	Linux        manualPlatformInfo `json:"linux"`
+}
+
+// handleManualInstall returns platform-specific shell commands users can run
+// directly when the web UI cannot complete an installation.
+func (s *Server) handleManualInstall(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	t, ok := s.findTool(id)
+	if !ok {
+		jsonErr(w, "tool not found", 404)
+		return
+	}
+
+	// Derive the prebuilt subdirectory from the setup script path.
+	// t.Setup is relative to repo root, e.g. "tools/toolchains/llvm/setup.sh"
+	// → strip leading "tools/" and trailing filename to get "toolchains/llvm".
+	var prebuiltSubpath string
+	setupParts := strings.Split(t.Setup, "/")
+	if len(setupParts) >= 3 && setupParts[0] == "tools" {
+		prebuiltSubpath = strings.Join(setupParts[1:len(setupParts)-1], "/")
+	}
+
+	splitParts := s.scanPrebuiltParts(prebuiltSubpath, t.Version, t.ReceiptName)
+
+	receipt := t.ReceiptName
+	winPrefix := "${LOCALAPPDATA}/airgap-cpp-devkit/" + receipt
+	linuxPrefix := "~/.local/share/airgap-cpp-devkit/" + receipt
+
+	winEnv := "export AIRGAP_OS=windows\n" +
+		`export PREBUILT_DIR="$(pwd)/prebuilt"` + "\n" +
+		fmt.Sprintf(`export INSTALL_PREFIX="%s"`, winPrefix)
+
+	linuxEnv := "export AIRGAP_OS=linux\n" +
+		`export PREBUILT_DIR="$(pwd)/prebuilt"` + "\n" +
+		fmt.Sprintf(`export INSTALL_PREFIX="%s"`, linuxPrefix)
+
+	resp := manualInstallResponse{
+		ToolID:       t.ID,
+		ToolName:     t.Name,
+		Version:      t.Version,
+		SetupScript:  t.Setup,
+		UsesPrebuilt: t.UsesPrebuilt,
+		SplitParts:   splitParts,
+		Windows: manualPlatformInfo{
+			DefaultPrefix:  winPrefix,
+			EnvBlock:       winEnv,
+			InstallCmd:     "bash " + t.Setup,
+			CustomPrefixEx: fmt.Sprintf("bash %s --prefix /c/custom/path/%s", t.Setup, receipt),
+			Notes: []string{
+				"Open Git Bash (MINGW64) — not PowerShell or Command Prompt",
+				"cd to the devkit root (the folder containing launch.sh)",
+				"The default prefix installs per-user; no administrator rights needed",
+				"setup.sh handles split archives automatically",
+			},
+		},
+		Linux: manualPlatformInfo{
+			DefaultPrefix:  linuxPrefix,
+			EnvBlock:       linuxEnv,
+			InstallCmd:     "bash " + t.Setup,
+			CustomPrefixEx: fmt.Sprintf("bash %s --prefix /opt/custom/%s", t.Setup, receipt),
+			Notes: []string{
+				"Run as root for a system-wide install (/opt/airgap-cpp-devkit/ prefix)",
+				"cd to the devkit root (the folder containing launch.sh)",
+				"The default prefix installs per-user; no root rights needed",
+				"setup.sh handles split archives automatically",
+			},
+		},
+	}
+	jsonOK(w, resp)
+}
+
+// scanPrebuiltParts finds split-archive part files in the prebuilt directory
+// for the given tool subpath and version, and returns reassembly commands.
+func (s *Server) scanPrebuiltParts(subpath, version, receiptName string) []splitPartInfo {
+	if subpath == "" || version == "" {
+		return nil
+	}
+	searchDir := filepath.Join(s.PrebuiltDir, filepath.FromSlash(subpath), version)
+	entries, err := os.ReadDir(searchDir)
+	if err != nil {
+		return nil
+	}
+
+	archives := map[string]int{}
+	for _, e := range entries {
+		if idx := strings.Index(e.Name(), ".part-"); idx != -1 {
+			archives[e.Name()[:idx]]++
+		}
+	}
+	if len(archives) == 0 {
+		return nil
+	}
+
+	relDir, err := filepath.Rel(s.RepoRoot, searchDir)
+	if err != nil {
+		relDir = filepath.Join("prebuilt", subpath, version)
+	}
+	relDirSlash := filepath.ToSlash(relDir)
+
+	var result []splitPartInfo
+	for archiveName, count := range archives {
+		result = append(result, splitPartInfo{
+			ArchiveName: archiveName,
+			PartsDir:    relDirSlash,
+			PartCount:   count,
+			WinAssembleCmd: fmt.Sprintf(
+				`cat "%s/%s.part-"* | tar -xJ --strip-components=1 -C "${LOCALAPPDATA}/airgap-cpp-devkit/%s"`,
+				relDirSlash, archiveName, receiptName),
+			LinuxAssembleCmd: fmt.Sprintf(
+				`cat %s/%s.part-* | tar -xJ --strip-components=1 -C ~/.local/share/airgap-cpp-devkit/%s`,
+				relDirSlash, archiveName, receiptName),
+		})
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].ArchiveName < result[j].ArchiveName })
+	return result
 }
