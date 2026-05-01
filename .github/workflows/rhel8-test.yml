@@ -1,0 +1,79 @@
+name: RHEL 8 Integration Test
+
+# Builds Dockerfile.rhel8-test and runs the full install + smoke-test suite
+# inside a UBI 8.10 container — validates glibc 2.28 compatibility, no-EPEL
+# constraint, and correct install-cli.sh behaviour on RHEL 8.
+#
+# Triggers:
+#   - Push/PR that touches install-related files
+#   - Weekly schedule (Monday 07:00 UTC)
+#   - Manual dispatch with profile selection
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile.rhel8-test
+      - install-cli.sh
+      - launch.sh
+      - tests/run-tests.sh
+      - scripts/install-mode.sh
+      - tools/**
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile.rhel8-test
+      - install-cli.sh
+      - launch.sh
+      - tests/run-tests.sh
+      - scripts/install-mode.sh
+      - tools/**
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Install profile'
+        required: false
+        default: 'cpp-dev'
+        type: choice
+        options: [minimal, cpp-dev, devops, full]
+
+concurrency:
+  group: rhel8-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rhel8-test:
+    name: RHEL 8 integration (UBI 8.10)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+          lfs: true
+
+      - name: Init prebuilt submodule
+        run: |
+          git submodule update --init prebuilt
+          git -C prebuilt lfs pull 2>/dev/null || true
+
+      - name: Init tools submodule
+        run: git submodule update --init tools
+
+      - name: Build RHEL 8 test image
+        run: docker build -f Dockerfile.rhel8-test -t airgap-devkit-rhel8 .
+
+      - name: Run install + smoke tests
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'cpp-dev' }}"
+          case "$PROFILE" in
+            minimal|cpp-dev|devops|full) ;;
+            *) echo "Invalid profile: $PROFILE"; exit 1 ;;
+          esac
+          echo "Running RHEL 8 integration test — profile: $PROFILE"
+          docker run --rm -e DEVKIT_PROFILE="$PROFILE" airgap-devkit-rhel8

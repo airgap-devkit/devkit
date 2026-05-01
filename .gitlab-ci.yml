@@ -161,8 +161,8 @@ server-ops:
   script:
     # Start server
     - nohup bash launch.sh --no-browser > devkit-server.log 2>&1 &
-    - SERVER_PID=$!
-    - echo "Server PID ${SERVER_PID}"
+    - echo $! > .server.pid
+    - echo "Server PID $(cat .server.pid)"
     - |
       echo "Waiting for http://${SERVER_HOST}:${SERVER_PORT}/health ..."
       for i in $(seq 1 30); do
@@ -178,12 +178,16 @@ server-ops:
         fi
       done
 
+    # Read auth token written by the server on first start
+    - DEVKIT_TOKEN=$(cat .devkit-token 2>/dev/null || echo "")
+
     # Push team identity
     - |
       printf '{"team_name":"%s","org_name":"%s","devkit_name":"%s"}' \
         "${TEAM_NAME}" "${ORG_NAME}" "${DEVKIT_NAME}" > /tmp/dk-config.json
       curl -sf -X POST \
            -H 'Content-Type: application/json' \
+           -H "X-DevKit-Token: ${DEVKIT_TOKEN}" \
            -d @/tmp/dk-config.json \
            "http://${SERVER_HOST}:${SERVER_PORT}/api/config"
       echo "Team identity pushed"
@@ -198,6 +202,7 @@ server-ops:
           echo "ERROR: '${PACKAGE_FILE_PATH}' not found on runner"; exit 1
         fi
         curl -sf -X POST \
+             -H "X-DevKit-Token: ${DEVKIT_TOKEN}" \
              -F "package=@${PACKAGE_FILE_PATH}" \
              "http://${SERVER_HOST}:${SERVER_PORT}/packages/upload"
         echo "Package uploaded: ${PACKAGE_FILE_PATH}"
@@ -209,6 +214,7 @@ server-ops:
         echo "${SAVE_PROFILE_JSON}" | \
         curl -sf -X POST \
              -H 'Content-Type: application/json' \
+             -H "X-DevKit-Token: ${DEVKIT_TOKEN}" \
              -d @- \
              "http://${SERVER_HOST}:${SERVER_PORT}/api/profiles"
         echo "Custom profile saved"
@@ -220,6 +226,7 @@ server-ops:
         echo "${IMPORT_TEAM_CONFIG}" | \
         curl -sf -X POST \
              -H 'Content-Type: application/json' \
+             -H "X-DevKit-Token: ${DEVKIT_TOKEN}" \
              -d @- \
              "http://${SERVER_HOST}:${SERVER_PORT}/api/import"
         echo "Team config imported"
@@ -228,23 +235,27 @@ server-ops:
     # Export team config (optional)
     - |
       if [ "${EXPORT_TEAM_CONFIG}" = "true" ]; then
-        curl -sf "http://${SERVER_HOST}:${SERVER_PORT}/api/export" \
+        curl -sf \
+             -H "X-DevKit-Token: ${DEVKIT_TOKEN}" \
+             "http://${SERVER_HOST}:${SERVER_PORT}/api/export" \
              -o team-config-export.json
         echo "Team config exported"
       fi
 
     # Tool health snapshot (always)
     - |
-      curl -sf "http://${SERVER_HOST}:${SERVER_PORT}/api/health/tools" \
+      curl -sf \
+           -H "X-DevKit-Token: ${DEVKIT_TOKEN}" \
+           "http://${SERVER_HOST}:${SERVER_PORT}/api/health/tools" \
            -o tool-health.json
       echo "Tool health:"
       cat tool-health.json
 
     # Stop server
-    - kill ${SERVER_PID} 2>/dev/null || true
+    - kill "$(cat .server.pid 2>/dev/null)" 2>/dev/null || true
   after_script:
-    - kill $(cat /proc/*/cmdline 2>/dev/null | tr '\0' ' ' | grep 'devkit-server' | awk '{print $1}' | head -1) 2>/dev/null || true
-    - rm -f /tmp/dk-config.json /tmp/dk-profile.json /tmp/dk-import.json
+    - kill "$(cat .server.pid 2>/dev/null)" 2>/dev/null || true
+    - rm -f .server.pid /tmp/dk-config.json /tmp/dk-profile.json /tmp/dk-import.json
   artifacts:
     paths:
       - devkit-server.log

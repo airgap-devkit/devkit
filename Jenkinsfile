@@ -232,6 +232,11 @@ pipeline {
                     done
                 """
 
+                // Read auth token written by the server on first start
+                script {
+                    env.DEVKIT_TOKEN = sh(returnStdout: true, script: 'cat .devkit-token 2>/dev/null || echo ""').trim()
+                }
+
                 // Push team identity to running server
                 script {
                     writeJSON file: '/tmp/dk-config.json', json: [
@@ -243,6 +248,7 @@ pipeline {
                 sh """
                     curl -sf -X POST \
                          -H 'Content-Type: application/json' \
+                         -H "X-DevKit-Token: ${env.DEVKIT_TOKEN}" \
                          -d @/tmp/dk-config.json \
                          "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/config"
                     echo "Team identity pushed"
@@ -258,6 +264,7 @@ pipeline {
                             [ -f '${params.PACKAGE_FILE_PATH}' ] || \
                                 { echo "ERROR: '${params.PACKAGE_FILE_PATH}' not found"; exit 1; }
                             curl -sf -X POST \
+                                 -H "X-DevKit-Token: ${env.DEVKIT_TOKEN}" \
                                  -F 'package=@${params.PACKAGE_FILE_PATH}' \
                                  "http://${params.SERVER_HOST}:${params.SERVER_PORT}/packages/upload"
                             echo "Package uploaded: ${params.PACKAGE_FILE_PATH}"
@@ -272,6 +279,7 @@ pipeline {
                         sh """
                             curl -sf -X POST \
                                  -H 'Content-Type: application/json' \
+                                 -H "X-DevKit-Token: ${env.DEVKIT_TOKEN}" \
                                  -d @/tmp/dk-profile.json \
                                  "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/profiles"
                             echo "Custom profile saved"
@@ -286,6 +294,7 @@ pipeline {
                         sh """
                             curl -sf -X POST \
                                  -H 'Content-Type: application/json' \
+                                 -H "X-DevKit-Token: ${env.DEVKIT_TOKEN}" \
                                  -d @/tmp/dk-import.json \
                                  "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/import"
                             echo "Team config imported"
@@ -297,7 +306,9 @@ pipeline {
                 script {
                     if (params.EXPORT_TEAM_CONFIG) {
                         sh """
-                            curl -sf "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/export" \
+                            curl -sf \
+                                 -H "X-DevKit-Token: ${env.DEVKIT_TOKEN}" \
+                                 "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/export" \
                                  -o team-config-export.json
                             echo "Team config exported"
                         """
@@ -307,7 +318,9 @@ pipeline {
 
                 // Tool health snapshot (always)
                 sh """
-                    curl -sf "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/health/tools" \
+                    curl -sf \
+                         -H "X-DevKit-Token: ${env.DEVKIT_TOKEN}" \
+                         "http://${params.SERVER_HOST}:${params.SERVER_PORT}/api/health/tools" \
                          -o tool-health.json
                     echo "Tool health:"
                     cat tool-health.json

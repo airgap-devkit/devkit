@@ -63,6 +63,7 @@ PREFIX_OVERRIDE=""
 REBUILD=false
 AUTO_YES=false
 PROFILE=""
+ADMIN_INSTALL=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -70,6 +71,7 @@ while [[ $# -gt 0 ]]; do
         --rebuild) REBUILD=true; shift ;;
         --yes)     AUTO_YES=true; shift ;;
         --profile) PROFILE="$2"; shift 2 ;;
+        --admin)   ADMIN_INSTALL=true; shift ;;
         -h|--help)
             sed -n '2,/^[^#]/{/^#/!q; s/^# \?//; p}' "$0"
             exit 0 ;;
@@ -321,6 +323,8 @@ else
     # --yes mode: use defaults
     if [[ -n "${PREFIX_OVERRIDE}" ]]; then
         export INSTALL_PREFIX_OVERRIDE="${PREFIX_OVERRIDE}"
+    elif [[ "${ADMIN_INSTALL}" == "true" ]]; then
+        export INSTALL_PREFIX_OVERRIDE="${SYS_PREFIX}"
     else
         export INSTALL_PREFIX_OVERRIDE="${USER_PREFIX}"
     fi
