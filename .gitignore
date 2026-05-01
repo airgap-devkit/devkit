@@ -78,3 +78,9 @@ dist/
 .pypirc
 .pyirc
 *.egg-info/
+
+# Runtime install logs
+devkit-logs/
+
+# Security scan output — reference only, never commit
+airgap-devkit-security/

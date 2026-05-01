@@ -115,7 +115,10 @@ func normaliseDate(raw string) string {
 
 // probeSystemInstall runs check_cmd to detect a system-installed tool (no receipt).
 // Returns the version string extracted from output, or "" if not found.
-func probeSystemInstall(checkCmd string) string {
+// On Windows, cmd.exe is used as the launcher so that PATH-registered tools resolve,
+// but the original check_cmd tokens are passed as discrete arguments rather than
+// string-concatenated to avoid cmd.exe injection via shell metacharacters.
+func probeSystemInstall(checkCmd, goos string) string {
 	if checkCmd == "" {
 		return ""
 	}
@@ -123,7 +126,13 @@ func probeSystemInstall(checkCmd string) string {
 	if len(parts) == 0 {
 		return ""
 	}
-	cmd := exec.Command(parts[0], parts[1:]...)
+	var cmd *exec.Cmd
+	if goos == "windows" {
+		// Pass cmd + /c + original argv as separate args, never as a single shell string.
+		cmd = exec.Command("cmd", append([]string{"/c"}, parts...)...)
+	} else {
+		cmd = exec.Command(parts[0], parts[1:]...)
+	}
 	out, err := cmd.Output()
 	if err != nil {
 		return ""
@@ -156,12 +165,7 @@ func GetStatus(t Tool, prefix, currentOS string) ToolStatus {
 
 	// If no receipt, probe system PATH via check_cmd
 	if !installed && t.CheckCmd != "" {
-		// On Windows, run via cmd /c so PATH-based tools resolve correctly
-		checkCmd := t.CheckCmd
-		if runtime.GOOS == "windows" {
-			checkCmd = "cmd /c " + checkCmd
-		}
-		if ver := probeSystemInstall(checkCmd); ver != "" {
+		if ver := probeSystemInstall(t.CheckCmd, runtime.GOOS); ver != "" {
 			installed = true
 			receipt = Receipt{
 				Exists:  true,

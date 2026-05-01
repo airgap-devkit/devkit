@@ -187,9 +187,12 @@ func openBrowser(url string) {
 
 	switch runtime.GOOS {
 	case "windows":
+		// Pass url as a discrete argument to Start-Process, never string-concatenated
+		// into the -Command string, so that single quotes or spaces in the URL cannot
+		// break out of the PowerShell quoting context.
 		if err := exec.Command("powershell.exe", "-NoProfile", "-Command",
-			"Start-Process", "'"+url+"'").Start(); err != nil {
-			_ = exec.Command("cmd", "/c", "start", url).Start()
+			"Start-Process", url).Start(); err != nil {
+			_ = exec.Command("cmd", "/c", "start", "", url).Start()
 		}
 	case "darwin":
 		_ = exec.Command("open", url).Start()
