@@ -1034,8 +1034,6 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
 	}
 
-	// Split into argv instead of passing to a shell interpreter so that shell
-	// metacharacters in check_cmd cannot cause command injection.
 	parts := strings.Fields(checkCmd)
 	if len(parts) == 0 {
 		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
@@ -1174,8 +1172,6 @@ func (s *Server) handleToolLogList(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleToolLogFile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	file := chi.URLParam(r, "file")
-	// Reject empty, dot-only, or filenames containing anything other than
-	// digits, dashes, and dots (matches the 20060102-150405.log format).
 	if file == "" || file == "." || file == ".." {
 		jsonErr(w, "invalid filename", 400)
 		return
@@ -1375,8 +1371,6 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
 	for _, f := range zr.File {
 		target := filepath.Join(destDir, filepath.Clean(f.Name))
-		// Verify the resolved target is strictly inside the destination directory.
-		// filepath.Rel catches any remaining ../.. sequences that Clean+Join may miss.
 		rel, err := filepath.Rel(safeRoot, target+string(os.PathSeparator))
 		if err != nil || strings.HasPrefix(rel, "..") || !strings.HasPrefix(target, safeRoot) {
 			continue

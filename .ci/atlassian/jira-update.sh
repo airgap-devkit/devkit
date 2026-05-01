@@ -167,8 +167,6 @@ echo "Comment posted to ${ISSUE_KEY}"
 if [[ -n "${DESIRED_TRANSITION}" ]]; then
     echo "Looking up transitions for ${ISSUE_KEY}..."
     TRANSITIONS_JSON="$(jira_api GET "/issue/${ISSUE_KEY}/transitions")"
-    # Pass DESIRED_TRANSITION via environment variable, not string interpolation,
-    # to prevent shell metacharacters in transition names from injecting Python code.
     TRANSITION_ID="$(echo "${TRANSITIONS_JSON}" | \
         DESIRED_TRANSITION="${DESIRED_TRANSITION}" python3 -c "
 import json, os, sys
