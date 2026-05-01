@@ -506,8 +506,15 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [6/12] Installing style-formatter (required)..."
-_run_bootstrap_no_prefix "style-formatter" \
-    "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/bootstrap.sh"
+_CLANG_FORMAT="${INSTALL_PREFIX_OVERRIDE}/toolchains/llvm/bin/clang-format"
+if [[ ! -x "${_CLANG_FORMAT}" ]] || ! "${_CLANG_FORMAT}" --version &>/dev/null; then
+    echo "  [--]  Skipped: style-formatter (clang-format not compatible with this system's runtime libraries)"
+    SKIPPED_TOOLS+=("style-formatter (runtime library incompatible)")
+else
+    _run_bootstrap_no_prefix "style-formatter" \
+        "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/bootstrap.sh"
+fi
+unset _CLANG_FORMAT
 
 # ---------------------------------------------------------------------------
 # Step 7: servy (optional, Windows only)
@@ -686,7 +693,7 @@ if [[ ${#FAILED_TOOLS[@]} -gt 0 ]]; then
     echo "  [!!] Some tools failed. Check logs in:"
     case "${OS}" in
         windows) echo "         %TEMP%\\airgap-cpp-devkit\\logs\\" ;;
-        linux)   echo "         /var/log/airgap-cpp-devkit/" >&2 ;;
+        linux)   echo "         /var/log/airgap-cpp-devkit/" ;;
     esac
     echo ""
     exit 1
