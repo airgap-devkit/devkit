@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.2.1] — 2026-05-01
+
+### Fixed
+- `Dockerfile.rhel8-test` — RHEL 8 CI `$(ldd --version | head -1)` command substitution was evaluated by the outer `/bin/sh` and the result embedded unquoted, causing bash to choke on the parentheses in `ldd (GNU libc) 2.28` with a syntax error; wrapped the substitution in escaped double quotes so the parentheses are safely quoted when bash receives the string
+- `.github/workflows/` — updated `actions/checkout` from v4.2.2 (Node.js 20, deprecated) to v4.3.1 (Node.js 24) across all three workflow files
+
+---
+
 ## [1.2.0] — 2026-05-01
 
 ### Added

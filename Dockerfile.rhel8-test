@@ -62,7 +62,7 @@ ENV DEVKIT_PROFILE=cpp-dev
 CMD bash -c "\
   echo '==> airgap-devkit RHEL 8 integration test' && \
   echo '    Profile: ${DEVKIT_PROFILE}' && \
-  echo '    glibc: '$(ldd --version | head -1) && \
+  echo \"    glibc: $(ldd --version | head -1)\" && \
   echo '' && \
   bash install-cli.sh --yes --profile \"\${DEVKIT_PROFILE}\" && \
   echo '' && \
