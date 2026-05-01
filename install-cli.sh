@@ -468,6 +468,9 @@ echo "  [2/12] Installing tools/toolchains/llvm (required)..."
 _run_bootstrap "toolchains/llvm" \
     "${REPO_ROOT}/tools/toolchains/llvm/setup.sh"
 
+# Make LLVM tools available for subsequent steps (e.g. style-formatter needs clang-format)
+export PATH="${INSTALL_PREFIX_OVERRIDE}/toolchains/llvm/bin:${PATH}"
+
 # ---------------------------------------------------------------------------
 # Step 3: cmake
 # ---------------------------------------------------------------------------
@@ -536,8 +539,13 @@ fi
 echo ""
 echo "  [9/12] VS Code extensions (optional)..."
 if [[ "${INSTALL_VSCODE}" == "true" ]]; then
-    _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
-        "${REPO_ROOT}/tools/dev-tools/vscode-extensions/setup.sh"
+    if ! command -v code &>/dev/null; then
+        echo "  [--]  Skipped: dev-tools/vscode-extensions (VS Code not installed)"
+        SKIPPED_TOOLS+=("dev-tools/vscode-extensions (code not found)")
+    else
+        _run_bootstrap_no_prefix "dev-tools/vscode-extensions" \
+            "${REPO_ROOT}/tools/dev-tools/vscode-extensions/setup.sh"
+    fi
 else
     echo "  [--]  Skipped: tools/dev-tools/vscode-extensions"
     SKIPPED_TOOLS+=("tools/dev-tools/vscode-extensions")
@@ -597,12 +605,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Generate env.sh
+# ---------------------------------------------------------------------------
+ENV_DIR="${INSTALL_PREFIX_OVERRIDE}"
+ENV_FILE="${ENV_DIR}/env.sh"
+mkdir -p "${ENV_DIR}"
+cat > "${ENV_FILE}" << 'ENVSH'
+#!/usr/bin/env bash
+# airgap-cpp-devkit — source this file or add to ~/.bashrc
+_devkit_prefix="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+for _d in "$_devkit_prefix"/*/bin "$_devkit_prefix"/*/*/bin; do
+    [[ -d "$_d" ]] && export PATH="$_d:$PATH"
+done
+unset _devkit_prefix _d
+ENVSH
+chmod +x "${ENV_FILE}"
+
+# ---------------------------------------------------------------------------
 # Wire env.sh into ~/.bashrc
 # ---------------------------------------------------------------------------
 echo ""
 echo "  Wiring env.sh into ~/.bashrc..."
-ENV_DIR="${INSTALL_PREFIX_OVERRIDE}"
-ENV_FILE="${ENV_DIR}/env.sh"
 BASHRC="${HOME}/.bashrc"
 
 if [[ -f "${ENV_FILE}" ]]; then

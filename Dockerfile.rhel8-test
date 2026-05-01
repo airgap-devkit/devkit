@@ -32,6 +32,8 @@ RUN dnf install -y \
       findutils \
       which \
       file \
+      make \
+      perl \
       sudo \
       shadow-utils \
     && dnf clean all
