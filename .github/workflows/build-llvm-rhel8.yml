@@ -188,12 +188,13 @@ jobs:
       - name: Commit and push prebuilt submodule
         working-directory: prebuilt
         run: |
+          git checkout main || git checkout -b main
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "toolchains/llvm/${LLVM_VERSION}/"
           git diff --cached --stat
           git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL 8 (glibc 2.28 / UBI 8.10)"
-          git push
+          git push origin main
 
       # ── Update submodule pointer in main repo ───────────────────────────────
       - name: Update submodule pointer
