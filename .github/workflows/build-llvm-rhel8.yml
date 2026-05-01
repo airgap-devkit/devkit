@@ -1,0 +1,207 @@
+name: Build LLVM tools for RHEL 8
+
+# Builds clang, clang++, clang-format, clang-tidy, lld, llvm-ar, and llvm-nm
+# inside a UBI 8.10 container (glibc 2.28) and commits the result to the
+# prebuilt/ submodule as 50 MB split parts — matching the existing archive format.
+#
+# Run this manually once per LLVM version bump whenever you update VERSION in
+# tools/toolchains/llvm/setup.sh.
+#
+# Requirements:
+#   PREBUILT_TOKEN secret — GitHub PAT (classic) with repo scope on
+#   airgap-devkit/prebuilt.  Create at:
+#   Settings → Secrets and variables → Actions → New repository secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      llvm_version:
+        description: 'LLVM version — must match VERSION in tools/toolchains/llvm/setup.sh'
+        required: true
+        default: '22.1.4'
+
+jobs:
+  build:
+    name: Build LLVM ${{ inputs.llvm_version }} (UBI 8.10 / glibc 2.28)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      LLVM_VERSION: ${{ inputs.llvm_version }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Init prebuilt submodule
+        run: git submodule update --init prebuilt
+
+      - name: Wire HTTPS credentials into prebuilt remote
+        run: |
+          git -C prebuilt remote set-url origin \
+            "https://x-access-token:${{ secrets.PREBUILT_TOKEN }}@github.com/airgap-devkit/prebuilt.git"
+
+      # ── Build ───────────────────────────────────────────────────────────────
+      # Everything below runs inside the UBI 8.10 container via docker run so
+      # the resulting binaries are linked against glibc 2.28 and GCC 8's
+      # libstdc++, making them compatible with any RHEL 8+ system.
+      #
+      # We use BUILD_SHARED_LIBS=OFF so each tool binary is self-contained —
+      # no libLLVM.so shipped, no RPATH complexity. The only runtime deps are
+      # the system libraries already present on RHEL 8 (glibc, libstdc++, zlib).
+      #
+      # cmake 3.11 (UBI 8 default) is too old for LLVM 17+, so we download a
+      # modern cmake binary from cmake.org and install it to /usr/local.
+      #
+      # Build targets only what the devkit uses:
+      #   clang  clang-format  clang-tidy  lld  llvm-ar  llvm-nm
+      # Estimated time: 40-70 minutes on a 2-CPU GitHub Actions runner.
+      - name: Build LLVM inside UBI 8.10 container
+        run: |
+          mkdir -p /tmp/llvm-output
+          docker run --rm \
+            --memory=6g \
+            --cpus="$(nproc)" \
+            -e LLVM_VERSION \
+            -v /tmp/llvm-output:/output \
+            registry.access.redhat.com/ubi8/ubi:8.10 \
+            bash -euo pipefail -c '
+              echo "==> System : $(cat /etc/redhat-release)"
+              echo "==> glibc  : $(ldd --version | head -1)"
+
+              # ── system packages ────────────────────────────────────────────
+              dnf install -y --nodocs \
+                gcc gcc-c++ \
+                make \
+                python3 \
+                git \
+                xz \
+                curl \
+                zlib-devel \
+                ncurses-devel
+              echo "==> GCC    : $(gcc --version | head -1)"
+
+              # Use ninja-build from AppStream if available (faster than make)
+              dnf install -y ninja-build 2>/dev/null \
+                && GENERATOR="Ninja" BUILD_CMD="ninja -j$(nproc)" \
+                || { GENERATOR="Unix Makefiles" BUILD_CMD="make -j$(nproc)"; }
+              echo "==> Build  : ${GENERATOR}"
+
+              # ── modern cmake ───────────────────────────────────────────────
+              # UBI 8 ships cmake 3.11 which is too old for LLVM 17+.
+              CMAKE_VER=3.28.6
+              echo "==> Installing cmake ${CMAKE_VER}..."
+              curl -fsSL \
+                "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.sh" \
+                -o /tmp/cmake.sh
+              bash /tmp/cmake.sh --skip-license --prefix=/usr/local --exclude-subdir
+              echo "==> cmake  : $(cmake --version | head -1)"
+
+              # ── LLVM source ────────────────────────────────────────────────
+              echo "==> Downloading llvm-project-${LLVM_VERSION}.src.tar.xz..."
+              curl -fL --retry 3 \
+                "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz" \
+                -o /tmp/llvm-src.tar.xz
+              echo "==> Extracting..."
+              mkdir -p /tmp/llvm-src
+              tar -xJf /tmp/llvm-src.tar.xz --strip-components=1 -C /tmp/llvm-src
+
+              # ── configure ─────────────────────────────────────────────────
+              mkdir -p /tmp/llvm-build
+              cd /tmp/llvm-build
+              echo "==> Configuring..."
+              cmake -G "${GENERATOR}" \
+                -DCMAKE_BUILD_TYPE=MinSizeRel \
+                -DCMAKE_INSTALL_PREFIX=/tmp/llvm-install \
+                -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld" \
+                -DLLVM_TARGETS_TO_BUILD="X86" \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DLLVM_INCLUDE_TESTS=OFF \
+                -DLLVM_INCLUDE_EXAMPLES=OFF \
+                -DLLVM_INCLUDE_BENCHMARKS=OFF \
+                -DLLVM_BUILD_DOCS=OFF \
+                -DLLVM_ENABLE_DOXYGEN=OFF \
+                -DLLVM_ENABLE_SPHINX=OFF \
+                -DCLANG_INCLUDE_DOCS=OFF \
+                -DCLANG_INCLUDE_TESTS=OFF \
+                /tmp/llvm-src/llvm
+
+              # ── build ──────────────────────────────────────────────────────
+              echo "==> Building (40-70 minutes on a 2-CPU runner)..."
+              ${BUILD_CMD} \
+                clang \
+                clang-format \
+                clang-tidy \
+                lld \
+                llvm-ar \
+                llvm-nm
+
+              # ── stage install ─────────────────────────────────────────────
+              mkdir -p /tmp/llvm-install/bin
+              for tool in clang clang++ clang-format clang-tidy lld llvm-ar llvm-nm; do
+                [[ -f "bin/${tool}" ]] && cp "bin/${tool}" /tmp/llvm-install/bin/
+              done
+              # clang++ is a symlink to clang in the LLVM driver model
+              [[ ! -f /tmp/llvm-install/bin/clang++ ]] \
+                && ln -sf clang /tmp/llvm-install/bin/clang++
+
+              echo "==> Stripping binaries..."
+              strip /tmp/llvm-install/bin/* 2>/dev/null || true
+
+              echo "==> Binary sizes after strip:"
+              ls -lh /tmp/llvm-install/bin/
+
+              # ── verify ────────────────────────────────────────────────────
+              echo "==> Verifying binaries execute on glibc 2.28..."
+              /tmp/llvm-install/bin/clang-format --version
+              /tmp/llvm-install/bin/clang         --version
+
+              # ── package ───────────────────────────────────────────────────
+              echo "==> Packaging..."
+              cd /tmp/llvm-install
+              tar -cJf "/output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz" \
+                --transform "s|^\.|LLVM-${LLVM_VERSION}-Linux-X64-rhel8|" \
+                .
+              echo "==> Archive size: $(du -sh /output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz | cut -f1)"
+            '
+
+      # ── Split ───────────────────────────────────────────────────────────────
+      # Match the existing 50 MB / alphabetic suffix convention used by the
+      # other LLVM archives in prebuilt/toolchains/llvm/<version>/.
+      - name: Split archive into 50 MB parts
+        run: |
+          DEST="prebuilt/toolchains/llvm/${LLVM_VERSION}"
+          mkdir -p "${DEST}"
+          rm -f "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"*
+          split -b 50m \
+            /tmp/llvm-output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz \
+            "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"
+          echo "Parts:"
+          ls -lh "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"*
+
+      # ── Commit to prebuilt/ ─────────────────────────────────────────────────
+      - name: Commit and push prebuilt submodule
+        working-directory: prebuilt
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "toolchains/llvm/${LLVM_VERSION}/"
+          git diff --cached --stat
+          git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL 8 (glibc 2.28 / UBI 8.10)"
+          git push
+
+      # ── Update submodule pointer in main repo ───────────────────────────────
+      - name: Update submodule pointer
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add prebuilt
+          git diff --cached --stat
+          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL 8 build" \
+            || echo "Submodule pointer unchanged — nothing to commit"
+          git push
