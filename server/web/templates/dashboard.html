@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{.Config.DevkitName}} — Dashboard</title>
-<script>
+<script nonce="{{nonce}}">
 // Apply saved theme before CSS loads to prevent flash
 (function() {
   var t = localStorage.getItem('devkit-theme') || 'light';
@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" href="/static/img/airgap-devkit-favicon.png">
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/htmx.min.js" defer></script>
-<script>
+<script nonce="{{nonce}}">
 // ── Theme toggle ──
 function toggleTheme() {
   var html = document.documentElement;
@@ -1761,7 +1761,7 @@ function resetToPrebuiltDefaults() {
   });
 }
 </script>
-<script>
+<script nonce="{{nonce}}">
 // Pre-load all tool data so showToolDetail can open modals instantly (no fetch-then-show flash)
 window._toolCache = {};
 ({{toJSON .Tools}} || []).forEach(function(t) { window._toolCache[t.id] = t; });
@@ -2751,7 +2751,7 @@ window._toolCache = {};
   </div>
 </div>
 
-<script>
+<script nonce="{{nonce}}">
 // ── Friendly check status messages ──
 function friendlyCheckOutput(raw) {
   if (!raw) return raw;

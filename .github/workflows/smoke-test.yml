@@ -69,6 +69,10 @@ jobs:
         shell: bash
         run: |
           PROFILE="${{ github.event.inputs.profile || 'minimal' }}"
+          case "$PROFILE" in
+            minimal|cpp-dev|devops|full) ;;
+            *) echo "Invalid profile: $PROFILE"; exit 1 ;;
+          esac
           echo "Installing profile: $PROFILE"
           bash install-cli.sh --yes --profile "$PROFILE"
 

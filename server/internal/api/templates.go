@@ -11,10 +11,10 @@ import (
 	"golang.org/x/text/language"
 )
 
-var funcMap = template.FuncMap{
-	"lower": strings.ToLower,
-	"title": cases.Title(language.English).String,
-	"join":  strings.Join,
+var baseFuncMap = template.FuncMap{
+	"lower":      strings.ToLower,
+	"title":      cases.Title(language.English).String,
+	"join":       strings.Join,
 	"hasPrefix":  strings.HasPrefix,
 	"trimPrefix": strings.TrimPrefix,
 	"toJSON": func(v any) template.JS {
@@ -27,8 +27,16 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func renderTemplate(webFS fs.FS, name string, w http.ResponseWriter, data any) error {
-	tmpl, err := template.New(name).Funcs(funcMap).ParseFS(webFS, "templates/"+name)
+func renderTemplate(webFS fs.FS, name string, w http.ResponseWriter, r *http.Request, data any) error {
+	nonce := nonceFromCtx(r.Context())
+	fm := template.FuncMap{}
+	for k, v := range baseFuncMap {
+		fm[k] = v
+	}
+	// Expose nonce as a template function so inline <script nonce="{{nonce}}"> works.
+	fm["nonce"] = func() string { return nonce }
+
+	tmpl, err := template.New(name).Funcs(fm).ParseFS(webFS, "templates/"+name)
 	if err != nil {
 		return err
 	}

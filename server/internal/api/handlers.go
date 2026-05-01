@@ -3,6 +3,9 @@ package api
 import (
 	"archive/zip"
 	"bytes"
+	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +27,25 @@ import (
 	"github.com/nimzshafie/airgap-devkit/server/internal/team"
 	"github.com/nimzshafie/airgap-devkit/server/internal/tools"
 )
+
+type ctxKey int
+
+const nonceKey ctxKey = iota
+
+func generateNonce() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "fallback-nonce"
+	}
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+func nonceFromCtx(ctx context.Context) string {
+	if v, ok := ctx.Value(nonceKey).(string); ok {
+		return v
+	}
+	return ""
+}
 
 type Server struct {
 	RepoRoot    string
@@ -122,11 +144,15 @@ func (s *Server) Token() string { return s.token }
 
 func responseHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nonce := generateNonce()
+		ctx := context.WithValue(r.Context(), nonceKey, nonce)
+		r = r.WithContext(ctx)
+
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		w.Header().Set("Content-Security-Policy",
-			"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
+			"default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
 		next.ServeHTTP(w, r)
 	})
 }
@@ -601,7 +627,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"AppVersion":     AppVersion,
 	}
 
-	if err := renderTemplate(s.webFS, "dashboard.html", w, data); err != nil {
+	if err := renderTemplate(s.webFS, "dashboard.html", w, r, data); err != nil {
 		http.Error(w, "template error: "+err.Error(), 500)
 	}
 }
@@ -611,7 +637,7 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 		"Config": s.Config,
 		"OS":     s.OS,
 	}
-	if err := renderTemplate(s.webFS, "logs.html", w, data); err != nil {
+	if err := renderTemplate(s.webFS, "logs.html", w, r, data); err != nil {
 		http.Error(w, "template error: "+err.Error(), 500)
 	}
 }
@@ -892,7 +918,7 @@ func cleanupShellRc(installDir string) string {
 			}
 		}
 		if removed > 0 {
-			_ = os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o644)
+			_ = os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o600)
 			msgs = append(msgs, fmt.Sprintf("Removed %d PATH line(s) from ~/%s", removed, name))
 		}
 	}
@@ -1008,7 +1034,13 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
 	}
 
-	cmd := exec.Command("bash", "-c", checkCmd)
+	// Split into argv instead of passing to a shell interpreter so that shell
+	// metacharacters in check_cmd cannot cause command injection.
+	parts := strings.Fields(checkCmd)
+	if len(parts) == 0 {
+		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
+	}
+	cmd := exec.Command(parts[0], parts[1:]...)
 	if env := s.checkEnv(t); env != nil {
 		cmd.Env = env
 	}
@@ -1142,7 +1174,12 @@ func (s *Server) handleToolLogList(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleToolLogFile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	file := chi.URLParam(r, "file")
-	// Sanitise: only allow safe filenames (digits, dash, .log)
+	// Reject empty, dot-only, or filenames containing anything other than
+	// digits, dashes, and dots (matches the 20060102-150405.log format).
+	if file == "" || file == "." || file == ".." {
+		jsonErr(w, "invalid filename", 400)
+		return
+	}
 	for _, c := range file {
 		if !((c >= '0' && c <= '9') || c == '-' || c == '.') {
 			jsonErr(w, "invalid filename", 400)
@@ -1338,7 +1375,10 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
 	for _, f := range zr.File {
 		target := filepath.Join(destDir, filepath.Clean(f.Name))
-		if !strings.HasPrefix(target, safeRoot) {
+		// Verify the resolved target is strictly inside the destination directory.
+		// filepath.Rel catches any remaining ../.. sequences that Clean+Join may miss.
+		rel, err := filepath.Rel(safeRoot, target+string(os.PathSeparator))
+		if err != nil || strings.HasPrefix(rel, "..") || !strings.HasPrefix(target, safeRoot) {
 			continue
 		}
 		if f.FileInfo().IsDir() {
@@ -1486,7 +1526,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 	type setupData struct {
 		Config devconfig.Config
 	}
-	if err := renderTemplate(s.webFS, "setup.html", w, setupData{Config: s.Config}); err != nil {
+	if err := renderTemplate(s.webFS, "setup.html", w, r, setupData{Config: s.Config}); err != nil {
 		http.Error(w, err.Error(), 500)
 	}
 }
