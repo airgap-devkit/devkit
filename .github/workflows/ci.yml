@@ -59,6 +59,11 @@ jobs:
         if: runner.os == 'Linux'
         run: chmod +x ${{ matrix.binary }}
 
+      - name: Write CI devkit config
+        shell: bash
+        run: |
+          echo '{"setup_complete": true}' > devkit.config.json
+
       - name: Start server
         shell: bash
         run: |
