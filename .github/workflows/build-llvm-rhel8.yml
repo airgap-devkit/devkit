@@ -235,6 +235,7 @@ jobs:
           echo "Pointing prebuilt submodule → ${PREBUILT_SHA}"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git update-index --cacheinfo "160000,${PREBUILT_SHA},prebuilt"
           git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL 8 build"
           git push
