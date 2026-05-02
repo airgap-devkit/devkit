@@ -1,0 +1,6 @@
+# Default owner for all files
+* @nimzshafie
+
+# CI scripts and workflows — require explicit review
+ci/                            @nimzshafie
+.github/workflows/             @nimzshafie

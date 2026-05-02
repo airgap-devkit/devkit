@@ -13,18 +13,18 @@ on:
   push:
     branches: [main]
     paths:
-      - Dockerfile.rhel8-test
-      - install-cli.sh
-      - launch.sh
+      - ci/Dockerfile.rhel8-test
+      - scripts/install-cli.sh
+      - scripts/launch.sh
       - tests/run-tests.sh
       - scripts/install-mode.sh
       - tools/**
   pull_request:
     branches: [main]
     paths:
-      - Dockerfile.rhel8-test
-      - install-cli.sh
-      - launch.sh
+      - ci/Dockerfile.rhel8-test
+      - scripts/install-cli.sh
+      - scripts/launch.sh
       - tests/run-tests.sh
       - scripts/install-mode.sh
       - tools/**
@@ -68,7 +68,7 @@ jobs:
         run: git submodule update --init tools
 
       - name: Build RHEL 8 test image
-        run: docker build -f Dockerfile.rhel8-test -t airgap-devkit-rhel8 .
+        run: docker build -f ci/Dockerfile.rhel8-test -t airgap-devkit-rhel8 .
 
       - name: Run install + smoke tests
         run: |

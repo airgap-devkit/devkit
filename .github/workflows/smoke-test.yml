@@ -76,7 +76,7 @@ jobs:
             *) echo "Invalid profile: $PROFILE"; exit 1 ;;
           esac
           echo "Installing profile: $PROFILE"
-          bash install-cli.sh --yes --profile "$PROFILE"
+          bash scripts/install-cli.sh --yes --profile "$PROFILE"
 
       # -- Smoke tests ──────────────────────────────────────────────────────
       - name: Run smoke tests

@@ -20,16 +20,14 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
           persist-credentials: false
-
-      - name: Init submodules (tools + prebuilt only)
-        run: git submodule update --init tools prebuilt
-
-      - name: Run validate-manifests.sh
-        run: bash tests/validate-manifests.sh --verbose
+      - run: git submodule update --init tools prebuilt
+      - name: Lint
+        run: bash ci/lint.sh
+      - name: Validate
+        run: bash ci/test.sh
 
   # ── Job 2: Server binary health check ────────────────────────────────────
   server-health:
@@ -48,74 +46,13 @@ jobs:
             binary: prebuilt/bin/devkit-server-linux-amd64
           - os: windows-latest
             binary: prebuilt/bin/devkit-server-windows-amd64.exe
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
           persist-credentials: false
-
-      - name: Init submodules (tools + prebuilt)
+      - run: git submodule update --init tools prebuilt
+      - name: Smoke test
         shell: bash
-        run: git submodule update --init tools prebuilt
-
-      - name: Make binary executable (Linux)
-        if: runner.os == 'Linux'
-        run: chmod +x ${{ matrix.binary }}
-
-      - name: Write CI devkit config
-        shell: bash
-        run: |
-          echo '{"setup_complete": true}' > devkit.config.json
-
-      - name: Start server
-        shell: bash
-        run: |
-          ./${{ matrix.binary }} \
-            --tools tools \
-            --prebuilt prebuilt \
-            --port 8080 \
-            --no-browser &
-          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
-
-      - name: Wait for server to be ready
-        shell: bash
-        run: |
-          for i in $(seq 1 15); do
-            curl -sf http://127.0.0.1:8080/health && echo "Server ready." && exit 0
-            sleep 1
-          done
-          echo "ERROR: server did not become ready within 15 seconds" >&2
-          exit 1
-
-      - name: Read auth token
-        shell: bash
-        run: |
-          TOKEN=$(cat .devkit-token 2>/dev/null || echo "")
-          echo "DEVKIT_TOKEN=$TOKEN" >> "$GITHUB_ENV"
-
-      - name: GET /health
-        shell: bash
-        run: curl -sf http://127.0.0.1:8080/health
-
-      - name: GET /api/tools -- verify tool discovery
-        shell: bash
-        run: |
-          resp=$(curl -sf -H "X-DevKit-Token: $DEVKIT_TOKEN" http://127.0.0.1:8080/api/tools)
-          count=$(echo "$resp" | python3 -c "
-          import json, sys
-          tools = json.load(sys.stdin)
-          print(len(tools))
-          ")
-          echo "Discovered $count tools"
-          [ "$count" -gt 0 ] || { echo "ERROR: /api/tools returned no tools"; exit 1; }
-
-      - name: GET /api/profiles -- verify profiles endpoint
-        shell: bash
-        run: |
-          curl -sf -H "X-DevKit-Token: $DEVKIT_TOKEN" http://127.0.0.1:8080/api/profiles
-
-      - name: Stop server
-        if: always()
-        shell: bash
-        run: kill "$SERVER_PID" 2>/dev/null || true
+        env:
+          DEVKIT_BINARY: ${{ matrix.binary }}
+        run: bash ci/smoke.sh

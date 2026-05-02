@@ -5,7 +5,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.2.0** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.0** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -25,7 +25,7 @@ git submodule update --init --recursive
 
 **Windows (Git Bash) and Linux:**
 ```bash
-bash launch.sh
+bash scripts/launch.sh
 ```
 
 The script selects the correct pre-compiled binary for your platform, starts the
@@ -49,24 +49,24 @@ override it for a single session.
 2. Or click **Install** next to any individual tool.
 3. Custom profiles can be created and saved from the Settings panel.
 
-> **No binary?** Run `bash launch.sh --rebuild` to compile the server binary from
-> the vendored Go source (requires Go 1.21+). Then rerun `bash launch.sh`.
+> **No binary?** Run `bash scripts/launch.sh --rebuild` to compile the server binary from
+> the vendored Go source (requires Go 1.21+). Then rerun `bash scripts/launch.sh`.
 >
-> **No UI needed?** Use the CLI directly: `bash install-cli.sh`
-> For headless/CI installs: `bash install-cli.sh --yes --profile cpp-dev`
+> **No UI needed?** Use the CLI directly: `bash scripts/install-cli.sh`
+> For headless/CI installs: `bash scripts/install-cli.sh --yes --profile cpp-dev`
 
 ---
 
-## launch.sh Flags
+## scripts/launch.sh Flags
 
 ```bash
-bash launch.sh                      # launch UI and open browser
-bash launch.sh --port 9090          # custom port (one session only)
-bash launch.sh --host 0.0.0.0       # bind to all interfaces (LAN / remote access)
-bash launch.sh --no-browser         # start server, don't open browser
-bash launch.sh --tls                # enable HTTPS with a self-signed certificate
-bash launch.sh --cli                # skip UI, run install-cli.sh directly
-bash launch.sh --rebuild            # rebuild binary from source, then launch
+bash scripts/launch.sh                      # launch UI and open browser
+bash scripts/launch.sh --port 9090          # custom port (one session only)
+bash scripts/launch.sh --host 0.0.0.0       # bind to all interfaces (LAN / remote access)
+bash scripts/launch.sh --no-browser         # start server, don't open browser
+bash scripts/launch.sh --tls                # enable HTTPS with a self-signed certificate
+bash scripts/launch.sh --cli                # skip UI, run scripts/install-cli.sh directly
+bash scripts/launch.sh --rebuild            # rebuild binary from source, then launch
 ```
 
 ---
@@ -163,14 +163,14 @@ DELETE /api/layout                   — reset to defaults
 
 ## CI/CD Integration
 
-Pipeline files ship in the repo root and are configured via `.ci/`.
+Pipeline files ship in the repo root and delegate to `ci/`.
 
 | File | Platform |
 |------|----------|
 | `Jenkinsfile` | Jenkins |
 | `.gitlab-ci.yml` | GitLab CI/CD |
-| `.ci/atlassian/jira-update.sh` | Jira issue updater |
-| `.ci/atlassian/confluence-update.sh` | Confluence page writer |
+| `ci/atlassian/jira-update.sh` | Jira issue updater |
+| `ci/atlassian/confluence-update.sh` | Confluence page writer |
 
 Both pipelines implement the same logical stages:
 
@@ -182,7 +182,7 @@ Validate → Configure → Install → Server Operations → Smoke Tests → Atl
 |-------|-------------|
 | **Validate** | Checks all `devkit.json` and `manifest.json` files for syntax and required fields |
 | **Configure** | Patches `devkit.config.json` with pipeline parameters (team, profile, port) |
-| **Install** | Runs `install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
+| **Install** | Runs `scripts/install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
 | **Server Operations** | Starts the server; reads token from `.devkit-token`; pushes team identity; handles package upload, config import/export |
 | **Smoke Tests** | Runs `tests/run-tests.sh` to verify all installed tools respond |
 | **Atlassian** | Posts build result to a Jira issue and overwrites a Confluence status page |
@@ -220,8 +220,8 @@ curl -X POST "https://gitlab.example.com/api/v4/projects/PROJECT_ID/trigger/pipe
   --form "variables[PROFILE]=cpp-dev" --form "variables[TEAM_NAME]=Backend Team"
 ```
 
-See [`.ci/README.md`](.ci/README.md) for full setup instructions and
-[`.ci/atlassian/README.md`](.ci/atlassian/README.md) for Atlassian configuration.
+See [`ci/README.md`](ci/README.md) for full setup instructions and
+[`ci/atlassian/README.md`](ci/atlassian/README.md) for Atlassian configuration.
 
 ---
 
@@ -233,25 +233,25 @@ See [`.ci/README.md`](.ci/README.md) for full setup instructions and
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
-bash launch.sh          # opens DevKit Manager
-# or: bash install-cli.sh --yes --profile cpp-dev
+bash scripts/launch.sh          # opens DevKit Manager
+# or: bash scripts/install-cli.sh --yes --profile cpp-dev
 ```
 
 ### Worst case — Binaries not permitted, source only
 
-Skip the submodule. Both the DevKit Manager and `install-cli.sh` detect that
+Skip the submodule. Both the DevKit Manager and `scripts/install-cli.sh` detect that
 `prebuilt/` is absent and fall back to building all tools from vendored source.
 
 ```bash
 git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
-bash launch.sh          # opens DevKit Manager
-# or: bash install-cli.sh
+bash scripts/launch.sh          # opens DevKit Manager
+# or: bash scripts/install-cli.sh
 ```
 
 > **Server binary** — if `prebuilt/bin/` is absent, run
-> `bash launch.sh --rebuild` once to compile the Go server from `server/`.
+> `bash scripts/launch.sh --rebuild` once to compile the Go server from `server/`.
 
 ---
 
@@ -320,18 +320,18 @@ cd airgap-cpp-devkit
 git submodule update --init --recursive
 
 # Launch DevKit Manager (uses prebuilt binary)
-bash launch.sh
+bash scripts/launch.sh
 
 # Or rebuild the binary from source first
-bash launch.sh --rebuild
+bash scripts/launch.sh --rebuild
 ```
 
 ### Useful commands
 
 ```bash
-bash -n <script.sh> && echo "OK"          # syntax-check before running
-bash launch.sh --no-browser               # dev mode, logs in terminal
-bash launch.sh --tls --no-browser         # HTTPS mode
+bash -n <script.sh> && echo "OK"                        # syntax-check before running
+bash scripts/launch.sh --no-browser                     # dev mode, logs in terminal
+bash scripts/launch.sh --tls --no-browser               # HTTPS mode
 
 # Health check (no token required)
 curl -s http://127.0.0.1:9090/health
@@ -341,10 +341,10 @@ TOKEN=$(cat .devkit-token)
 curl -s -H "X-DevKit-Token: $TOKEN" http://127.0.0.1:9090/api/tools
 
 bash tests/run-tests.sh --verbose
-bash install-cli.sh --yes --profile cpp-dev
+bash scripts/install-cli.sh --yes --profile cpp-dev
 bash scripts/generate-sbom.sh
-bash scripts/status.sh                    # print install status of all tools
-bash scripts/pkg.sh list                  # list all bundled tools and versions
+bash scripts/status.sh                                   # print install status of all tools
+bash scripts/pkg.sh list                                 # list all bundled tools and versions
 bash scripts/pkg.sh set-version cmake 3.31.0
 ```
 
@@ -422,91 +422,98 @@ Done. Every subsequent `git commit` enforces LLVM style.
 ```
 airgap-cpp-devkit/
 +-- README.md                              <- you are here
-+-- TOOLS.md                               <- single-page tool inventory
++-- CHANGELOG.md
++-- CONTRIBUTING.md
++-- CODE_OF_CONDUCT.md
++-- SECURITY.md
++-- SUPPORT.md
++-- LICENSE
 +-- sbom.spdx.json                         <- root aggregate SBOM (SPDX 2.3)
-+-- devkit.config.json                     <- server/UI configuration (team, port, theme)
 +-- layout.json                            <- dashboard category/tool ordering
-+-- launch.sh                              <- PRIMARY entry point (starts Go server)
-+-- install-cli.sh                         <- CLI installer / fallback (Bash only)
-+-- uninstall.sh                           <- removes all installed tools
-+-- Jenkinsfile                            <- Jenkins declarative pipeline
-+-- .gitlab-ci.yml                         <- GitLab CI/CD pipeline
++-- Jenkinsfile                            <- Jenkins declarative pipeline (thin)
++-- .gitlab-ci.yml                         <- GitLab CI/CD pipeline (thin)
 +-- .gitmodules                            <- submodule pointers (prebuilt, tools)
+|
++-- ci/                                    <- CI/CD scripts and platform configs
+|   +-- build.sh                           <- build the Go server binary
+|   +-- test.sh                            <- run manifest validation suite
+|   +-- lint.sh                            <- syntax-check all shell scripts
+|   +-- release.sh                         <- thin wrapper around scripts/release.sh
+|   +-- smoke.sh                           <- server health check (used by ci.yml)
+|   +-- Dockerfile.rhel8-test              <- RHEL 8 / UBI 8.10 integration test image
+|   +-- atlassian/
+|   |   +-- jira-update.sh                 <- post build result to Jira issue
+|   |   +-- confluence-update.sh           <- overwrite Confluence status page
+|   |   +-- atlassian.config.json          <- config template (no secrets committed)
+|   +-- jenkins/                           <- Jenkins setup docs
+|   +-- gitlab/                            <- GitLab setup docs
+|
++-- .github/
+|   +-- workflows/
+|   |   +-- ci.yml                         <- thin; calls ci/lint.sh, ci/test.sh, ci/smoke.sh
+|   |   +-- smoke-test.yml                 <- weekly + manual install regression
+|   |   +-- rhel8-test.yml                 <- RHEL 8 integration test
+|   |   +-- build-llvm-rhel8.yml           <- builds Clang/LLVM for RHEL 8
+|   +-- ISSUE_TEMPLATE/
+|   +-- PULL_REQUEST_TEMPLATE.md
+|   +-- CODEOWNERS
+|   +-- dependabot.yml
+|
++-- docs/
+|   +-- assets/                            <- screenshots and diagrams
+|   +-- TOOLS.md                           <- single-page tool inventory
+|   +-- manual-install.md                  <- manual install guide
+|
++-- examples/                              <- runnable config examples
+|
++-- scripts/
+|   +-- launch.sh                          <- PRIMARY entry point (starts Go server)
+|   +-- install-cli.sh                     <- CLI installer / fallback (Bash only)
+|   +-- uninstall.sh                       <- removes all installed tools
+|   +-- build-server.sh                    <- builds Go binary from source
+|   +-- release.sh                         <- atomic version bump + build + PyPI upload
+|   +-- install-mode.sh                    <- shared admin/user detection library
+|   +-- setup-prebuilt-submodule.sh        <- initialize prebuilt submodule
+|   +-- generate-sbom.sh                   <- regenerates all SBOM timestamps
+|   +-- fetch-vscode-extensions.py         <- mirrors .vsix files for offline use
+|   +-- status.sh                          <- prints install status of all tools
+|   +-- pkg.sh                             <- package management helper
+|   +-- manual-install.sh                  <- CLI fallback for manual installs
+|
++-- tests/
+|   +-- run-tests.sh                       <- post-install smoke tests
+|   +-- validate-manifests.sh              <- validates devkit.json/manifest.json syntax
+|   +-- check-installed-tools.sh           <- tests check_cmd for installed tools
 |
 +-- server/                                <- Go server source (DevKit Manager)
 |   +-- main.go
 |   +-- go.mod / go.sum
 |   +-- internal/
 |   |   +-- api/                           <- HTTP handlers, routes, SSE, bundling
-|   |   |   +-- auth.go                    <- session token middleware and bootstrap handler
+|   |   |   +-- auth.go                    <- session token middleware
 |   |   |   +-- version.go                 <- AppVersion constant
 |   |   +-- config/                        <- devkit.config.json loader
 |   |   +-- tools/                         <- tool discovery and status
 |   +-- web/                               <- embedded web UI (templates, assets)
 |
-+-- .ci/                                   <- CI/CD configuration and scripts
-|   +-- README.md
-|   +-- config.json                        <- shared CI defaults (profiles, Atlassian, etc.)
-|   +-- jenkins/                           <- Jenkins setup docs
-|   +-- gitlab/                            <- GitLab setup docs
-|   +-- atlassian/
-|       +-- jira-update.sh                 <- post build result to Jira issue
-|       +-- confluence-update.sh           <- overwrite Confluence status page
-|       +-- atlassian.config.json          <- config template (no secrets committed)
-|
-+-- scripts/
-|   +-- install-mode.sh                    <- shared admin/user detection library
-|   +-- setup-prebuilt-submodule.sh        <- initialize prebuilt submodule
-|   +-- generate-sbom.sh                   <- regenerates all SBOM timestamps
-|   +-- fetch-vscode-extensions.py         <- mirrors .vsix files for offline use
-|   +-- status.sh                          <- prints install status of all tools
-|   +-- pkg.sh                             <- package management helper (list, add, remove, set-version)
-|
-+-- tests/
-|   +-- run-tests.sh                       <- post-install smoke tests
-|
 +-- packages/
+|   +-- python/                            <- PyPI packaging wrapper
+|   |   +-- pyproject.toml
+|   |   +-- src/airgap_devkit/
 |   +-- pip-packages/                      <- vendored pip wheels
-|
-+-- user-packages/                         <- user-managed packages (not tracked by git)
 |
 +-- prebuilt/                              <- SUBMODULE (separate repo, optional)
 |   +-- bin/                               <- devkit-server binaries (Linux + Windows)
-|   +-- build-tools/cmake/                 <- CMake 4.3.1
-|   +-- dev-tools/conan/                   <- Conan 2.27.1
-|   +-- dev-tools/filezilla/               <- FileZilla 3.70.4
-|   +-- dev-tools/notepadpp/               <- Notepad++ 8.9.3
-|   +-- dev-tools/putty/                   <- PuTTY 0.83
-|   +-- dev-tools/servy/                   <- Servy 7.9
-|   +-- dev-tools/sourcetree/              <- SourceTree 3.4.30
-|   +-- frameworks/grpc/windows/1.80.0/    <- gRPC prebuilt
-|   +-- languages/dotnet/10.0.202/         <- .NET 10 SDK
 |   +-- languages/python/                  <- Python 3.14.4
-|   +-- toolchains/clang/mingw/            <- llvm-mingw 20260407
-|   +-- toolchains/clang/rhel8/            <- Clang 20.1.8 RHEL 8 RPMs
-|   +-- toolchains/clang/source-build/     <- clang-format, clang-tidy, Ninja binaries
-|   +-- toolchains/gcc/linux/              <- gcc-toolset-15 RHEL 8 RPMs
-|   +-- toolchains/gcc/windows/            <- WinLibs GCC 15.2.0
+|   +-- toolchains/                        <- Clang, GCC, LLVM binaries
 |
 +-- tools/                                 <- SUBMODULE (airgap-devkit/tools)
     +-- build-tools/cmake/
     +-- build-tools/lcov/
-    +-- dev-tools/conan/
-    +-- dev-tools/filezilla/
-    +-- dev-tools/gdb/
-    +-- dev-tools/git-bundle/
-    +-- dev-tools/notepadpp/
-    +-- dev-tools/putty/
-    +-- dev-tools/servy/
-    +-- dev-tools/sourcetree/
-    +-- dev-tools/vscode-extensions/
+    +-- dev-tools/
     +-- frameworks/grpc/
-    +-- languages/dotnet/
-    +-- languages/python/
-    +-- toolchains/clang/source-build/
-    +-- toolchains/clang/style-formatter/
-    +-- toolchains/gcc/linux/
-    +-- toolchains/gcc/windows/
+    +-- languages/
+    +-- toolchains/
 ```
 
 ---
