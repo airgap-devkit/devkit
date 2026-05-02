@@ -1,0 +1,92 @@
+name: Sign & Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: 'Apply code signatures to prebuilt binaries'
+        type: boolean
+        default: true
+      scan:
+        description: 'Run VirusTotal malware scan'
+        type: boolean
+        default: true
+
+jobs:
+  sign-and-scan:
+    name: Sign binaries & VirusTotal scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - run: git submodule update --init prebuilt
+
+      # ── Install signing tools ───────────────────────────────────────────────
+      - name: Install osslsigncode
+        if: ${{ inputs.sign }}
+        run: sudo apt-get install -y --no-install-recommends osslsigncode
+
+      # ── Authenticode certificate ────────────────────────────────────────────
+      # Store the PKCS#12 file as a base64-encoded GitHub secret CODESIGN_CERT_B64
+      # and the passphrase as CODESIGN_PASSWD.
+      - name: Decode code-signing certificate
+        if: ${{ inputs.sign }}
+        env:
+          CODESIGN_CERT_B64: ${{ secrets.CODESIGN_CERT_B64 }}
+        run: |
+          if [[ -n "$CODESIGN_CERT_B64" ]]; then
+            echo "$CODESIGN_CERT_B64" | base64 --decode > /tmp/codesign.p12
+            echo "CODESIGN_CERT=/tmp/codesign.p12" >> "$GITHUB_ENV"
+          fi
+
+      # ── GPG key ─────────────────────────────────────────────────────────────
+      # Store the ASCII-armored private key as GPG_PRIVATE_KEY,
+      # key passphrase as GPG_KEY_PASSPHRASE, and key fingerprint/email as GPG_KEY_ID.
+      - name: Import GPG signing key
+        if: ${{ inputs.sign }}
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
+        run: |
+          if [[ -n "$GPG_PRIVATE_KEY" ]]; then
+            echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+            echo "pinentry-mode loopback"  >> ~/.gnupg/gpg.conf
+            gpgconf --kill gpg-agent || true
+            echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+            echo "GPG_KEY_ID=${{ secrets.GPG_KEY_ID }}" >> "$GITHUB_ENV"
+          fi
+
+      # ── Sign ────────────────────────────────────────────────────────────────
+      - name: Sign binaries
+        if: ${{ inputs.sign }}
+        env:
+          CODESIGN_PASSWD: ${{ secrets.CODESIGN_PASSWD }}
+        run: bash ci/sign.sh
+
+      # ── VirusTotal scan ─────────────────────────────────────────────────────
+      # Store your VT API v3 key as the GitHub secret VT_API_KEY.
+      - name: VirusTotal scan
+        if: ${{ inputs.scan }}
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          bash scripts/virustotal-scan.sh \
+            prebuilt/bin/devkit-server-linux-amd64 \
+            prebuilt/bin/devkit-server-windows-amd64.exe
+
+      # ── Upload reports ──────────────────────────────────────────────────────
+      - name: Upload VirusTotal reports
+        if: ${{ always() && inputs.scan }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: virustotal-reports-${{ github.run_id }}
+          path: dist/vt-reports/
+          if-no-files-found: ignore
+          retention-days: 90

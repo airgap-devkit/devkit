@@ -19,9 +19,11 @@ VERSION="${1:-}"
 NO_BUILD=false
 UPLOAD=false
 TEST_PYPI=false
+SKIP_SIGN=false
+SKIP_VT=false
 
 if [[ -z "$VERSION" ]]; then
-    echo "Usage: bash scripts/release.sh <version> [--no-build] [--test] [--upload]" >&2
+    echo "Usage: bash scripts/release.sh <version> [--no-build] [--test] [--upload] [--skip-sign] [--skip-vt]" >&2
     echo "  version format: 1.2.3 or 1.2.3rc1 or 1.2.3b2" >&2
     exit 1
 fi
@@ -29,9 +31,11 @@ fi
 shift
 for arg in "$@"; do
     case "$arg" in
-        --no-build) NO_BUILD=true ;;
-        --upload)   UPLOAD=true ;;
-        --test)     TEST_PYPI=true; UPLOAD=true ;;
+        --no-build)  NO_BUILD=true ;;
+        --upload)    UPLOAD=true ;;
+        --test)      TEST_PYPI=true; UPLOAD=true ;;
+        --skip-sign) SKIP_SIGN=true ;;
+        --skip-vt)   SKIP_VT=true ;;
         *) echo "Unknown flag: $arg" >&2; exit 1 ;;
     esac
 done
@@ -112,7 +116,37 @@ else
     echo "  --no-build: skipping Go compile, using existing prebuilt/"
 fi
 
-# ── 4b. commit & push prebuilt submodule ──────────────────────────────────────
+# ── 4b. sign binaries ─────────────────────────────────────────────────────────
+if [[ "$SKIP_SIGN" == false ]]; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Code signing"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    bash "$REPO_ROOT/scripts/sign-binaries.sh"
+else
+    echo "  --skip-sign: skipping binary signing"
+fi
+
+# ── 4c. VirusTotal scan ────────────────────────────────────────────────────────
+if [[ "$SKIP_VT" == false ]]; then
+    if [[ -z "${VT_API_KEY:-}" ]]; then
+        echo ""
+        echo "  [WARN] VT_API_KEY not set — skipping VirusTotal scan"
+        echo "         To scan: export VT_API_KEY=<key> and re-run, or use --skip-vt to suppress this warning"
+    else
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "  VirusTotal scan"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        bash "$REPO_ROOT/scripts/virustotal-scan.sh" \
+            "$REPO_ROOT/prebuilt/bin/devkit-server-linux-amd64" \
+            "$REPO_ROOT/prebuilt/bin/devkit-server-windows-amd64.exe"
+    fi
+else
+    echo "  --skip-vt: skipping VirusTotal scan"
+fi
+
+# ── 4d. commit & push prebuilt submodule ──────────────────────────────────────
 # Must happen before the parent repo is updated so CI can always fetch the pointer.
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -191,5 +225,8 @@ if [[ "$UPLOAD" == false ]]; then
     echo ""
     echo "  To upload to TestPyPI: bash scripts/release.sh $VERSION --no-build --test"
     echo "  To upload to PyPI:     bash scripts/release.sh $VERSION --no-build --upload"
+    echo ""
+    echo "  Signing env vars:  CODESIGN_CERT, CODESIGN_PASSWD, GPG_KEY_ID"
+    echo "  VT scan env var:   VT_API_KEY  (skip with --skip-vt)"
 fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

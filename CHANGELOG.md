@@ -11,6 +11,25 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.2] — 2026-05-01
+
+### Added
+- `scripts/sign-binaries.sh` — Authenticode (Windows, via `osslsigncode` or `signtool`) and GPG detached-signature (Linux) support
+- `scripts/verify-signatures.sh` — verify Authenticode and GPG signatures on prebuilt binaries
+- `scripts/virustotal-scan.sh` — VirusTotal API v3 scan with JSON report output; supports files >32 MB via large-file upload URL
+- `ci/sign.sh` — thin CI entry-point that calls `scripts/sign-binaries.sh`
+- `.github/workflows/sign-and-scan.yml` — manual `workflow_dispatch` workflow to sign binaries and/or run VirusTotal scan in CI
+- `osslsigncode 2.13` entry in `scripts/download-prebuilt.sh` (Windows zip + Linux source archive)
+
+### Changed
+- `scripts/release.sh` — integrated signing (`--skip-sign`) and VirusTotal scan (`--skip-vt`) steps; both are run by default when env vars are present
+- `.github/workflows/build-llvm-rhel8.yml` — `actions/upload-artifact` v4.6.0 → v7.0.1; `actions/download-artifact` v4 → v8.0.1 (pinned SHA)
+- `.github/workflows/smoke-test.yml` — `actions/upload-artifact` v4.6.0 → v7.0.1 (pinned SHA)
+- `.gitignore` — added `.claudeignore`
+- Server binaries rebuilt against current Go toolchain
+
+---
+
 ## [1.3.1] — 2026-05-01
 
 ### Fixed
