@@ -280,6 +280,43 @@ MEOF
     ok "Servy 8.3 complete."
   fi
 
+  # ── osslsigncode 2.13 (~5MB Windows zip + ~2MB source) ─────────────────────
+  log "osslsigncode 2.13"
+  OSSL_DIR="$PREBUILT_DIR/dev-tools/osslsigncode/2.13"
+  mkdir -p "$OSSL_DIR"
+
+  dl "https://github.com/mtrojnar/osslsigncode/releases/download/2.13/osslsigncode-2.13-windows-x64-mingw.zip" \
+     "$OSSL_DIR/osslsigncode-2.13-windows-x64-mingw.zip"
+
+  # Linux RHEL 8 source build — archive lives in the tools submodule
+  OSSL_SOURCES="$REPO_ROOT/tools/dev-tools/osslsigncode/sources"
+  mkdir -p "$OSSL_SOURCES"
+  dl "https://github.com/mtrojnar/osslsigncode/archive/refs/tags/2.13.tar.gz" \
+     "$OSSL_SOURCES/osslsigncode-2.13.tar.gz"
+
+  WIN_SHA=$(sha256 "$OSSL_DIR/osslsigncode-2.13-windows-x64-mingw.zip")
+  LIN_SHA=$(sha256 "$OSSL_SOURCES/osslsigncode-2.13.tar.gz")
+  cat > "$OSSL_DIR/manifest.json" << MEOF
+{
+  "tool": "osslsigncode",
+  "version": "2.13",
+  "source": "https://github.com/mtrojnar/osslsigncode/releases/tag/2.13",
+  "platforms": {
+    "windows": {
+      "archive": "osslsigncode-2.13-windows-x64-mingw.zip",
+      "sha256": "$WIN_SHA"
+    },
+    "linux-x64": {
+      "source_archive": "tools/dev-tools/osslsigncode/sources/osslsigncode-2.13.tar.gz",
+      "sha256": "$LIN_SHA",
+      "build": "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build && cmake --install build",
+      "notes": "Requires: gcc cmake openssl-devel libcurl-devel zlib-devel pkg-config"
+    }
+  }
+}
+MEOF
+  ok "osslsigncode 2.13 complete."
+
 fi  # RUN_SMALL
 
 # ─────────────────────────────────────────────────────────────────────────────
