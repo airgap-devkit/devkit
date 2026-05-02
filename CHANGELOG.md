@@ -11,6 +11,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.1] — 2026-05-01
+
+### Fixed
+- `scripts/launch.sh`, `scripts/uninstall.sh`, `tests/check-installed-tools.sh` — removed unused variables flagged by ShellCheck (SC2034)
+- `scripts/pkg.sh` — fixed printf format/argument mismatch (SC2183) by splitting composite argument into two separate args
+- `tests/run-tests.sh`, `tests/check-installed-tools.sh` — added ShellCheck source directive for non-constant `source` paths (SC1090)
+- `tests/validate-manifests.sh` — removed redundant quotes around regex RHS in `[[ =~ ]]` (SC2076)
+
+### Changed
+- Go deps: `go-chi/chi` v5.2.2 → v5.2.5, `golang.org/x/text` v0.22.0 → v0.36.0; server binaries rebuilt
+- Python build deps: `setuptools>=75`, `wheel>=0.45`
+
+---
+
 ## [1.3.0] — 2026-05-01
 
 ### Changed
