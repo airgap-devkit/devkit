@@ -4,13 +4,18 @@ name: Build LLVM tools for RHEL 8
 # inside a UBI 8.10 container (glibc 2.28) and commits the result to the
 # prebuilt/ submodule as 50 MB split parts — matching the existing archive format.
 #
-# Run this manually once per LLVM version bump whenever you update VERSION in
+# Two-job design:
+#   build  (~90 min) — compiles LLVM, uploads archive as a workflow artifact
+#   commit (~10 sec) — downloads artifact, clones prebuilt on main, commits, pushes
+#
+# If only the commit step fails, use "Re-run failed jobs" — it skips the build.
+#
+# Run manually once per LLVM version bump whenever VERSION changes in
 # tools/toolchains/llvm/setup.sh.
 #
 # Requirements:
 #   PREBUILT_TOKEN secret — GitHub PAT (classic) with repo scope on
-#   airgap-devkit/prebuilt.  Create at:
-#   Settings → Secrets and variables → Actions → New repository secret.
+#   airgap-devkit/prebuilt.  Settings → Secrets and variables → Actions.
 
 on:
   workflow_dispatch:
@@ -20,12 +25,13 @@ on:
         required: true
         default: '22.1.4'
 
+# ── Job 1: Build ──────────────────────────────────────────────────────────────
 jobs:
   build:
     name: Build LLVM ${{ inputs.llvm_version }} (UBI 8.10 / glibc 2.28)
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     env:
       LLVM_VERSION: ${{ inputs.llvm_version }}
@@ -35,32 +41,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
-      - name: Init prebuilt submodule
-        run: git submodule update --init prebuilt
-
-      - name: Wire HTTPS credentials into prebuilt remote
-        run: |
-          git -C prebuilt remote set-url origin \
-            "https://x-access-token:${{ secrets.PREBUILT_TOKEN }}@github.com/airgap-devkit/prebuilt.git"
-
-      # ── Build ───────────────────────────────────────────────────────────────
       # Everything below runs inside the UBI 8.10 container via docker run so
       # the resulting binaries are linked against glibc 2.28 and GCC 8's
       # libstdc++, making them compatible with any RHEL 8+ system.
       #
-      # We use BUILD_SHARED_LIBS=OFF so each tool binary is self-contained —
-      # no libLLVM.so shipped, no RPATH complexity. The only runtime deps are
-      # the system libraries already present on RHEL 8 (glibc, libstdc++, zlib).
+      # BUILD_SHARED_LIBS=OFF → each tool is self-contained; no libLLVM.so
+      # shipped, no RPATH complexity. Runtime deps are the standard system libs
+      # already present on RHEL 8 (glibc, libstdc++, zlib).
       #
-      # cmake 3.11 (UBI 8 default) is too old for LLVM 17+, so we download a
-      # modern cmake binary from cmake.org and install it to /usr/local.
+      # cmake 3.11 (UBI 8 default) is too old for LLVM 17+; we download a
+      # modern cmake binary from cmake.org.
       #
-      # Build targets only what the devkit uses:
-      #   clang  clang-format  clang-tidy  lld  llvm-ar  llvm-nm
-      # Estimated time: 40-70 minutes on a 2-CPU GitHub Actions runner.
+      # Estimated time: 80-100 minutes on a 2-CPU GitHub Actions runner.
       - name: Build LLVM inside UBI 8.10 container
         run: |
           mkdir -p /tmp/llvm-output
@@ -93,7 +87,6 @@ jobs:
               echo "==> Build  : ${GENERATOR}"
 
               # ── modern cmake ───────────────────────────────────────────────
-              # UBI 8 ships cmake 3.11 which is too old for LLVM 17+.
               CMAKE_VER=3.28.6
               echo "==> Installing cmake ${CMAKE_VER}..."
               curl -fsSL \
@@ -132,7 +125,7 @@ jobs:
                 /tmp/llvm-src/llvm
 
               # ── build ──────────────────────────────────────────────────────
-              echo "==> Building (40-70 minutes on a 2-CPU runner)..."
+              echo "==> Building (80-100 minutes on a 2-CPU runner)..."
               ${BUILD_CMD} \
                 clang \
                 clang-format \
@@ -146,7 +139,6 @@ jobs:
               for tool in clang clang++ clang-format clang-tidy lld llvm-ar llvm-nm; do
                 [[ -f "bin/${tool}" ]] && cp "bin/${tool}" /tmp/llvm-install/bin/
               done
-              # clang++ is a symlink to clang in the LLVM driver model
               [[ ! -f /tmp/llvm-install/bin/clang++ ]] \
                 && ln -sf clang /tmp/llvm-install/bin/clang++
 
@@ -170,12 +162,55 @@ jobs:
               echo "==> Archive size: $(du -sh /output/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz | cut -f1)"
             '
 
-      # ── Split ───────────────────────────────────────────────────────────────
-      # Match the existing 50 MB / alphabetic suffix convention used by the
-      # other LLVM archives in prebuilt/toolchains/llvm/<version>/.
+      - name: Upload archive as workflow artifact
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08  # v4.6.0
+        with:
+          name: llvm-rhel8-${{ inputs.llvm_version }}
+          path: /tmp/llvm-output/LLVM-${{ inputs.llvm_version }}-Linux-X64-rhel8.tar.xz
+          retention-days: 3
+
+# ── Job 2: Commit ─────────────────────────────────────────────────────────────
+# Separate job so a commit/push failure can be re-run in seconds without
+# repeating the 90-minute build.
+#
+# Clones prebuilt directly (not via git submodule update) so it is always
+# on the main branch — no detached HEAD, no push ambiguity.
+  commit:
+    name: Commit to prebuilt/ and update submodule pointer
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      LLVM_VERSION: ${{ inputs.llvm_version }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout main repo (no submodules)
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: false
+
+      - name: Clone prebuilt on main branch
+        run: |
+          git clone \
+            "https://x-access-token:${{ secrets.PREBUILT_TOKEN }}@github.com/airgap-devkit/prebuilt.git" \
+            prebuilt-wr
+          echo "prebuilt HEAD: $(git -C prebuilt-wr rev-parse HEAD)"
+          echo "prebuilt branch: $(git -C prebuilt-wr branch --show-current)"
+
+      - name: Download LLVM archive artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: llvm-rhel8-${{ inputs.llvm_version }}
+          path: /tmp/llvm-output/
+
       - name: Split archive into 50 MB parts
         run: |
-          DEST="prebuilt/toolchains/llvm/${LLVM_VERSION}"
+          DEST="prebuilt-wr/toolchains/llvm/${LLVM_VERSION}"
           mkdir -p "${DEST}"
           rm -f "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"*
           split -b 50m \
@@ -184,25 +219,22 @@ jobs:
           echo "Parts:"
           ls -lh "${DEST}/LLVM-${LLVM_VERSION}-Linux-X64-rhel8.tar.xz.part-"*
 
-      # ── Commit to prebuilt/ ─────────────────────────────────────────────────
-      - name: Commit and push prebuilt submodule
-        working-directory: prebuilt
+      - name: Commit and push prebuilt
+        working-directory: prebuilt-wr
         run: |
-          git checkout main || git checkout -b main
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "toolchains/llvm/${LLVM_VERSION}/"
           git diff --cached --stat
           git commit -m "build: LLVM ${LLVM_VERSION} tools for RHEL 8 (glibc 2.28 / UBI 8.10)"
-          git push origin main
+          git push
 
-      # ── Update submodule pointer in main repo ───────────────────────────────
-      - name: Update submodule pointer
+      - name: Update submodule pointer in main repo
         run: |
+          PREBUILT_SHA=$(git -C prebuilt-wr rev-parse HEAD)
+          echo "Pointing prebuilt submodule → ${PREBUILT_SHA}"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add prebuilt
-          git diff --cached --stat
-          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL 8 build" \
-            || echo "Submodule pointer unchanged — nothing to commit"
+          git update-index --cacheinfo "160000,${PREBUILT_SHA},prebuilt"
+          git commit -m "chore: update prebuilt — LLVM ${LLVM_VERSION} RHEL 8 build"
           git push
