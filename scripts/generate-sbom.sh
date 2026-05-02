@@ -90,21 +90,16 @@ echo ""
 # ---------------------------------------------------------------------------
 echo "Verifying JSON syntax..."
 ALL_OK=true
-for sbom in \
-  "${REPO_ROOT}/sbom.spdx.json"
-do
-  if [[ ! -f "${sbom}" ]]; then
-    echo "  [FAIL] Missing: ${sbom}" >&2
-    ALL_OK=false
-    continue
-  fi
-  if python3 -c "import json,sys; json.load(open('${sbom}'))" 2>/dev/null; then
-    echo "  [PASS] ${sbom#${REPO_ROOT}/}"
-  else
-    echo "  [FAIL] Invalid JSON: ${sbom}" >&2
-    ALL_OK=false
-  fi
-done
+sbom="${REPO_ROOT}/sbom.spdx.json"
+if [[ ! -f "${sbom}" ]]; then
+  echo "  [FAIL] Missing: ${sbom}" >&2
+  ALL_OK=false
+elif python3 -c "import json,sys; json.load(open('${sbom}'))" 2>/dev/null; then
+  echo "  [PASS] ${sbom#"${REPO_ROOT}"/}"
+else
+  echo "  [FAIL] Invalid JSON: ${sbom}" >&2
+  ALL_OK=false
+fi
 
 echo ""
 
