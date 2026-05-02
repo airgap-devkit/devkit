@@ -406,7 +406,7 @@ PYEOF
         local sub="${cat_dir#tools/}"
         printf '# Locate the prebuilt archive\n' >> "${tool_dir}/setup.sh"
         printf 'PREBUILT_DIR="${PREBUILT_DIR:-${REPO_ROOT}/prebuilt}"\n' >> "${tool_dir}/setup.sh"
-        printf 'PARTS_DIR="${PREBUILT_DIR}/%s/%s/${VERSION}"\n' "$sub/$id" >> "${tool_dir}/setup.sh"
+        printf 'PARTS_DIR="${PREBUILT_DIR}/%s/%s/${VERSION}"\n' "$sub" "$id" >> "${tool_dir}/setup.sh"
         printf 'ARCHIVE="$(devkit_find_file "${PARTS_DIR}")"\n\n' >> "${tool_dir}/setup.sh"
         printf '# TODO: choose the right install method:\n' >> "${tool_dir}/setup.sh"
         printf '#   devkit_extract        "${ARCHIVE}" "${PREFIX}"   # tar/zip archive\n' >> "${tool_dir}/setup.sh"
