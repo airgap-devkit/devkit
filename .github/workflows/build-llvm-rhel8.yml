@@ -203,7 +203,7 @@ jobs:
           echo "prebuilt branch: $(git -C prebuilt-wr branch --show-current)"
 
       - name: Download LLVM archive artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: llvm-rhel8-${{ inputs.llvm_version }}
           path: /tmp/llvm-output/
