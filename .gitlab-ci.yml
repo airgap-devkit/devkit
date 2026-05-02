@@ -1,6 +1,6 @@
 # =============================================================================
 # AirGap DevKit — GitLab CI/CD Pipeline
-# See .ci/gitlab/SETUP.md for setup instructions and variable reference.
+# See ci/gitlab/SETUP.md for setup instructions and variable reference.
 #
 # Override any variable below via:
 #   CI/CD > Pipelines > Run pipeline > Add variables
@@ -126,7 +126,7 @@ install:linux:
     - |
       FLAGS="--yes --profile ${PROFILE}"
       [ "${ADMIN_INSTALL}" = "true" ] && FLAGS="${FLAGS} --admin"
-      bash install-cli.sh ${FLAGS}
+      bash scripts/install-cli.sh ${FLAGS}
   artifacts:
     paths:
       - "**/INSTALL_RECEIPT.txt"
@@ -141,7 +141,7 @@ install:windows:
     - if: $TARGET_OS == "windows" || $TARGET_OS == "both"
     - when: never
   script:
-    - bash install-cli.sh --yes --profile "${PROFILE}"
+    - bash scripts/install-cli.sh --yes --profile "${PROFILE}"
   artifacts:
     paths:
       - "**/INSTALL_RECEIPT.txt"
@@ -160,7 +160,7 @@ server-ops:
   needs: [configure]
   script:
     # Start server
-    - nohup bash launch.sh --no-browser > devkit-server.log 2>&1 &
+    - nohup bash scripts/launch.sh --no-browser > devkit-server.log 2>&1 &
     - echo $! > .server.pid
     - echo "Server PID $(cat .server.pid)"
     - |
@@ -306,7 +306,7 @@ atlassian:update:
       BUILD_URL="${CI_PIPELINE_URL}"
 
       if [ -n "${JIRA_ISSUE_KEY}" ]; then
-        bash .ci/atlassian/jira-update.sh \
+        bash ci/atlassian/jira-update.sh \
           --issue   "${JIRA_ISSUE_KEY}" \
           --status  "${BUILD_STATUS}" \
           --url     "${BUILD_URL}" \
@@ -315,7 +315,7 @@ atlassian:update:
       fi
 
       if [ -n "${CONFLUENCE_PAGE_ID}" ]; then
-        bash .ci/atlassian/confluence-update.sh \
+        bash ci/atlassian/confluence-update.sh \
           --page-id "${CONFLUENCE_PAGE_ID}" \
           --status  "${BUILD_STATUS}" \
           --url     "${BUILD_URL}" \

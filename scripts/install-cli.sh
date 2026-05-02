@@ -7,7 +7,7 @@
 # Use this when Python is unavailable or you prefer a non-GUI workflow.
 #
 # PREFERRED entry point (Python 3.8+ required):
-#   bash launch.sh
+#   bash scripts/launch.sh
 #   Opens the DevKit Manager web UI at http://127.0.0.1:8080
 #   with one-click installs, profiles, and live log output.
 #
@@ -33,7 +33,7 @@
 #   - matlab             (verification only -- checks Database Toolbox + Compiler)
 #
 # PREFERRED entry point (replaces this script for most users):
-#   bash launch.sh
+#   bash scripts/launch.sh
 #   Finds Python automatically, opens http://127.0.0.1:8080 -- visual dashboard,
 #   one-click installs, profile-based batch installs, log browser.
 #   Falls back to this script automatically if Python is not found.
@@ -54,7 +54,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="${SCRIPT_DIR}"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -137,7 +137,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _header "  airgap-cpp-devkit -- CLI Installer (fallback)"
     echo ""
     echo "  Tip: for a visual installer with live output, run instead:"
-    echo "       bash launch.sh   ->  http://127.0.0.1:8080"
+    echo "       bash scripts/launch.sh   ->  http://127.0.0.1:8080"
     echo ""
     echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
@@ -167,7 +167,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Tip: use --profile <name> to skip prompts"
     echo "       Profiles: cpp-dev | devops | minimal | full"
     echo ""
-    echo "  Tip: prefer a browser UI? Run instead: bash launch.sh"
+    echo "  Tip: prefer a browser UI? Run instead: bash scripts/launch.sh"
     echo ""
     _section "  INSTALL MODE"
     echo ""
@@ -704,6 +704,6 @@ echo "  Restart your shell or run:"
 echo ""
 echo "  All installed tools will then be available on PATH."
 echo ""
-echo "  To manage tools visually: bash launch.sh"
+echo "  To manage tools visually: bash scripts/launch.sh"
 echo "    Opens http://127.0.0.1:8080 -- dashboard, install, logs."
 echo ""

@@ -6,9 +6,9 @@
 # Removes installed airgap-cpp-devkit tools and cleans up PATH registration.
 #
 # USAGE:
-#   bash uninstall.sh              # interactive — choose which tools to remove
-#   bash uninstall.sh --all        # remove everything without prompting
-#   bash uninstall.sh --prefix <path>   # look for installs under custom prefix
+#   bash scripts/uninstall.sh              # interactive — choose which tools to remove
+#   bash scripts/uninstall.sh --all        # remove everything without prompting
+#   bash scripts/uninstall.sh --prefix <path>   # look for installs under custom prefix
 #
 # OPTIONS:
 #   --all              Remove all installed tools without prompting
@@ -19,7 +19,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="${SCRIPT_DIR}"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # ---------------------------------------------------------------------------
 # Parse arguments

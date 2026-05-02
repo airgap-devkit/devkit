@@ -11,6 +11,26 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.0] — 2026-05-01
+
+### Changed
+- **Repository layout** — aligned to project standard: `ci/` (renamed from `.ci/`), `scripts/launch.sh`, `scripts/install-cli.sh`, `scripts/uninstall.sh` (moved from root), `docs/TOOLS.md` (moved from root), `ci/Dockerfile.rhel8-test` (moved from root)
+- **CI workflows** — `ci.yml` thinned to call `ci/lint.sh`, `ci/test.sh`, and `ci/smoke.sh`; server health-check logic extracted to `ci/smoke.sh`
+- All Jenkinsfile, `.gitlab-ci.yml`, `smoke-test.yml`, and `rhel8-test.yml` references updated for new script paths
+- `scripts/launch.sh` and `scripts/install-cli.sh` internal path resolution updated for new location in `scripts/`
+
+### Added
+- `ci/build.sh`, `ci/test.sh`, `ci/lint.sh`, `ci/release.sh`, `ci/smoke.sh` — canonical CI entry-point scripts
+- `.github/CODEOWNERS` — primary maintainer assigned for all files and CI paths
+- `.github/dependabot.yml` — weekly dependency updates for Go modules, pip, and GitHub Actions
+- `docs/assets/` — home for project screenshots and diagrams
+- `examples/` — placeholder for runnable configuration examples
+- `packages/python/src/airgap_devkit/py.typed` — PEP 561 typed package marker
+- `packages/python/.python-version` — pinned Python version for the packaging environment
+- `.pre-commit-config.yaml` — ruff lint/format and standard pre-commit hooks
+
+---
+
 ## [1.2.1] — 2026-05-01
 
 ### Fixed

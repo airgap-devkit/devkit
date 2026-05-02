@@ -1,6 +1,6 @@
 // =============================================================================
 // AirGap DevKit — Jenkins Declarative Pipeline
-// See .ci/jenkins/SETUP.md for full setup instructions and parameter reference.
+// See ci/jenkins/SETUP.md for full setup instructions and parameter reference.
 // Requires: Pipeline Utility Steps plugin, Credentials Binding plugin,
 //           AnsiColor plugin (optional), linux + windows agent labels.
 // =============================================================================
@@ -173,7 +173,7 @@ pipeline {
                         sh """
                             FLAGS="--yes --profile ${params.PROFILE}"
                             [ '${params.ADMIN_INSTALL}' = 'true' ] && FLAGS="\$FLAGS --admin"
-                            bash install-cli.sh \$FLAGS
+                            bash scripts/install-cli.sh \$FLAGS
                         """
                     }
                     post {
@@ -191,7 +191,7 @@ pipeline {
                     steps {
                         checkout scm
                         unstash 'devkit-config'
-                        bat "bash install-cli.sh --yes --profile ${params.PROFILE}"
+                        bat "bash scripts/install-cli.sh --yes --profile ${params.PROFILE}"
                     }
                     post {
                         always {
@@ -214,7 +214,7 @@ pipeline {
 
                 // Start server
                 sh """
-                    nohup bash launch.sh --no-browser > devkit-server.log 2>&1 &
+                    nohup bash scripts/launch.sh --no-browser > devkit-server.log 2>&1 &
                     echo \$! > .server.pid
 
                     echo "Waiting for server at http://${params.SERVER_HOST}:${params.SERVER_PORT}/health ..."
@@ -388,7 +388,7 @@ pipeline {
                         def result = currentBuild.currentResult
                         if (params.JIRA_ISSUE_KEY?.trim()) {
                             sh """
-                                bash .ci/atlassian/jira-update.sh \
+                                bash ci/atlassian/jira-update.sh \
                                     --issue   '${params.JIRA_ISSUE_KEY}' \
                                     --status  '${result}' \
                                     --url     '${env.BUILD_URL}' \
@@ -398,7 +398,7 @@ pipeline {
                         }
                         if (params.CONFLUENCE_PAGE_ID?.trim()) {
                             sh """
-                                bash .ci/atlassian/confluence-update.sh \
+                                bash ci/atlassian/confluence-update.sh \
                                     --page-id '${params.CONFLUENCE_PAGE_ID}' \
                                     --status  '${result}' \
                                     --url     '${env.BUILD_URL}' \

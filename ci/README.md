@@ -25,7 +25,7 @@ Validate → Configure → Install → Server Operations → Smoke Tests → Atl
 |-------|-------------|
 | **Validate** | Checks all `devkit.json` + `manifest.json` files for syntax and required fields |
 | **Configure** | Patches `devkit.config.json` with pipeline parameters (team, profile, port, etc.) |
-| **Install** | Runs `install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
+| **Install** | Runs `scripts/install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
 | **Server Operations** | Starts the devkit server, pushes team identity via API, handles package uploads / team config import-export |
 | **Smoke Tests** | Runs `tests/run-tests.sh` to verify all installed tools are functional |
 | **Atlassian** | Posts build results to Jira issue; overwrites Confluence status page |
@@ -52,8 +52,14 @@ All options are exposed as Jenkins parameters or GitLab CI variables and can be 
 ## Directory Layout
 
 ```
-.ci/
+ci/
 ├── README.md                       ← this file
+├── build.sh                        ← build the Go server binary
+├── test.sh                         ← run manifest validation suite
+├── lint.sh                         ← syntax-check all shell scripts
+├── release.sh                      ← thin wrapper around scripts/release.sh
+├── smoke.sh                        ← server health check (used by ci.yml)
+├── Dockerfile.rhel8-test           ← RHEL 8 / UBI 8.10 integration test image
 ├── jenkins/
 │   └── SETUP.md                    ← Jenkins setup instructions + parameter reference
 ├── gitlab/
