@@ -56,10 +56,10 @@ TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M UTC')"
 
 # ── Determine status badge ────────────────────────────────────────────────────
 case "${BUILD_STATUS^^}" in
-    SUCCESS)  STATUS_COLOR="Green";  STATUS_ICON="(/)"  ;;
-    FAILURE)  STATUS_COLOR="Red";    STATUS_ICON="(x)"  ;;
-    UNSTABLE) STATUS_COLOR="Yellow"; STATUS_ICON="(!)"  ;;
-    *)        STATUS_COLOR="Grey";   STATUS_ICON="(?)"  ;;
+    SUCCESS)  STATUS_COLOR="Green"  ;;
+    FAILURE)  STATUS_COLOR="Red"    ;;
+    UNSTABLE) STATUS_COLOR="Yellow" ;;
+    *)        STATUS_COLOR="Grey"   ;;
 esac
 
 # ── Helper: confluence_api ────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ DEVKIT_PORT="${DEVKIT_SERVER_PORT:-9090}"
 
 if [[ -n "${DEVKIT_HOST}" ]]; then
     TOOLS_JSON="$(curl -sf "http://${DEVKIT_HOST}:${DEVKIT_PORT}/api/tools" 2>/dev/null || echo '[]')"
-    TOOL_ROWS="$(echo "${TOOLS_JSON}" | python3 - <<'PYEOF'
+    TOOL_ROWS="$(echo "${TOOLS_JSON}" | python3 -c '
 import json, sys
 tools = json.load(sys.stdin)
 if not isinstance(tools, list):
@@ -111,8 +111,7 @@ for t in tools:
     status  = "✅ Installed" if t.get("installed") else "○ Available"
     rows.append(f"<tr><td>{name}</td><td>{version}</td><td>{cat}</td><td>{status}</td></tr>")
 print("\n".join(rows))
-PYEOF
-)"
+')"
 fi
 
 if [[ -z "${TOOL_ROWS}" ]]; then

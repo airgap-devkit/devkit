@@ -30,14 +30,13 @@ FORCE_CLI=false
 FORCE_REBUILD=false
 SERVER_ARGS=()
 UI_PORT=8080
-UI_HOST="127.0.0.1"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --cli)        FORCE_CLI=true; shift ;;
         --rebuild)    FORCE_REBUILD=true; shift ;;
         --port)       UI_PORT="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
-        --host)       UI_HOST="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
+        --host)       SERVER_ARGS+=("$1" "$2"); shift 2 ;;
         --no-browser) SERVER_ARGS+=("$1"); shift ;;
         *)            SERVER_ARGS+=("$1"); shift ;;
     esac

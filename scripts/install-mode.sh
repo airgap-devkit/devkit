@@ -83,7 +83,8 @@ _im_localappdata() {
 }
 
 _im_temp_dir() {
-    local os="$(_im_os)"
+    local os
+    os="$(_im_os)"
     if [[ "${os}" == "windows" ]]; then
         if [[ -n "${TEMP:-}" ]]; then
             cygpath -u "${TEMP}" 2>/dev/null || \
