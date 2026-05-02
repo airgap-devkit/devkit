@@ -62,6 +62,7 @@ fi
 
 # Source env.sh if available
 ENV_FILE="${PREFIX}/env.sh"
+# shellcheck source=/dev/null
 [[ -f "${ENV_FILE}" ]] && source "${ENV_FILE}" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------

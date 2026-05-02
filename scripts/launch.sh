@@ -28,7 +28,6 @@ _sep() { printf '%s\n' "========================================================
 # ---------------------------------------------------------------------------
 FORCE_CLI=false
 FORCE_REBUILD=false
-NO_BROWSER=false
 SERVER_ARGS=()
 UI_PORT=8080
 UI_HOST="127.0.0.1"
@@ -39,7 +38,7 @@ while [[ $# -gt 0 ]]; do
         --rebuild)    FORCE_REBUILD=true; shift ;;
         --port)       UI_PORT="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
         --host)       UI_HOST="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
-        --no-browser) NO_BROWSER=true; SERVER_ARGS+=("$1"); shift ;;
+        --no-browser) SERVER_ARGS+=("$1"); shift ;;
         *)            SERVER_ARGS+=("$1"); shift ;;
     esac
 done

@@ -50,6 +50,7 @@ PREFIX="$(_detect_prefix)"
 
 # Source the env file if present so installed tool PATHs are available
 ENV_FILE="$PREFIX/env.sh"
+# shellcheck source=/dev/null
 [[ -f "$ENV_FILE" ]] && source "$ENV_FILE" 2>/dev/null || true
 
 _py() {
@@ -99,7 +100,6 @@ if [[ ! -d "$TOOLS_DIR" ]]; then
 fi
 
 while IFS= read -r -d '' devkit_json; do
-    tool_id="$(_json_get "$devkit_json" id)"
     tool_name="$(_json_get "$devkit_json" name)"
     check_cmd="$(_json_get "$devkit_json" check_cmd)"
     platform="$(_json_get "$devkit_json" platform)"

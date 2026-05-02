@@ -142,6 +142,7 @@ else
         done
 
         plat="$(_json_get "$f" platform)"
+        # shellcheck disable=SC2076
         if [[ -n "$plat" && ! " ${VALID_PLATFORMS[*]} " =~ " $plat " ]]; then
             _fail "$label — invalid platform value: '$plat' (expected: windows | linux | both)"
             all_ok=false
