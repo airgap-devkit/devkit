@@ -5,7 +5,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.3.3** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.4** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -85,9 +85,13 @@ startup; changes take effect on next launch.
   "dashboard_title": "Tool Dashboard",
   "hostname":        "127.0.0.1",
   "port":            9090,
-  "default_profile": "minimal"
+  "default_profile": "minimal",
+  "setup_complete":  true,
+  "allow_egress":    false
 }
 ```
+
+`allow_egress: false` (default) keeps the server fully air-gapped — `/api/network` always returns `online: false` and `/api/updates` returns an empty list without probing the internet. Set to `true` only on machines with intentional internet access to enable the update checker and network latency probe.
 
 Team identity (`team_name`, `org_name`, `devkit_name`, `theme_color`) can also be
 pushed live via `POST /api/config` or through CI/CD pipelines without restarting.
@@ -113,8 +117,8 @@ The manager is a self-contained Go binary with an embedded web UI. Features:
 | **Version management** | Keep multiple installed versions per tool; switch active version |
 | **Live install log** | SSE-streamed output per tool; log history browser |
 | **Health checks** | `GET /api/health/tools` — verifies all installed tool binaries respond |
-| **Network status** | `GET /api/network` — latency probe to detect accidental internet access |
-| **Update checker** | `GET /api/updates` — compares pinned manifest versions against latest releases |
+| **Network status** | `GET /api/network` — returns `online: false` unless `allow_egress: true` is set in `devkit.config.json` |
+| **Update checker** | `GET /api/updates` — compares pinned manifest versions against GitHub releases; requires `allow_egress: true` |
 
 ### Authentication
 
@@ -172,7 +176,7 @@ POST /api/layout                     — save layout
 DELETE /api/layout                   — reset to defaults
 ```
 
-> **First-run setup:** if no `devkit.config.json` is found at the repo root, all `/api/*` requests redirect to `/setup` until the wizard completes (POST `/api/setup` with `team_name`, `org_name`, `devkit_name`). See `examples/devkit.config.json` for a ready-to-use template.
+> **First-run setup:** the server redirects `/api/*` to `/setup` when `devkit.config.json` exists but has `"setup_complete": false`. The repo ships a default `devkit.config.json` with `"setup_complete": true` so new installs skip the wizard. For headless/CI use, verify that `setup_complete` is `true` in your config file before hitting the API.
 
 ---
 

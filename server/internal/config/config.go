@@ -17,6 +17,7 @@ type Config struct {
 	DefaultProfile string `json:"default_profile"`
 	TeamConfigRepo string `json:"team_config_repo"`
 	SetupComplete  bool   `json:"setup_complete"`
+	AllowEgress    bool   `json:"allow_egress"`
 }
 
 func Load(repoRoot string) Config {

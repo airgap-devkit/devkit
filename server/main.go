@@ -81,7 +81,7 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%d", *host, *port)
 	baseURL := fmt.Sprintf("%s://%s:%d", scheme, *host, *port)
-	browserURL := fmt.Sprintf("%s/auth/bootstrap?token=%s&next=/", baseURL, srv.Token())
+	browserURL := fmt.Sprintf("%s/auth/bootstrap?devkit_token=%s&next=/", baseURL, srv.Token())
 
 	fmt.Printf("╔══════════════════════════════════════════╗\n")
 	fmt.Printf("║  AirGap DevKit  v%-24s║\n", api.AppVersion)

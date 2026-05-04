@@ -25,7 +25,10 @@ type NetworkStatus struct {
 	LatencyMs int64 `json:"latency_ms"`
 }
 
-func checkNetwork() NetworkStatus {
+func checkNetwork(allowEgress bool) NetworkStatus {
+	if !allowEgress {
+		return NetworkStatus{}
+	}
 	start := time.Now()
 	conn, err := net.DialTimeout("tcp", "8.8.8.8:53", 3*time.Second)
 	if err != nil {
@@ -42,7 +45,7 @@ func checkNetwork() NetworkStatus {
 }
 
 func (s *Server) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
-	jsonOK(w, checkNetwork())
+	jsonOK(w, checkNetwork(s.Config.AllowEgress))
 }
 
 // ── Update check ───────────────────────────────────────────────────────────
@@ -82,7 +85,7 @@ func (s *Server) handleCheckUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 	_updateCache.mu.RUnlock()
 
-	ns := checkNetwork()
+	ns := checkNetwork(s.Config.AllowEgress)
 	if !ns.Online {
 		jsonOK(w, map[string]any{"online": false, "updates": []any{}, "cached": false})
 		return
@@ -196,9 +199,9 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ns := checkNetwork()
+	ns := checkNetwork(s.Config.AllowEgress)
 	if !ns.Online {
-		sse.Send("ERROR: No internet connection detected.")
+		sse.Send("ERROR: Egress is disabled or no internet connection. Set allow_egress: true in devkit.config.json to enable update downloads.")
 		sse.Done("failed")
 		return
 	}

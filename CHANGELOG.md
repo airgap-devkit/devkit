@@ -11,6 +11,25 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.4] — 2026-05-04
+
+### Fixed
+
+#### Air-gap correctness
+- `server/internal/api/network.go` — internet probes (`/api/network`, `/api/updates`, update download) are now gated behind `allow_egress` in `devkit.config.json` (defaults `false`); previously the server unconditionally dialled `8.8.8.8:53` and `api.github.com` on every `/api/updates` call, breaking the air-gap contract
+- `examples/devkit.config.json` — added `allow_egress: false` field so the template is explicit; `server/internal/config/config.go` gains the matching `AllowEgress` field
+
+#### Tool install failures
+- `tools/dev-tools/git/setup.sh` — now exits 0 with a "skipping" message on Linux (was `exit 1`); matches the pattern already used by notepadpp, servy, sourcetree, and grpc
+
+#### Authentication
+- `server/main.go` — browser auto-open URL corrected from `?token=` to `?devkit_token=`; the auth handler requires `devkit_token` but the launch URL was using the wrong parameter name, causing every auto-open to return 401
+
+### Documentation
+- `README.md` — Configuration section updated: `setup_complete` and `allow_egress` now shown in the example block with explanation; Network status and Update checker feature rows clarified to reflect the egress gate; First-run setup note corrected (was describing the wrong condition)
+
+---
+
 ## [1.3.3] — 2026-05-03
 
 ### Fixed
