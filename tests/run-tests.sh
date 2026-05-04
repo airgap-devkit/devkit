@@ -85,8 +85,7 @@ _check_bin() {
   local args=("$@")
   if command -v "${cmd}" &>/dev/null; then
     local out
-    out="$("${cmd}" "${args[@]}" 2>&1 | head -1)"
-    if [[ $? -eq 0 ]]; then
+    if out="$("${cmd}" "${args[@]}" 2>&1 | head -1)"; then
       if [[ "${VERBOSE}" == "true" ]]; then
         _ok "${label}: ${out}"
       else
@@ -171,8 +170,8 @@ echo ""
 _sep
 echo "  [1] Toolchains"
 _sep
-_check_bin_receipt "clang-format 22.1.3" "toolchains/clang/source-build" clang-format --version
-_check_bin_receipt "clang-tidy 22.1.3"   "toolchains/clang/source-build" clang-tidy   --version
+_check_bin_receipt "clang-format 22.1.4" "toolchains/llvm" clang-format --version
+_check_bin_receipt "clang-tidy 22.1.4"   "toolchains/llvm" clang-tidy   --version
 
 # ---------------------------------------------------------------------------
 # 2. Build tools
@@ -204,8 +203,12 @@ if ! _receipt_exists "python"; then
   _skip "python (not installed)"
 elif [[ -f "${PY_BIN}" ]]; then
   _ok "python binary exists"
-  VER="$("${PY_BIN}" --version 2>&1)"
-  _ok "python version: ${VER}"
+  local_ver=""
+  if local_ver="$("${PY_BIN}" --version 2>&1)"; then
+    _ok "python version: ${local_ver}"
+  else
+    _fail "python --version failed (exit $?)"
+  fi
 else
   _fail "python binary missing at ${PY_BIN}"
 fi
@@ -260,7 +263,7 @@ echo "  [6] Style Formatter"
 _sep
 HOOK="${REPO_ROOT}/.git/hooks/pre-commit"
 [[ -f "${HOOK}" ]] && _ok "pre-commit hook installed" || _fail "pre-commit hook missing"
-_check_bin_receipt "clang-format (hook)" "toolchains/clang/source-build" clang-format --version
+_check_bin_receipt "clang-format (hook)" "toolchains/llvm" clang-format --version
 
 # ---------------------------------------------------------------------------
 # 7. Python sanity check
@@ -273,24 +276,24 @@ if ! _receipt_exists "python"; then
 elif ! _receipt_exists "pip-packages"; then
   _skip "full package import test (pip-packages not installed)"
 elif [[ -f "${PY_BIN}" ]]; then
-  SANITY_OUT="$("${PY_BIN}" -c "
+  local_sanity=""
+  if local_sanity="$("${PY_BIN}" -c "
 import sqlite3, numpy, pandas, streamlit, sqlalchemy
 print('sqlite3:', sqlite3.sqlite_version)
 print('numpy:', numpy.__version__)
 print('pandas:', pandas.__version__)
 print('streamlit:', streamlit.__version__)
 print('sqlalchemy:', sqlalchemy.__version__)
-" 2>&1)"
-  if [[ $? -eq 0 ]]; then
+" 2>&1)"; then
     _ok "full package import test"
     if [[ "${VERBOSE}" == "true" ]]; then
-      echo "${SANITY_OUT}" | while IFS= read -r line; do
+      echo "${local_sanity}" | while IFS= read -r line; do
         echo "         ${line}"
       done
     fi
   else
     _fail "full package import test"
-    echo "${SANITY_OUT}" >&2
+    echo "${local_sanity}" >&2
   fi
 fi
 
