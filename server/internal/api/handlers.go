@@ -524,8 +524,16 @@ func winLocalAppData() string {
 	return ""
 }
 
-func prefixOverridePath(repoRoot string) string {
-	return filepath.Join(repoRoot, "manager", "src", "airgap_devkit", ".devkit-prefix")
+func prefixOverridePath(_ string) string {
+	// Store outside the repo so it survives git operations and works when the
+	// repo is mounted read-only.
+	if cfgDir, err := os.UserConfigDir(); err == nil {
+		return filepath.Join(cfgDir, "airgap-cpp-devkit", "prefix")
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, ".config", "airgap-cpp-devkit", "prefix")
+	}
+	return filepath.Join(os.TempDir(), ".devkit-prefix")
 }
 
 func readPrefixOverride(repoRoot string) string {
@@ -674,7 +682,12 @@ func (s *Server) handleSetPrefix(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, "prefix must be an absolute, clean path", 400)
 		return
 	}
-	if err := os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(body.Prefix), 0o600); err != nil {
+	p := prefixOverridePath(s.RepoRoot)
+	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+		jsonErr(w, err.Error(), 500)
+		return
+	}
+	if err := os.WriteFile(p, []byte(body.Prefix), 0o600); err != nil {
 		jsonErr(w, err.Error(), 500)
 		return
 	}
@@ -790,7 +803,9 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 			jsonErr(w, "imported prefix must be an absolute, clean path", 400)
 			return
 		}
-		_ = os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(tc.Prefix), 0o600)
+		pp := prefixOverridePath(s.RepoRoot)
+		_ = os.MkdirAll(filepath.Dir(pp), 0o700)
+		_ = os.WriteFile(pp, []byte(tc.Prefix), 0o600)
 		s.mu.Lock()
 		s.prefix = tc.Prefix
 		s.mu.Unlock()
@@ -1624,7 +1639,9 @@ func (s *Server) syncTeamConfig() {
 		return
 	}
 	if tc.Prefix != "" && filepath.IsAbs(tc.Prefix) && filepath.Clean(tc.Prefix) == tc.Prefix {
-		_ = os.WriteFile(prefixOverridePath(s.RepoRoot), []byte(tc.Prefix), 0o600)
+		pp := prefixOverridePath(s.RepoRoot)
+		_ = os.MkdirAll(filepath.Dir(pp), 0o700)
+		_ = os.WriteFile(pp, []byte(tc.Prefix), 0o600)
 		s.mu.Lock()
 		s.prefix = tc.Prefix
 		s.mu.Unlock()

@@ -52,7 +52,7 @@ func (s *Server) tokenAuth(next http.Handler) http.Handler {
 }
 
 func (s *Server) handleAuthBootstrap(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Get("token") != s.token {
+	if r.URL.Query().Get("devkit_token") != s.token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

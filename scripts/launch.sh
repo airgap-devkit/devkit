@@ -29,16 +29,19 @@ _sep() { printf '%s\n' "========================================================
 FORCE_CLI=false
 FORCE_REBUILD=false
 SERVER_ARGS=()
-UI_PORT=8080
+INSTALL_ARGS=()
+UI_PORT=9090
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --cli)        FORCE_CLI=true; shift ;;
-        --rebuild)    FORCE_REBUILD=true; shift ;;
-        --port)       UI_PORT="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
-        --host)       SERVER_ARGS+=("$1" "$2"); shift 2 ;;
-        --no-browser) SERVER_ARGS+=("$1"); shift ;;
-        *)            SERVER_ARGS+=("$1"); shift ;;
+        --cli)         FORCE_CLI=true; shift ;;
+        --rebuild)     FORCE_REBUILD=true; INSTALL_ARGS+=("$1"); shift ;;
+        --port)        UI_PORT="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
+        --host)        SERVER_ARGS+=("$1" "$2"); shift 2 ;;
+        --no-browser)  SERVER_ARGS+=("$1"); shift ;;
+        --yes|--admin) INSTALL_ARGS+=("$1"); shift ;;
+        --profile|--prefix) INSTALL_ARGS+=("$1" "$2"); shift 2 ;;
+        *)             SERVER_ARGS+=("$1"); shift ;;
     esac
 done
 
@@ -46,7 +49,7 @@ done
 # --cli: go straight to install-cli.sh
 # ---------------------------------------------------------------------------
 if [[ "${FORCE_CLI}" == "true" ]]; then
-    exec bash "${INSTALL_SH}" "${SERVER_ARGS[@]+"${SERVER_ARGS[@]}"}"
+    exec bash "${INSTALL_SH}" "${INSTALL_ARGS[@]+"${INSTALL_ARGS[@]}"}"
 fi
 
 # ---------------------------------------------------------------------------
@@ -101,7 +104,7 @@ if [[ ! -f "${SERVER_BIN}" ]]; then
     echo ""
     echo "  Falling back to install-cli.sh..."
     echo ""
-    exec bash "${INSTALL_SH}"
+    exec bash "${INSTALL_SH}" "${INSTALL_ARGS[@]+"${INSTALL_ARGS[@]}"}"
 fi
 
 # ---------------------------------------------------------------------------
@@ -109,11 +112,25 @@ fi
 # ---------------------------------------------------------------------------
 _free_port() {
     local port="$1"
-    local pids
-    pids="$(netstat -ano 2>/dev/null \
-        | grep -E "[:.]${port}[[:space:]].*LISTEN" \
-        | awk '{print $NF}' \
-        | sort -u)" || true
+    local pids=""
+    if [[ "$PLATFORM" == "windows" ]]; then
+        # Windows: netstat -ano last column is PID
+        pids="$(netstat -ano 2>/dev/null \
+            | grep -E "[:.]${port}[[:space:]].*LISTEN" \
+            | awk '{print $NF}' \
+            | grep -E '^[0-9]+$' \
+            | sort -u)" || true
+    else
+        # Linux: use ss (iproute2); extract pid= from the users: field.
+        # ss output: users:(("prog",pid=NNN,fd=M))
+        pids="$(ss -ltnp "sport = :${port}" 2>/dev/null \
+            | grep -oP 'pid=\K[0-9]+' \
+            | sort -u)" || true
+        # Fallback: lsof (not always installed)
+        if [[ -z "$pids" ]] && command -v lsof &>/dev/null; then
+            pids="$(lsof -ti ":${port}" 2>/dev/null)" || true
+        fi
+    fi
     [[ -z "$pids" ]] && return 0
     echo "  [!!]  Port ${port} in use — killing: ${pids}"
     for pid in $pids; do
