@@ -1,0 +1,12 @@
+{
+  "team_name": "My Team",
+  "org_name": "My Org",
+  "devkit_name": "AirGap DevKit",
+  "theme_color": "#2563eb",
+  "dashboard_title": "Tool Dashboard",
+  "hostname": "127.0.0.1",
+  "port": 9090,
+  "default_profile": "minimal",
+  "team_config_repo": "",
+  "setup_complete": true
+}
