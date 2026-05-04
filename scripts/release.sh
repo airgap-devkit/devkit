@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
-# Release script — bumps version, builds Go binaries, builds pip wheel, uploads to PyPI.
+# Release script — bumps version, builds Go binaries, builds pip wheel,
+# creates a GitHub release, and publishes to PyPI.
 #
 # Usage:
-#   bash scripts/release.sh <version> [--no-build] [--test] [--upload]
+#   bash scripts/release.sh <version> [flags]
 #
-# Examples:
-#   bash scripts/release.sh 1.0.2                   # bump + build wheel, no upload
-#   bash scripts/release.sh 1.0.2 --upload          # bump + build + upload to PyPI
-#   bash scripts/release.sh 1.0.2 --test            # upload to TestPyPI instead
-#   bash scripts/release.sh 1.0.2 --no-build        # skip Go compile (use existing prebuilt/)
+# Flags:
+#   --no-build        Skip Go compile (use existing prebuilt/ binaries)
+#   --upload          Publish wheel + sdist to PyPI (real index)
+#   --test            Publish to TestPyPI instead of real PyPI (implies --upload)
+#   --skip-sign       Skip Authenticode / GPG binary signing
+#   --skip-vt         Skip VirusTotal scan
+#   --skip-gh-release Skip creating the GitHub release and tag
+#
+# Standard full release (new binaries, public):
+#   bash scripts/release.sh 1.2.3 --upload
+#
+# Hotfix / bug-fix only (binaries unchanged):
+#   bash scripts/release.sh 1.2.3 --no-build --skip-sign --skip-vt --upload
+#
+# Dry run (local build only, no publish):
+#   bash scripts/release.sh 1.2.3 --no-build --skip-sign --skip-vt --skip-gh-release
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,9 +33,10 @@ UPLOAD=false
 TEST_PYPI=false
 SKIP_SIGN=false
 SKIP_VT=false
+SKIP_GH_RELEASE=false
 
 if [[ -z "$VERSION" ]]; then
-    echo "Usage: bash scripts/release.sh <version> [--no-build] [--test] [--upload] [--skip-sign] [--skip-vt]" >&2
+    echo "Usage: bash scripts/release.sh <version> [--no-build] [--upload] [--test] [--skip-sign] [--skip-vt] [--skip-gh-release]" >&2
     echo "  version format: 1.2.3 or 1.2.3rc1 or 1.2.3b2" >&2
     exit 1
 fi
@@ -31,11 +44,12 @@ fi
 shift
 for arg in "$@"; do
     case "$arg" in
-        --no-build)  NO_BUILD=true ;;
-        --upload)    UPLOAD=true ;;
-        --test)      TEST_PYPI=true; UPLOAD=true ;;
-        --skip-sign) SKIP_SIGN=true ;;
-        --skip-vt)   SKIP_VT=true ;;
+        --no-build)       NO_BUILD=true ;;
+        --upload)         UPLOAD=true ;;
+        --test)           TEST_PYPI=true; UPLOAD=true ;;
+        --skip-sign)      SKIP_SIGN=true ;;
+        --skip-vt)        SKIP_VT=true ;;
+        --skip-gh-release) SKIP_GH_RELEASE=true ;;
         *) echo "Unknown flag: $arg" >&2; exit 1 ;;
     esac
 done
@@ -196,7 +210,75 @@ echo ""
 echo "  Checking with twine..."
 "$PYTHON" -m twine check "$REPO_ROOT/dist/python/"*
 
-# ── 8. upload ─────────────────────────────────────────────────────────────────
+# ── 8. GitHub release ─────────────────────────────────────────────────────────
+# Creates a git tag, pushes it, and publishes a GitHub release with the wheel
+# and sdist attached.  Skipped for pre-release versions (a/b/rc) by default
+# unless the caller explicitly passes --upload (or a full stable version).
+if [[ "$SKIP_GH_RELEASE" == false ]]; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  GitHub release"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    if ! command -v gh &>/dev/null; then
+        echo "  [WARN] 'gh' CLI not found — skipping GitHub release."
+        echo "         Install gh (https://cli.github.com/) and re-run, or use --skip-gh-release."
+    else
+        TAG="v$GO_VERSION"
+
+        # Push the working-tree commit before tagging so the tag lands on the
+        # version-bumped commit (not the commit before it).
+        echo "  Pushing main branch..."
+        git -C "$REPO_ROOT" push origin main
+
+        # Create + push the tag (skip if it already exists on the remote).
+        if git -C "$REPO_ROOT" ls-remote --exit-code --tags origin "$TAG" &>/dev/null; then
+            echo "  Tag $TAG already exists on remote — skipping tag push."
+        else
+            git -C "$REPO_ROOT" tag "$TAG"
+            git -C "$REPO_ROOT" push origin "$TAG"
+            echo "  Pushed tag $TAG"
+        fi
+
+        # Build the release notes from the CHANGELOG block for this version.
+        _changelog_section() {
+            local ver="$1" cl="$REPO_ROOT/CHANGELOG.md"
+            awk "/^## \[$ver\]/,/^## \[/" "$cl" \
+                | head -n -1 \
+                | tail -n +2
+        }
+        RELEASE_NOTES="$(_changelog_section "$VERSION")"
+        if [[ -z "$RELEASE_NOTES" ]]; then
+            RELEASE_NOTES="See [CHANGELOG.md](CHANGELOG.md) for details."
+        fi
+        # Append install snippet
+        RELEASE_NOTES="${RELEASE_NOTES}
+
+## Install
+
+\`\`\`
+pip install airgap-devkit==$VERSION
+\`\`\`"
+
+        SDIST=$(ls "$REPO_ROOT/dist/python/"*.tar.gz 2>/dev/null | head -1)
+        WHEEL_FILE=$(ls "$REPO_ROOT/dist/python/"*.whl 2>/dev/null | head -1)
+
+        GH_FLAGS=(--title "v${GO_VERSION}" --notes "$RELEASE_NOTES" --latest)
+        # Pre-release versions (a/b/rc in PEP 440) get --prerelease flag
+        if echo "$VERSION" | grep -qE '(a|b|rc)[0-9]+$'; then
+            GH_FLAGS+=(--prerelease)
+        fi
+
+        gh release create "$TAG" \
+            "${WHEEL_FILE}" \
+            "${SDIST}" \
+            "${GH_FLAGS[@]}"
+
+        echo "  GitHub release: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/releases/tag/$TAG"
+    fi
+fi
+
+# ── 9. PyPI upload ────────────────────────────────────────────────────────────
 if [[ "$UPLOAD" == true ]]; then
     echo ""
     if [[ "$TEST_PYPI" == true ]]; then
@@ -223,8 +305,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  Done — v$VERSION"
 if [[ "$UPLOAD" == false ]]; then
     echo ""
-    echo "  To upload to TestPyPI: bash scripts/release.sh $VERSION --no-build --test"
-    echo "  To upload to PyPI:     bash scripts/release.sh $VERSION --no-build --upload"
+    echo "  To publish (PyPI + GitHub release):"
+    echo "    bash scripts/release.sh $VERSION --no-build --skip-sign --skip-vt --upload"
     echo ""
     echo "  Signing env vars:  CODESIGN_CERT, CODESIGN_PASSWD, GPG_KEY_ID"
     echo "  VT scan env var:   VT_API_KEY  (skip with --skip-vt)"
