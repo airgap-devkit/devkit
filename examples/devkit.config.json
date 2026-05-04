@@ -8,5 +8,6 @@
   "port": 9090,
   "default_profile": "minimal",
   "team_config_repo": "",
-  "setup_complete": true
+  "setup_complete": true,
+  "allow_egress": false
 }
