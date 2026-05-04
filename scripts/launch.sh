@@ -31,12 +31,13 @@ FORCE_REBUILD=false
 SERVER_ARGS=()
 INSTALL_ARGS=()
 UI_PORT=9090
+USER_PORT=""   # explicit --port flag; takes priority over config file
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --cli)         FORCE_CLI=true; shift ;;
         --rebuild)     FORCE_REBUILD=true; INSTALL_ARGS+=("$1"); shift ;;
-        --port)        UI_PORT="$2";  SERVER_ARGS+=("$1" "$2"); shift 2 ;;
+        --port)        UI_PORT="$2"; USER_PORT="$2"; shift 2 ;;
         --host)        SERVER_ARGS+=("$1" "$2"); shift 2 ;;
         --no-browser)  SERVER_ARGS+=("$1"); shift ;;
         --yes|--admin) INSTALL_ARGS+=("$1"); shift ;;
@@ -108,40 +109,60 @@ if [[ ! -f "${SERVER_BIN}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Free target port if in use
+# Free target port if in use — only kills existing devkit-server processes.
+# Refuses to kill unrelated daemons to avoid collateral damage.
 # ---------------------------------------------------------------------------
 _free_port() {
     local port="$1"
     local pids=""
     if [[ "$PLATFORM" == "windows" ]]; then
-        # Windows: netstat -ano last column is PID
         pids="$(netstat -ano 2>/dev/null \
             | grep -E "[:.]${port}[[:space:]].*LISTEN" \
             | awk '{print $NF}' \
             | grep -E '^[0-9]+$' \
             | sort -u)" || true
     else
-        # Linux: use ss (iproute2); extract pid= from the users: field.
-        # ss output: users:(("prog",pid=NNN,fd=M))
         pids="$(ss -ltnp "sport = :${port}" 2>/dev/null \
             | grep -oP 'pid=\K[0-9]+' \
             | sort -u)" || true
-        # Fallback: lsof (not always installed)
         if [[ -z "$pids" ]] && command -v lsof &>/dev/null; then
             pids="$(lsof -ti ":${port}" 2>/dev/null)" || true
         fi
     fi
     [[ -z "$pids" ]] && return 0
-    echo "  [!!]  Port ${port} in use — killing: ${pids}"
+
+    local killed=0
     for pid in $pids; do
         [[ "$pid" =~ ^[0-9]+$ ]] || continue
         if [[ "$PLATFORM" == "windows" ]]; then
-            taskkill.exe //PID "$pid" //F 2>/dev/null || true
+            local exe
+            exe="$(wmic process where "ProcessId=${pid}" get ExecutablePath 2>/dev/null \
+                | grep -i "devkit-server" | tr -d '\r' | xargs || true)"
+            if [[ -n "$exe" ]]; then
+                echo "  [--]  Stopping previous devkit-server (PID ${pid}) on port ${port}."
+                taskkill.exe //PID "$pid" //F 2>/dev/null || true
+                killed=1
+            else
+                echo "  [!!]  Port ${port} is in use by PID ${pid} (not devkit-server)." >&2
+                echo "        Free port ${port} manually or choose a different port with --port." >&2
+                exit 1
+            fi
         else
-            kill -9 "$pid" 2>/dev/null || true
+            local exe
+            exe="$(readlink "/proc/${pid}/exe" 2>/dev/null || true)"
+            if [[ "$exe" == *devkit-server* ]]; then
+                echo "  [--]  Stopping previous devkit-server (PID ${pid}) on port ${port}."
+                kill -TERM "$pid" 2>/dev/null || true
+                killed=1
+            else
+                echo "  [!!]  Port ${port} is in use by PID ${pid} ($(basename "${exe:-unknown}")) — not devkit-server." >&2
+                echo "        Free port ${port} manually or choose a different port with --port." >&2
+                exit 1
+            fi
         fi
     done
-    sleep 1
+    [[ "$killed" == "1" ]] && sleep 1
+    return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -157,8 +178,9 @@ echo "  Press Ctrl+C to stop."
 _sep
 echo ""
 
-# Read effective port from devkit.config.json using pure bash (no python needed)
+# Read effective port: explicit --port flag > devkit.config.json > default (9090)
 _effective_port() {
+    [[ -n "$USER_PORT" ]] && echo "$USER_PORT" && return
     local cfg="${REPO_ROOT}/devkit.config.json"
     if [[ -f "$cfg" ]]; then
         local p
@@ -176,4 +198,5 @@ chmod +x "${SERVER_BIN}" 2>/dev/null || true
 exec "${SERVER_BIN}" \
     --tools    "${REPO_ROOT}/tools" \
     --prebuilt "${REPO_ROOT}/prebuilt" \
+    --port     "${EFFECTIVE_PORT}" \
     "${SERVER_ARGS[@]+"${SERVER_ARGS[@]}"}"

@@ -72,6 +72,7 @@ devkit-tls.key
 tools/dev-tools/devkit-ui/.devkit-prefix
 tools/dev-tools/git-bundle/tests/test_repos/
 devkit.config.json
+!examples/devkit.config.json
 temp_installs/
 
 # PyPI credentials and build artifacts

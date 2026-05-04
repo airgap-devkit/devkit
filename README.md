@@ -139,6 +139,19 @@ in the repo root (readable by the current user only).
 ```
 GET  /health                         — server liveness check (no token required)
 GET  /auth/bootstrap                 — exchange URL token for session cookie, redirect to UI
+
+# Tool install/uninstall actions — respond with SSE (text/event-stream) live output
+GET  /install/<id>                   — install a tool (streams progress)
+GET  /uninstall/<id>                 — uninstall a tool (streams progress)
+GET  /check/<id>                     — run the tool's check_cmd (streams output)
+GET  /versions/<id>                  — show installed version info
+GET  /logs/<id>                      — stream the last install log
+GET  /install-pkg/<id>               — install a package bundle (streams progress)
+GET  /remove-pkg/<id>                — remove a package bundle (streams progress)
+GET  /install-profile/<name>         — install all tools in a profile (streams progress)
+GET  /download-update/<id>           — download a tool update
+
+# Metadata and configuration
 GET  /api/tools                      — full tool list with install status
 GET  /api/tool/{id}                  — single tool detail
 GET  /api/health/tools               — binary health check for all installed tools
@@ -158,6 +171,8 @@ GET  /api/layout                     — current dashboard layout
 POST /api/layout                     — save layout
 DELETE /api/layout                   — reset to defaults
 ```
+
+> **First-run setup:** if no `devkit.config.json` is found at the repo root, all `/api/*` requests redirect to `/setup` until the wizard completes (POST `/api/setup` with `team_name`, `org_name`, `devkit_name`). See `examples/devkit.config.json` for a ready-to-use template.
 
 ---
 
@@ -277,7 +292,7 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 
 | Directory | Purpose | Required? |
 |-----------|---------|-----------|
-| [`tools/toolchains/clang/style-formatter/`](tools/toolchains/clang/style-formatter/README.md) | LLVM C++ style enforcement via Git pre-commit hook | Yes |
+| [`tools/toolchains/llvm/style-formatter/`](tools/toolchains/llvm/style-formatter/README.md) | LLVM C++ style enforcement via Git pre-commit hook | Yes |
 | [`tools/toolchains/clang/source-build/`](tools/toolchains/clang/source-build/README.md) | clang-format + clang-tidy from LLVM 22.1.3; prebuilt or source build | No |
 | [`tools/build-tools/cmake/`](tools/build-tools/cmake/README.md) | CMake 4.3.1 — prebuilt or source build; RHEL 8 + Windows | No |
 | [`tools/dev-tools/git-bundle/`](tools/dev-tools/git-bundle/README.md) | Transfers Git repos with nested submodules across air-gapped boundaries | Yes |
@@ -373,13 +388,13 @@ git submodule update --init --recursive
 ### Step 2 — Copy setup.sh into the repo root
 
 ```bash
-cp tools/style-formatter/toolchains/clang/style-formatter/docs/production-repo-template/setup.sh ./setup.sh
+cp tools/toolchains/llvm/style-formatter/docs/production-repo-template/setup.sh ./setup.sh
 ```
 
 ### Step 3 — Append .gitignore entries
 
 ```bash
-cat tools/style-formatter/toolchains/clang/style-formatter/docs/gitignore-snippet.txt >> .gitignore
+cat tools/toolchains/llvm/style-formatter/docs/gitignore-snippet.txt >> .gitignore
 ```
 
 ### Step 4 — Commit and push

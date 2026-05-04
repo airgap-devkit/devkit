@@ -17,8 +17,8 @@
 #   - You are in a headless / CI environment with no browser
 #
 # REQUIRED tools (installed automatically):
-#   - tools/toolchains/llvm   (clang-format + clang-tidy 22.1.3)
-#   - cmake                   4.3.1
+#   - tools/toolchains/llvm   (clang-format + clang-tidy 22.1.4)
+#   - cmake                   4.3.2
 #   - python                  3.14.4  (portable interpreter)
 #   - lcov                    2.4  (Linux only)
 #   - style-formatter         pre-commit hook
@@ -136,8 +136,8 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
     _section "  REQUIRED (installed automatically)"
-    echo "    [1] tools/toolchains/clang         clang-format + clang-tidy 22.1.3"
-    echo "    [2] cmake                    4.3.1"
+    echo "    [1] tools/toolchains/llvm          clang-format + clang-tidy 22.1.4"
+    echo "    [2] cmake                    4.3.2"
     echo "    [3] python                   3.14.4 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
     echo "    [4] lcov                     2.4 (Linux only)"
@@ -298,7 +298,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "  Rebuild        : ${REBUILD}"
     echo ""
     echo "  Tools to install:"
-    echo "    [OK] tools/toolchains/clang, cmake 4.3.1, python 3.14.4, style-formatter"
+    echo "    [OK] tools/toolchains/llvm, cmake 4.3.2, python 3.14.4, style-formatter"
     [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.4"
     [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.9 (Windows only)"
     [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.27.1"
@@ -476,11 +476,11 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [2/12] Installing tools/toolchains/llvm (required)..."
-_run_bootstrap "toolchains/llvm" \
+_run_bootstrap "clang-llvm" \
     "${REPO_ROOT}/tools/toolchains/llvm/setup.sh"
 
 # Make LLVM tools available for subsequent steps (e.g. style-formatter needs clang-format)
-export PATH="${INSTALL_PREFIX_OVERRIDE}/toolchains/llvm/bin:${PATH}"
+export PATH="${INSTALL_PREFIX_OVERRIDE}/clang-llvm/bin:${PATH}"
 
 # ---------------------------------------------------------------------------
 # Step 3: cmake
@@ -517,7 +517,7 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [6/12] Installing style-formatter (required)..."
-_CLANG_FORMAT="${INSTALL_PREFIX_OVERRIDE}/toolchains/llvm/bin/clang-format"
+_CLANG_FORMAT="${INSTALL_PREFIX_OVERRIDE}/clang-llvm/bin/clang-format"
 if [[ ! -x "${_CLANG_FORMAT}" ]] || ! "${_CLANG_FORMAT}" --version &>/dev/null; then
     echo "  [--]  Skipped: style-formatter (clang-format not compatible with this system's runtime libraries)"
     SKIPPED_TOOLS+=("style-formatter (runtime library incompatible)")
