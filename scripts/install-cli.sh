@@ -4,51 +4,45 @@
 # install-cli.sh
 #
 # CLI installer for airgap-cpp-devkit.
-# Use this when Python is unavailable or you prefer a non-GUI workflow.
+# No Python required — pure Bash, works on Windows (Git Bash / MINGW64) and
+# Linux (RHEL 8 / Rocky 8+).
 #
-# PREFERRED entry point (Python 3.8+ required):
+# PREFERRED entry point (visual UI):
 #   bash scripts/launch.sh
-#   Opens the DevKit Manager web UI at http://127.0.0.1:8080
+#   Opens the DevKit Manager web UI at http://127.0.0.1:9090
 #   with one-click installs, profiles, and live log output.
 #
 # USE THIS SCRIPT WHEN:
-#   - Python 3.8+ is not available
 #   - You need a non-interactive / scripted install (--yes --profile)
-#   - You are in a headless environment with no browser
+#   - You are in a headless / CI environment with no browser
 #
 # REQUIRED tools (installed automatically):
-#   - tools/toolchains/clang  (clang-format + clang-tidy 22.1.3)
-#   - cmake       4.3.1
-#   - python      3.14.4  (portable interpreter)
-#   - lcov        2.4  (Linux only)
-#   - style-formatter  (pre-commit hook)
+#   - tools/toolchains/llvm   (clang-format + clang-tidy 22.1.3)
+#   - cmake                   4.3.1
+#   - python                  3.14.4  (portable interpreter)
+#   - lcov                    2.4  (Linux only)
+#   - style-formatter         pre-commit hook
 #
-# OPTIONAL tools (prompted):
+# OPTIONAL tools (prompted, or selected via --profile):
 #   - servy              7.9    (Windows only)
-#   - conan              2.27.1 (Windows + Linux, no Python required)
+#   - conan              2.27.1 (Windows + Linux)
 #   - tools/dev-tools/vscode-extensions  (requires VS Code + 'code' on PATH)
 #   - winlibs-gcc-ucrt   (Windows only)
 #   - tools/frameworks/grpc    (Windows only, requires Visual Studio)
 #   - sqlite             3.53.0 (CLI binary, Windows + Linux)
-#   - matlab             (verification only -- checks Database Toolbox + Compiler)
-#
-# PREFERRED entry point (replaces this script for most users):
-#   bash scripts/launch.sh
-#   Finds Python automatically, opens http://127.0.0.1:8080 -- visual dashboard,
-#   one-click installs, profile-based batch installs, log browser.
-#   Falls back to this script automatically if Python is not found.
+#   - matlab             (verification only — checks Database Toolbox + Compiler)
 #
 # USAGE:
-#   bash install.sh [--prefix <path>] [--rebuild] [--yes]
+#   bash scripts/install-cli.sh [--prefix <path>] [--rebuild] [--yes] [--profile <name>]
 #
 # OPTIONS:
 #   --prefix <path>   Override install prefix for all tools
 #   --rebuild         Force reinstall of all tools
 #   --yes             Non-interactive: use defaults, skip confirmation screen
 #   --profile <name>  Pre-select tools for a team profile (skips prompts):
-#                       cpp-dev   -- clang, cmake, python, conan, vscode, sqlite
+#                       cpp-dev   -- llvm, cmake, python, conan, vscode, sqlite
 #                       devops    -- cmake, python, conan, sqlite
-#                       minimal   -- clang, cmake, python only (no optionals)
+#                       minimal   -- llvm, cmake, python only (no optionals)
 #                       full      -- all optional tools enabled
 # =============================================================================
 set -euo pipefail
@@ -137,7 +131,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     _header "  airgap-cpp-devkit -- CLI Installer (fallback)"
     echo ""
     echo "  Tip: for a visual installer with live output, run instead:"
-    echo "       bash scripts/launch.sh   ->  http://127.0.0.1:8080"
+    echo "       bash scripts/launch.sh   ->  http://127.0.0.1:9090"
     echo ""
     echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
@@ -452,12 +446,29 @@ echo ""
 # Step 1: prebuilt submodule
 # ---------------------------------------------------------------------------
 echo "  [1/12] Checking prebuilt submodule..."
-if ! git -C "${REPO_ROOT}" submodule status prebuilt 2>/dev/null | grep -q "^[^-]"; then
-    im_progress_start "Initialising prebuilt submodule"
-    git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt
-    im_progress_stop "Submodule ready"
+_prebuilt_populated() {
+    # "populated" means the directory exists and contains at least one file
+    [[ -d "${REPO_ROOT}/prebuilt" ]] && \
+        find "${REPO_ROOT}/prebuilt" -maxdepth 2 -type f 2>/dev/null | grep -q .
+}
+if _prebuilt_populated; then
+    echo "  [OK]  prebuilt already present."
+elif git -C "${REPO_ROOT}" submodule status prebuilt 2>/dev/null | grep -q "^[^-]"; then
+    echo "  [OK]  prebuilt submodule already initialized."
 else
-    echo "  [OK]  prebuilt already initialized."
+    # prebuilt is absent — only try git fetch when NOT air-gapped.
+    # In an air-gapped environment the repo admin must pre-populate prebuilt/
+    # before running this script; we warn and continue rather than failing hard.
+    if [[ "${GIT_ALLOW_PROTOCOL:-}" == "" ]] && git ls-remote --exit-code \
+            "$(git -C "${REPO_ROOT}" remote get-url origin 2>/dev/null)" &>/dev/null 2>&1; then
+        im_progress_start "Initialising prebuilt submodule"
+        git -C "${REPO_ROOT}" submodule update --init --recursive prebuilt
+        im_progress_stop "Submodule ready"
+    else
+        echo "  [!!]  prebuilt/ not found and network is unavailable (air-gap mode)."
+        echo "        Continuing without prebuilt — tools that need it will fail gracefully."
+        echo "        To fix: populate prebuilt/ before running this script in air-gapped environments."
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -705,5 +716,5 @@ echo ""
 echo "  All installed tools will then be available on PATH."
 echo ""
 echo "  To manage tools visually: bash scripts/launch.sh"
-echo "    Opens http://127.0.0.1:8080 -- dashboard, install, logs."
+echo "    Opens http://127.0.0.1:9090 -- dashboard, install, logs."
 echo ""

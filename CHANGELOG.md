@@ -11,6 +11,36 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.3] — 2026-05-03
+
+### Fixed
+
+#### Air-gap / install
+- `scripts/build-server.sh` — removed unconditional `go mod tidy` + `go mod download`; build now uses `-mod=vendor` when `server/vendor/` is present; exits with a clear error when `GOPROXY=off` and the vendor dir is absent instead of silently reaching out to the network
+- `scripts/install-cli.sh` step 1 — no longer calls `git submodule update` when `prebuilt/` is already populated; in a true air-gap (no network) it warns and continues rather than hard-failing the entire install
+
+#### Server API
+- `server/internal/api/auth.go` — `GET /auth/bootstrap` now reads `?devkit_token=` (was `?token=`), matching the token middleware and README; using the documented query parameter now correctly sets the session cookie
+- `server/internal/api/handlers.go` — `prefixOverridePath` moved to `~/.config/airgap-cpp-devkit/prefix` (via `os.UserConfigDir()`); previously pointed at the nonexistent `manager/src/…` path, causing `POST /api/prefix` to always return 500
+- `packages/pip-packages/devkit.json` — corrected `setup` path from `languages/python/setup.sh` (resolved to a nonexistent sibling) to `../../tools/languages/python/setup.sh`; `GET /install/pip-packages` no longer returns "No such file or directory"
+
+#### Tool install failures
+- `tools/dev-tools/vscode-extensions/setup.sh` — `VSIX_DIR` now tries `prebuilt/dev-tools/vscode-extensions/` first, then falls back to `prebuilt/dev-tools/vscode/extensions/` and `prebuilt/dev-tools/vscode/`; was hard-coded to the missing `vscode-extensions/` path
+- `tools/toolchains/ninja/setup.sh` — tar member changed from `ninja` to `./ninja` to match archive entry format; extraction no longer fails with "Not found in archive"
+- `tools/toolchains/gcc/setup.sh` — non-root Linux install now uses `rpm2cpio | cpio -idmv` to extract RPM payloads into `$PREFIX`; previously hard-exited with "Root required" for non-root users despite README claiming user-prefix mode is supported
+
+#### Server setup gate (H7)
+- `server/internal/config/config.go` — on a fresh install with no `devkit.config.json`, `SetupComplete` now defaults to `true`; every `GET /api/*` no longer silently 302-redirects to `/setup` before the user has a chance to complete the wizard
+
+#### Launch script
+- `scripts/launch.sh` — default port corrected `8080 → 9090` to match README and `devkit.config.json` documentation
+- `scripts/launch.sh` — `_free_port()` now uses `ss -ltnp`/`lsof` on Linux instead of `netstat -ano` (which parses Windows column layout and misidentifies Linux's Timer column as a PID)
+- `scripts/launch.sh` — `--yes`, `--profile`, `--prefix`, `--admin`, `--rebuild` flags are now forwarded to `install-cli.sh` when the server binary is missing and the script falls back to CLI install; previously all CLI flags were silently dropped
+- `scripts/status.sh` — stale `tools/toolchains/clang/style-formatter/` paths updated to `tools/toolchains/llvm/style-formatter/`
+- `scripts/install-cli.sh` — header comment updated: removed stale Python 3.8+ requirement, corrected port reference to 9090, replaced `clang` path with `llvm`
+
+---
+
 ## [1.3.2] — 2026-05-01
 
 ### Added
@@ -193,7 +223,13 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-[Unreleased]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.0.1-rc.2...v1.1.0
 [1.0.1-rc.2]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v1.0.0-rc.1...v1.0.1-rc.2
 [1.0.0-rc.1]: https://github.com/NimaShafie/airgap-cpp-devkit/compare/v0.2.0-alpha.2...v1.0.0-rc.1

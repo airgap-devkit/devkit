@@ -139,11 +139,11 @@ _print_installed() {
 _check_style_formatter() {
     local fmt_bin=""
     local candidates=(
-        "${REPO_ROOT}/tools/toolchains/clang/style-formatter/.venv/bin/clang-format"
-        "${REPO_ROOT}/tools/toolchains/clang/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format.exe"
-        "${REPO_ROOT}/tools/toolchains/clang/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format"
-        "${REPO_ROOT}/tools/toolchains/clang/style-formatter/.venv/Scripts/clang-format.exe"
-        "${REPO_ROOT}/tools/toolchains/clang/style-formatter/.venv/Scripts/clang-format"
+        "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/.venv/bin/clang-format"
+        "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format.exe"
+        "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/.venv/Lib/site-packages/clang_format/data/bin/clang-format"
+        "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/.venv/Scripts/clang-format.exe"
+        "${REPO_ROOT}/tools/toolchains/llvm/style-formatter/.venv/Scripts/clang-format"
     )
     for c in "${candidates[@]}"; do
         [[ -x "${c}" ]] && { fmt_bin="${c}"; break; }
@@ -161,7 +161,7 @@ _check_style_formatter() {
         echo ""
     else
         _print_not_installed "style-formatter" \
-            "bash tools/toolchains/clang/style-formatter/bootstrap.sh"
+            "bash tools/toolchains/llvm/style-formatter/bootstrap.sh"
     fi
 }
 _check_cmake() {
@@ -255,11 +255,11 @@ echo "  Platform : ${OS}   Date : $(date '+%Y-%m-%d')"
 echo "======================================================================================================"
 printf "${RESET}"
 echo ""
-install_dir="$(_find_install_dir "toolchains/clang")"
+install_dir="$(_find_install_dir "toolchains/llvm")"
 if [[ -n "${install_dir}" ]]; then
-    _print_installed "toolchains/clang" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
+    _print_installed "toolchains/llvm" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
 else
-    _print_not_installed "toolchains/clang" "bash tools/toolchains/clang/source-build/setup.sh"
+    _print_not_installed "toolchains/llvm" "bash tools/toolchains/llvm/setup.sh"
 fi
 if [[ "${OS}" == "linux" ]]; then
     install_dir="$(_find_install_dir "lcov")"

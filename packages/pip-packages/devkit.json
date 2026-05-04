@@ -8,7 +8,7 @@
   "category": "Bundles",
   "platform": "both",
   "description": "Vendored pip wheels covering data science, web, CLI, and testing. Requires Python to be installed first.",
-  "setup": "languages/python/setup.sh",
+  "setup": "../../tools/languages/python/setup.sh",
   "setup_args": ["--pip-only"],
   "receipt_name": "pip-packages",
   "estimate": "~30s",

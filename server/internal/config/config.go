@@ -27,12 +27,15 @@ func Load(repoRoot string) Config {
 		ThemeColor:     "#2563eb",
 		DashboardTitle: "Tool Dashboard",
 		Hostname:       "127.0.0.1",
-		Port:           8080,
+		Port:           9090,
 		DefaultProfile: "minimal",
 	}
 	path := filepath.Join(repoRoot, "devkit.config.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
+		// No config file yet — defaults are sane; skip the setup wizard so the
+		// API is immediately usable on a fresh install.
+		cfg.SetupComplete = true
 		return cfg
 	}
 	_ = json.Unmarshal(data, &cfg)
