@@ -5,7 +5,7 @@
     "created": "2026-04-29T06:16:27Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
-      "Tool: airgap-cpp-devkit/scripts/generate-sbom.sh"
+      "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
     ],
     "comment": "Root aggregate SBOM for airgap-cpp-devkit. References all subproject SBOMs."
   },

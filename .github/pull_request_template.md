@@ -17,7 +17,7 @@
 - [ ] `bash tests/run-tests.sh --verbose` — smoke tests pass
 - [ ] No compiled binaries added to the main repo (binaries go in `prebuilt/` submodule)
 - [ ] `manifest.json` SHA256 checksums updated (if tool version changed)
-- [ ] `sbom.spdx.json` updated via `bash scripts/generate-sbom.sh` (if tool added/bumped)
+- [ ] `sbom.spdx.json` updated via `bash scripts/internal/generate-sbom.sh` (if tool added/bumped)
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] `README.md` / `TOOLS.md` updated (if a tool was added or removed)
 
