@@ -13,17 +13,17 @@ devkit root, and run:
 
 ```bash
 # List available tools
-bash scripts/manual-install.sh --list
+bash scripts/internal/manual-install.sh --list
 
 # Install a specific tool
-bash scripts/manual-install.sh --tool cmake
-bash scripts/manual-install.sh --tool toolchains/llvm
+bash scripts/internal/manual-install.sh --tool cmake
+bash scripts/internal/manual-install.sh --tool toolchains/llvm
 
 # Install to a custom location
-bash scripts/manual-install.sh --tool cmake --prefix /c/custom/cmake
+bash scripts/internal/manual-install.sh --tool cmake --prefix /c/custom/cmake
 
 # Verify split-archive parts are present without installing
-bash scripts/manual-install.sh --tool toolchains/llvm --verify-only
+bash scripts/internal/manual-install.sh --tool toolchains/llvm --verify-only
 ```
 
 The script finds the correct `setup.sh` for the tool, sets up the required
