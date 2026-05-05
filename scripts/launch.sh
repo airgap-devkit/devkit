@@ -11,7 +11,7 @@
 #   bash scripts/launch.sh --port 9090          # custom port
 #   bash scripts/launch.sh --host 0.0.0.0       # bind to all interfaces
 #   bash scripts/launch.sh --no-browser         # start server, don't open browser
-#   bash scripts/launch.sh --cli                # skip UI, run scripts/install-cli.sh directly
+#   bash scripts/launch.sh --cli                # skip UI, run scripts/internal/install-cli.sh directly
 #   bash scripts/launch.sh --rebuild            # rebuild binary from source, then launch
 # =============================================================================
 set -euo pipefail
@@ -19,7 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PREBUILT_BIN="${REPO_ROOT}/prebuilt/bin"
-INSTALL_SH="${SCRIPT_DIR}/install-cli.sh"
+INSTALL_SH="${SCRIPT_DIR}/internal/install-cli.sh"
 
 _sep() { printf '%s\n' "================================================================================"; }
 
@@ -84,7 +84,7 @@ if [[ "${FORCE_REBUILD}" == "true" ]]; then
         echo "  [!!]  --rebuild requires Go 1.21+ on PATH. Install Go or omit --rebuild to use prebuilt." >&2
         exit 1
     fi
-    bash "${SCRIPT_DIR}/build-server.sh"
+    bash "${SCRIPT_DIR}/internal/build-server.sh"
     echo ""
 fi
 

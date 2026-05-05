@@ -6,9 +6,9 @@
 # Removes installed airgap-cpp-devkit tools and cleans up PATH registration.
 #
 # USAGE:
-#   bash scripts/uninstall.sh              # interactive — choose which tools to remove
-#   bash scripts/uninstall.sh --all        # remove everything without prompting
-#   bash scripts/uninstall.sh --prefix <path>   # look for installs under custom prefix
+#   bash scripts/internal/uninstall.sh              # interactive — choose which tools to remove
+#   bash scripts/internal/uninstall.sh --all        # remove everything without prompting
+#   bash scripts/internal/uninstall.sh --prefix <path>   # look for installs under custom prefix
 #
 # OPTIONS:
 #   --all              Remove all installed tools without prompting

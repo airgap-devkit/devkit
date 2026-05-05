@@ -14,19 +14,19 @@ on:
     branches: [main]
     paths:
       - ci/Dockerfile.rhel8-test
-      - scripts/install-cli.sh
+      - scripts/internal/install-cli.sh
       - scripts/launch.sh
       - tests/run-tests.sh
-      - scripts/install-mode.sh
+      - scripts/internal/install-mode.sh
       - tools/**
   pull_request:
     branches: [main]
     paths:
       - ci/Dockerfile.rhel8-test
-      - scripts/install-cli.sh
+      - scripts/internal/install-cli.sh
       - scripts/launch.sh
       - tests/run-tests.sh
-      - scripts/install-mode.sh
+      - scripts/internal/install-mode.sh
       - tools/**
   schedule:
     - cron: '0 7 * * 1'

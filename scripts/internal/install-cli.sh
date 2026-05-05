@@ -33,7 +33,7 @@
 #   - matlab             (verification only — checks Database Toolbox + Compiler)
 #
 # USAGE:
-#   bash scripts/install-cli.sh [--prefix <path>] [--rebuild] [--yes] [--profile <name>]
+#   bash scripts/internal/install-cli.sh [--prefix <path>] [--rebuild] [--yes] [--profile <name>]
 #
 # OPTIONS:
 #   --prefix <path>   Override install prefix for all tools
@@ -48,7 +48,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -85,7 +85,7 @@ esac
 # ---------------------------------------------------------------------------
 # Source install-mode library
 # ---------------------------------------------------------------------------
-source "${REPO_ROOT}/scripts/install-mode.sh"
+source "${REPO_ROOT}/scripts/internal/install-mode.sh"
 
 # ---------------------------------------------------------------------------
 # Plain ASCII display helpers

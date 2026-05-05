@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# scripts/setup-prebuilt-submodule.sh
+# scripts/internal/setup-prebuilt-submodule.sh
 #
 # PURPOSE: One-time setup script to initialize the prebuilt submodule.
 #          Run this after cloning if you want the pre-built binaries (Base Case).
@@ -9,7 +9,7 @@
 #          and will be building all tools from source (Worst Case).
 #
 # USAGE:
-#   bash scripts/setup-prebuilt-submodule.sh
+#   bash scripts/internal/setup-prebuilt-submodule.sh
 #
 # WHAT IT DOES:
 #   1. Initializes and clones the prebuilt submodule
@@ -27,7 +27,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"

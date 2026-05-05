@@ -3,7 +3,7 @@
 # Exits 1 if any file receives malicious detections above the threshold.
 #
 # Usage:
-#   bash scripts/virustotal-scan.sh <file> [<file2> ...]
+#   bash scripts/internal/virustotal-scan.sh <file> [<file2> ...]
 #
 # Env vars:
 #   VT_API_KEY          VirusTotal API v3 key (required)
@@ -17,11 +17,11 @@ VT_MALICIOUS_FAIL="${VT_MALICIOUS_FAIL:-0}"
 VT_BASE="https://www.virustotal.com/api/v3"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REPORT_DIR="$REPO_ROOT/dist/vt-reports"
 
 if [[ $# -eq 0 ]]; then
-    echo "Usage: bash scripts/virustotal-scan.sh <file> [<file2> ...]" >&2
+    echo "Usage: bash scripts/internal/virustotal-scan.sh <file> [<file2> ...]" >&2
     exit 1
 fi
 

@@ -126,7 +126,7 @@ install:linux:
     - |
       FLAGS="--yes --profile ${PROFILE}"
       [ "${ADMIN_INSTALL}" = "true" ] && FLAGS="${FLAGS} --admin"
-      bash scripts/install-cli.sh ${FLAGS}
+      bash scripts/internal/install-cli.sh ${FLAGS}
   artifacts:
     paths:
       - "**/INSTALL_RECEIPT.txt"
@@ -141,7 +141,7 @@ install:windows:
     - if: $TARGET_OS == "windows" || $TARGET_OS == "both"
     - when: never
   script:
-    - bash scripts/install-cli.sh --yes --profile "${PROFILE}"
+    - bash scripts/internal/install-cli.sh --yes --profile "${PROFILE}"
   artifacts:
     paths:
       - "**/INSTALL_RECEIPT.txt"

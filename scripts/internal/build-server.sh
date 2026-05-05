@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Build the Go devkit server for Windows amd64 and Linux amd64.
-# Run from the repo root: bash scripts/build-server.sh
+# Run from the repo root: bash scripts/internal/build-server.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SERVER_DIR="$REPO_ROOT/server"
 OUT_DIR="$REPO_ROOT/prebuilt/bin"
 

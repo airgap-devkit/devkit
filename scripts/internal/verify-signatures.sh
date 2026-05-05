@@ -5,14 +5,14 @@
 # GPG detached sig (Linux):   gpg --verify
 #
 # Usage:
-#   bash scripts/verify-signatures.sh [--dir <path>]
+#   bash scripts/internal/verify-signatures.sh [--dir <path>]
 #
 # Defaults to checking prebuilt/bin/.  Pass --dir to point at a custom location
 # (e.g. a staged or downloaded copy of the binaries).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BIN_DIR="$REPO_ROOT/prebuilt/bin"
 
 while [[ $# -gt 0 ]]; do

@@ -12,16 +12,16 @@
 #   check                        Audit configuration consistency
 #
 # Examples:
-#   bash scripts/pkg.sh list
-#   bash scripts/pkg.sh remove matlab
-#   bash scripts/pkg.sh set-version cmake 3.31.0
-#   bash scripts/pkg.sh add my-tool
-#   bash scripts/pkg.sh check
+#   bash scripts/internal/pkg.sh list
+#   bash scripts/internal/pkg.sh remove matlab
+#   bash scripts/internal/pkg.sh set-version cmake 3.31.0
+#   bash scripts/internal/pkg.sh add my-tool
+#   bash scripts/internal/pkg.sh check
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # ── colour helpers ──────────────────────────────────────────────────────────
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
@@ -129,7 +129,7 @@ cmd_remove() {
 
     local djson
     djson=$(find_tool "$id") \
-        || err "Tool '${id}' not found. Run 'bash scripts/pkg.sh list' to see IDs."
+        || err "Tool '${id}' not found. Run 'bash scripts/internal/pkg.sh list' to see IDs."
     local tool_dir
     tool_dir="$(dirname "$djson")"
 
@@ -144,7 +144,7 @@ cmd_remove() {
     step "install-cli.sh — profile variable lines to remove"
     step "server/internal/api/handlers.go — ToolIDs lines to review"
     step "README.md / TOOLS.md — remove documentation row"
-    step "run: bash scripts/generate-sbom.sh"
+    step "run: bash scripts/internal/generate-sbom.sh"
     echo ""
 
     printf "Proceed? [y/N]: "
@@ -244,7 +244,7 @@ PYEOF
     fi
 
     echo ""
-    ok "Done. Run 'bash scripts/pkg.sh check' to verify, then update README.md and TOOLS.md."
+    ok "Done. Run 'bash scripts/internal/pkg.sh check' to verify, then update README.md and TOOLS.md."
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -302,7 +302,7 @@ PYEOF
     echo ""
     warn "Remaining manual steps:"
     step "Update version references in README.md and TOOLS.md"
-    step "Run: bash scripts/generate-sbom.sh"
+    step "Run: bash scripts/internal/generate-sbom.sh"
     step "Run: bash tests/validate-manifests.sh"
 }
 
@@ -455,7 +455,7 @@ PYEOF
     fi
     step "Add a row to README.md and TOOLS.md"
     step "Add a test case to tests/run-tests.sh"
-    step "Run: bash scripts/generate-sbom.sh"
+    step "Run: bash scripts/internal/generate-sbom.sh"
     step "Syntax-check: bash -n ${cat_dir}/${id}/setup.sh && echo OK"
 }
 
@@ -607,7 +607,7 @@ cmd_help() {
     echo ""
     echo -e "${BOLD}pkg.sh — airgap-devkit package manager${RESET}"
     echo ""
-    echo "  Usage: bash scripts/pkg.sh <command> [args]"
+    echo "  Usage: bash scripts/internal/pkg.sh <command> [args]"
     echo ""
     printf "  ${CYAN}%-34s${RESET} %s\n" "list"                        "List all bundled tools and versions"
     printf "  ${CYAN}%-34s${RESET} %s\n" "remove <id>"                 "Remove a tool from the kit"
@@ -616,11 +616,11 @@ cmd_help() {
     printf "  ${CYAN}%-34s${RESET} %s\n" "check"                       "Audit configuration consistency"
     echo ""
     echo "  Examples:"
-    echo "    bash scripts/pkg.sh list"
-    echo "    bash scripts/pkg.sh remove matlab"
-    echo "    bash scripts/pkg.sh set-version cmake 3.31.0"
-    echo "    bash scripts/pkg.sh add my-tool"
-    echo "    bash scripts/pkg.sh check"
+    echo "    bash scripts/internal/pkg.sh list"
+    echo "    bash scripts/internal/pkg.sh remove matlab"
+    echo "    bash scripts/internal/pkg.sh set-version cmake 3.31.0"
+    echo "    bash scripts/internal/pkg.sh add my-tool"
+    echo "    bash scripts/internal/pkg.sh check"
     echo ""
     echo "  See .claude/adding-tools.md for the full tool addition checklist."
     echo ""
