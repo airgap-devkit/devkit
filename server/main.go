@@ -36,6 +36,7 @@ func main() {
 		host      = flag.String("host", "127.0.0.1", "HTTP bind address")
 		noBrowser = flag.Bool("no-browser", false, "don't open browser on startup")
 		tlsFlag   = flag.Bool("tls", false, "enable HTTPS with an auto-generated self-signed certificate")
+		skipSetup = flag.Bool("skip-setup", false, "mark setup complete so API is immediately usable (headless/CI installs)")
 	)
 	flag.Parse()
 
@@ -56,6 +57,9 @@ func main() {
 	}
 
 	cfg := config.Load(repoRoot)
+	if *skipSetup {
+		cfg.SetupComplete = true
+	}
 
 	if cfg.Port != 8080 && *port == 8080 {
 		*port = cfg.Port

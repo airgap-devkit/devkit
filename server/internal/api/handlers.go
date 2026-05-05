@@ -991,6 +991,8 @@ func (s *Server) handleInstallProfile(w http.ResponseWriter, r *http.Request) {
 // checkEnv builds a copy of os.Environ() with the tool's install directory
 // prepended to PATH, so devkit-installed binaries are found even when the
 // server process was launched before the tool was added to the system PATH.
+// Common nested locations (bin/, usr/bin/, usr/local/bin/) are all included
+// to cover tools that unpack an RPM payload (e.g. gcc → usr/bin/gcc).
 func (s *Server) checkEnv(t tools.Tool) []string {
 	receipt := tools.GetReceipt(s.currentPrefix(), t.ReceiptName)
 	if !receipt.Exists {
@@ -1001,7 +1003,13 @@ func (s *Server) checkEnv(t tools.Tool) []string {
 		instDir = filepath.Join(s.currentPrefix(), t.ReceiptName)
 	}
 	sep := string(os.PathListSeparator)
-	extra := instDir + sep + instDir + string(os.PathSeparator) + "bin"
+	ps := string(os.PathSeparator)
+	extra := strings.Join([]string{
+		instDir,
+		instDir + ps + "bin",
+		instDir + ps + "usr" + ps + "bin",
+		instDir + ps + "usr" + ps + "local" + ps + "bin",
+	}, sep)
 	env := os.Environ()
 	for i, e := range env {
 		if strings.HasPrefix(strings.ToUpper(e), "PATH=") {
@@ -1010,6 +1018,35 @@ func (s *Server) checkEnv(t tools.Tool) []string {
 		}
 	}
 	return append(env, "PATH="+extra)
+}
+
+// resolveInExtendedPath looks up binary in the PATH value found inside env,
+// returning the full path if found or the original name if not.
+// This is necessary because exec.Command resolves names using the server
+// process's own PATH, not the child's modified PATH set via cmd.Env.
+func resolveInExtendedPath(binary string, env []string) string {
+	for _, e := range env {
+		if !strings.HasPrefix(strings.ToUpper(e), "PATH=") {
+			continue
+		}
+		for _, dir := range strings.Split(e[5:], string(os.PathListSeparator)) {
+			candidate := filepath.Join(dir, binary)
+			fi, err := os.Stat(candidate)
+			if err == nil && !fi.IsDir() {
+				return candidate
+			}
+			if runtime.GOOS == "windows" {
+				for _, ext := range []string{".exe", ".cmd", ".bat"} {
+					c := candidate + ext
+					if fi, err2 := os.Stat(c); err2 == nil && !fi.IsDir() {
+						return c
+					}
+				}
+			}
+		}
+		break
+	}
+	return binary
 }
 
 // runCheckResult holds the outcome of a single tool check.
@@ -1036,15 +1073,17 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 		if len(args) == 0 {
 			args = []string{"--version"}
 		}
-		cmd := exec.Command(t.CheckBinary, args...)
-		if env := s.checkEnv(t); env != nil {
+		env := s.checkEnv(t)
+		binPath := resolveInExtendedPath(t.CheckBinary, env)
+		cmd := exec.Command(binPath, args...)
+		if env != nil {
 			cmd.Env = env
 		}
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			return runCheckResult{OK: false, Output: string(out), Error: err.Error(), CheckCmd: t.CheckBinary + " " + strings.Join(args, " ")}
+			return runCheckResult{OK: false, Output: string(out), Error: err.Error(), CheckCmd: binPath + " " + strings.Join(args, " ")}
 		}
-		return runCheckResult{OK: true, Output: string(out), CheckCmd: t.CheckBinary + " " + strings.Join(args, " ")}
+		return runCheckResult{OK: true, Output: string(out), CheckCmd: binPath + " " + strings.Join(args, " ")}
 	}
 
 	if checkCmd == "" {
@@ -1055,8 +1094,10 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 	if len(parts) == 0 {
 		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
 	}
-	cmd := exec.Command(parts[0], parts[1:]...)
-	if env := s.checkEnv(t); env != nil {
+	env := s.checkEnv(t)
+	binPath := resolveInExtendedPath(parts[0], env)
+	cmd := exec.Command(binPath, parts[1:]...)
+	if env != nil {
 		cmd.Env = env
 	}
 	out, err := cmd.CombinedOutput()
