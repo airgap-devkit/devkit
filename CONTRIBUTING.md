@@ -54,7 +54,7 @@ Open an issue using the [Feature Request](.github/ISSUE_TEMPLATE/feature_request
 - Shell scripts target **MINGW64 (Git Bash)** on Windows and **Bash 4.x** on RHEL 8.
 - No compiled binaries in the main repo. Binaries belong in the `prebuilt/` submodule.
 - Versions and SHA256 checksums must be kept in sync across `manifest.json`, `devkit.json`, and `sbom.spdx.json`.
-- Run `bash scripts/generate-sbom.sh` after any tool addition or version bump.
+- Run `bash scripts/internal/generate-sbom.sh` after any tool addition or version bump.
 - Prefer editing existing files over creating new ones. No half-finished implementations.
 
 ---
