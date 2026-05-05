@@ -325,7 +325,9 @@ for candidate_prefix in "$(_get_sys_prefix)" "$(_get_user_prefix)" ${PREFIX_OVER
         if [[ "${DRY_RUN}" == "true" ]]; then
             echo "  [dry-run] Would remove from ~/.bashrc: source \"${env_file}\""
         else
-            grep -v "${env_file}" "${BASHRC}" > "${BASHRC}.tmp" \
+            grep -v -e "${env_file}" \
+                    -e "^# airgap-cpp-devkit -- added by install\.sh$" \
+                    "${BASHRC}" > "${BASHRC}.tmp" \
                 && [[ -s "${BASHRC}.tmp" ]] \
                 && mv "${BASHRC}.tmp" "${BASHRC}" \
                 || { rm -f "${BASHRC}.tmp"; echo "  [WARN] Skipped ~/.bashrc rewrite — output was unexpectedly empty." >&2; }
