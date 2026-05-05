@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# scripts/generate-sbom.sh
+# scripts/internal/generate-sbom.sh
 #
 # PURPOSE: Regenerate all SPDX 2.3 SBOM files for airgap-cpp-devkit.
 #          Updates the creationInfo.created timestamp in every SBOM to now.
