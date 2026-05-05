@@ -52,8 +52,8 @@ override it for a single session.
 > **No binary?** Run `bash scripts/launch.sh --rebuild` to compile the server binary from
 > the vendored Go source (requires Go 1.21+). Then rerun `bash scripts/launch.sh`.
 >
-> **No UI needed?** Use the CLI directly: `bash scripts/install-cli.sh`
-> For headless/CI installs: `bash scripts/install-cli.sh --yes --profile cpp-dev`
+> **No UI needed?** Use the CLI directly: `bash scripts/internal/install-cli.sh`
+> For headless/CI installs: `bash scripts/internal/install-cli.sh --yes --profile cpp-dev`
 
 ---
 
@@ -65,7 +65,7 @@ bash scripts/launch.sh --port 9090          # custom port (one session only)
 bash scripts/launch.sh --host 0.0.0.0       # bind to all interfaces (LAN / remote access)
 bash scripts/launch.sh --no-browser         # start server, don't open browser
 bash scripts/launch.sh --tls                # enable HTTPS with a self-signed certificate
-bash scripts/launch.sh --cli                # skip UI, run scripts/install-cli.sh directly
+bash scripts/launch.sh --cli                # skip UI, run scripts/internal/install-cli.sh directly
 bash scripts/launch.sh --rebuild            # rebuild binary from source, then launch
 ```
 
@@ -201,7 +201,7 @@ Validate → Configure → Install → Server Operations → Smoke Tests → Atl
 |-------|-------------|
 | **Validate** | Checks all `devkit.json` and `manifest.json` files for syntax and required fields |
 | **Configure** | Patches `devkit.config.json` with pipeline parameters (team, profile, port) |
-| **Install** | Runs `scripts/install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
+| **Install** | Runs `scripts/internal/install-cli.sh --yes --profile <PROFILE>` on Linux and/or Windows agents |
 | **Server Operations** | Starts the server; reads token from `.devkit-token`; pushes team identity; handles package upload, config import/export |
 | **Smoke Tests** | Runs `tests/run-tests.sh` to verify all installed tools respond |
 | **Atlassian** | Posts build result to a Jira issue and overwrites a Confluence status page |
@@ -253,12 +253,12 @@ git clone <this-repo-url>
 cd airgap-cpp-devkit
 git submodule update --init --recursive
 bash scripts/launch.sh          # opens DevKit Manager
-# or: bash scripts/install-cli.sh --yes --profile cpp-dev
+# or: bash scripts/internal/install-cli.sh --yes --profile cpp-dev
 ```
 
 ### Worst case — Binaries not permitted, source only
 
-Skip the submodule. Both the DevKit Manager and `scripts/install-cli.sh` detect that
+Skip the submodule. Both the DevKit Manager and `scripts/internal/install-cli.sh` detect that
 `prebuilt/` is absent and fall back to building all tools from vendored source.
 
 ```bash
@@ -266,7 +266,7 @@ git clone <this-repo-url>
 cd airgap-cpp-devkit
 # Do NOT run: git submodule update --init --recursive
 bash scripts/launch.sh          # opens DevKit Manager
-# or: bash scripts/install-cli.sh
+# or: bash scripts/internal/install-cli.sh
 ```
 
 > **Server binary** — if `prebuilt/bin/` is absent, run
@@ -360,11 +360,11 @@ TOKEN=$(cat .devkit-token)
 curl -s -H "X-DevKit-Token: $TOKEN" http://127.0.0.1:9090/api/tools
 
 bash tests/run-tests.sh --verbose
-bash scripts/install-cli.sh --yes --profile cpp-dev
-bash scripts/generate-sbom.sh
-bash scripts/status.sh                                   # print install status of all tools
-bash scripts/pkg.sh list                                 # list all bundled tools and versions
-bash scripts/pkg.sh set-version cmake 3.31.0
+bash scripts/internal/install-cli.sh --yes --profile cpp-dev
+bash scripts/internal/generate-sbom.sh
+bash scripts/internal/status.sh                                   # print install status of all tools
+bash scripts/internal/pkg.sh list                                 # list all bundled tools and versions
+bash scripts/internal/pkg.sh set-version cmake 3.31.0
 ```
 
 ---
@@ -457,7 +457,7 @@ airgap-cpp-devkit/
 |   +-- build.sh                           <- build the Go server binary
 |   +-- test.sh                            <- run manifest validation suite
 |   +-- lint.sh                            <- syntax-check all shell scripts
-|   +-- release.sh                         <- thin wrapper around scripts/release.sh
+|   +-- release.sh                         <- thin wrapper around scripts/internal/release.sh
 |   +-- smoke.sh                           <- server health check (used by ci.yml)
 |   +-- Dockerfile.rhel8-test              <- RHEL 8 / UBI 8.10 integration test image
 |   +-- atlassian/
@@ -487,17 +487,22 @@ airgap-cpp-devkit/
 |
 +-- scripts/
 |   +-- launch.sh                          <- PRIMARY entry point (starts Go server)
-|   +-- install-cli.sh                     <- CLI installer / fallback (Bash only)
-|   +-- uninstall.sh                       <- removes all installed tools
-|   +-- build-server.sh                    <- builds Go binary from source
-|   +-- release.sh                         <- atomic version bump + build + PyPI upload
-|   +-- install-mode.sh                    <- shared admin/user detection library
-|   +-- setup-prebuilt-submodule.sh        <- initialize prebuilt submodule
-|   +-- generate-sbom.sh                   <- regenerates all SBOM timestamps
-|   +-- fetch-vscode-extensions.py         <- mirrors .vsix files for offline use
-|   +-- status.sh                          <- prints install status of all tools
-|   +-- pkg.sh                             <- package management helper
-|   +-- manual-install.sh                  <- CLI fallback for manual installs
+|   +-- internal/                          <- helper scripts (not run directly)
+|   |   +-- install-cli.sh                <- CLI installer / headless installs
+|   |   +-- uninstall.sh                  <- removes all installed tools
+|   |   +-- release.sh                    <- version bump + build + PyPI upload
+|   |   +-- generate-sbom.sh              <- regenerates all SBOM timestamps
+|   |   +-- status.sh                     <- prints install status of all tools
+|   |   +-- pkg.sh                        <- package management helper
+|   |   +-- manual-install.sh             <- fallback installer (no UI)
+|   |   +-- build-server.sh               <- builds Go binary from source
+|   |   +-- install-mode.sh               <- shared admin/user detection library
+|   |   +-- setup-prebuilt-submodule.sh   <- initialize prebuilt submodule
+|   |   +-- download-prebuilt.sh          <- downloads/stages prebuilt binaries
+|   |   +-- sign-binaries.sh              <- Authenticode + GPG binary signing
+|   |   +-- verify-signatures.sh          <- verifies binary signatures
+|   |   +-- virustotal-scan.sh            <- VirusTotal API v3 scan
+|   |   +-- fetch-vscode-extensions.py    <- mirrors .vsix files for offline use
 |
 +-- tests/
 |   +-- run-tests.sh                       <- post-install smoke tests

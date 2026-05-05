@@ -7,7 +7,7 @@ Thin Python wrapper that ships the DevKit Manager binary and exposes an
 
 **Step 1 — build (or verify) the server binaries:**
 ```bash
-bash scripts/build-server.sh
+bash scripts/internal/build-server.sh
 ```
 
 **Step 2 — stage binaries into the package:**

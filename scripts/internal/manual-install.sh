@@ -9,11 +9,11 @@
 #          Runs in Git Bash (MINGW64) on Windows and in bash on Linux.
 #
 # USAGE:
-#   bash scripts/manual-install.sh --list
-#   bash scripts/manual-install.sh --tool cmake
-#   bash scripts/manual-install.sh --tool toolchains/llvm
-#   bash scripts/manual-install.sh --tool toolchains/llvm --prefix /c/tools/llvm
-#   bash scripts/manual-install.sh --tool toolchains/llvm --verify-only
+#   bash scripts/internal/manual-install.sh --list
+#   bash scripts/internal/manual-install.sh --tool cmake
+#   bash scripts/internal/manual-install.sh --tool toolchains/llvm
+#   bash scripts/internal/manual-install.sh --tool toolchains/llvm --prefix /c/tools/llvm
+#   bash scripts/internal/manual-install.sh --tool toolchains/llvm --verify-only
 #
 # PLATFORMS:
 #   Windows — run in Git Bash (MINGW64), not PowerShell or cmd.exe
@@ -22,7 +22,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TOOLS_DIR="$REPO_ROOT/tools"
 PREBUILT_DIR="${PREBUILT_DIR:-$REPO_ROOT/prebuilt}"
 
@@ -36,7 +36,7 @@ LIST_TOOLS=false
 # ---------------------------------------------------------------------------
 _usage() {
     cat <<'HELP'
-Usage: bash scripts/manual-install.sh [OPTIONS]
+Usage: bash scripts/internal/manual-install.sh [OPTIONS]
 
 Fallback installer for when the devkit-ui web application cannot complete an
 installation.  Runs entirely offline using the prebuilt/ binaries.
@@ -49,11 +49,11 @@ OPTIONS
   --help, -h              Show this help text
 
 EXAMPLES
-  bash scripts/manual-install.sh --list
-  bash scripts/manual-install.sh --tool cmake
-  bash scripts/manual-install.sh --tool toolchains/llvm
-  bash scripts/manual-install.sh --tool toolchains/llvm --prefix /c/tools/llvm
-  bash scripts/manual-install.sh --tool toolchains/llvm --verify-only
+  bash scripts/internal/manual-install.sh --list
+  bash scripts/internal/manual-install.sh --tool cmake
+  bash scripts/internal/manual-install.sh --tool toolchains/llvm
+  bash scripts/internal/manual-install.sh --tool toolchains/llvm --prefix /c/tools/llvm
+  bash scripts/internal/manual-install.sh --tool toolchains/llvm --verify-only
 
 NOTES
   • Run from the devkit root directory (the folder containing launch.sh), OR
@@ -120,7 +120,7 @@ if [[ "$LIST_TOOLS" == "true" ]]; then
         printf "    %-30s %s %s\n" "$local_id" "$local_name" "${local_ver:+(v$local_ver)}"
     done < <(find "$TOOLS_DIR" -name "devkit.json" -print0 2>/dev/null | sort -z)
     echo ""
-    echo "Install a tool with:  bash scripts/manual-install.sh --tool <id>"
+    echo "Install a tool with:  bash scripts/internal/manual-install.sh --tool <id>"
     exit 0
 fi
 

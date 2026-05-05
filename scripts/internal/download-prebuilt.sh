@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# scripts/download-prebuilt.sh
+# scripts/internal/download-prebuilt.sh
 # Downloads, repackages, and stages all updated prebuilt binaries.
 # Run from the repo root on an internet-connected machine.
 #
 # Usage:
-#   bash scripts/download-prebuilt.sh [--small] [--large]
+#   bash scripts/internal/download-prebuilt.sh [--small] [--large]
 #   --small   Only small/medium tools (cmake, notepadpp, 7zip, conan, servy)
 #   --large   Only large tools (llvm, dotnet, vscode) — can take 30+ min
 #   (no flags) runs all
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PREBUILT_DIR="$REPO_ROOT/prebuilt"
 TMP_DIR=$(mktemp -d)
 PART_SIZE="50m"
@@ -252,7 +252,7 @@ MEOF
   done
   if [[ -z "$SZIP_BIN" ]]; then
     echo "    WARNING: 7z not found — cannot unpack Servy .7z." >&2
-    echo "    Install 7-Zip first, then re-run: bash scripts/download-prebuilt.sh --small" >&2
+    echo "    Install 7-Zip first, then re-run: bash scripts/internal/download-prebuilt.sh --small" >&2
     echo "    Storing raw .7z as fallback; Servy staging incomplete." >&2
     cp "$TMP_DIR/servy-8.3-x64-portable.7z" "$SERVY_DIR/"
   else
@@ -480,5 +480,5 @@ fi  # RUN_LARGE
 echo ""
 echo "============================================================"
 echo " Prebuilt download complete."
-echo " Next: bash scripts/generate-sbom.sh"
+echo " Next: bash scripts/internal/generate-sbom.sh"
 echo "============================================================"

@@ -5,7 +5,7 @@
 # Linux binary (GPG):        gpg          — requires GPG_KEY_ID
 #
 # Usage:
-#   bash scripts/sign-binaries.sh [--windows-only] [--linux-only]
+#   bash scripts/internal/sign-binaries.sh [--windows-only] [--linux-only]
 #
 # Env vars (both are optional; missing means that target is skipped with a warning):
 #   CODESIGN_CERT    absolute path to a PKCS#12 (.pfx/.p12) certificate file
@@ -14,7 +14,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BIN_DIR="$REPO_ROOT/prebuilt/bin"
 
 WIN_EXE="$BIN_DIR/devkit-server-windows-amd64.exe"

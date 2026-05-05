@@ -7,13 +7,13 @@
 #          Recomputes SHA1 checksums for externalDocumentRefs in root SBOM.
 #
 # USAGE:
-#   bash scripts/generate-sbom.sh
+#   bash scripts/internal/generate-sbom.sh
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 

@@ -7,12 +7,12 @@
 # Reads install receipts and verifies binaries are executable.
 #
 # USAGE:
-#   bash scripts/status.sh
+#   bash scripts/internal/status.sh
 #
 # Works on Windows (Git Bash / MINGW64) and Linux (RHEL 8+).
 # =============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
     Linux*)               OS="linux"   ;;

@@ -3,7 +3,7 @@
 # creates a GitHub release, and publishes to PyPI.
 #
 # Usage:
-#   bash scripts/release.sh <version> [flags]
+#   bash scripts/internal/release.sh <version> [flags]
 #
 # Flags:
 #   --no-build        Skip Go compile (use existing prebuilt/ binaries)
@@ -14,17 +14,17 @@
 #   --skip-gh-release Skip creating the GitHub release and tag
 #
 # Standard full release (new binaries, public):
-#   bash scripts/release.sh 1.2.3 --upload
+#   bash scripts/internal/release.sh 1.2.3 --upload
 #
 # Hotfix / bug-fix only (binaries unchanged):
-#   bash scripts/release.sh 1.2.3 --no-build --skip-sign --skip-vt --upload
+#   bash scripts/internal/release.sh 1.2.3 --no-build --skip-sign --skip-vt --upload
 #
 # Dry run (local build only, no publish):
-#   bash scripts/release.sh 1.2.3 --no-build --skip-sign --skip-vt --skip-gh-release
+#   bash scripts/internal/release.sh 1.2.3 --no-build --skip-sign --skip-vt --skip-gh-release
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # ── args ──────────────────────────────────────────────────────────────────────
 VERSION="${1:-}"
@@ -36,7 +36,7 @@ SKIP_VT=false
 SKIP_GH_RELEASE=false
 
 if [[ -z "$VERSION" ]]; then
-    echo "Usage: bash scripts/release.sh <version> [--no-build] [--upload] [--test] [--skip-sign] [--skip-vt] [--skip-gh-release]" >&2
+    echo "Usage: bash scripts/internal/release.sh <version> [--no-build] [--upload] [--test] [--skip-sign] [--skip-vt] [--skip-gh-release]" >&2
     echo "  version format: 1.2.3 or 1.2.3rc1 or 1.2.3b2" >&2
     exit 1
 fi
@@ -125,7 +125,7 @@ if [[ "$NO_BUILD" == false ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  Building Go binaries"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    bash "$REPO_ROOT/scripts/build-server.sh"
+    bash "$REPO_ROOT/scripts/internal/build-server.sh"
 else
     echo "  --no-build: skipping Go compile, using existing prebuilt/"
 fi
@@ -136,7 +136,7 @@ if [[ "$SKIP_SIGN" == false ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  Code signing"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    bash "$REPO_ROOT/scripts/sign-binaries.sh"
+    bash "$REPO_ROOT/scripts/internal/sign-binaries.sh"
 else
     echo "  --skip-sign: skipping binary signing"
 fi
@@ -152,7 +152,7 @@ if [[ "$SKIP_VT" == false ]]; then
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "  VirusTotal scan"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        bash "$REPO_ROOT/scripts/virustotal-scan.sh" \
+        bash "$REPO_ROOT/scripts/internal/virustotal-scan.sh" \
             "$REPO_ROOT/prebuilt/bin/devkit-server-linux-amd64" \
             "$REPO_ROOT/prebuilt/bin/devkit-server-windows-amd64.exe"
     fi
@@ -306,7 +306,7 @@ echo "  Done — v$VERSION"
 if [[ "$UPLOAD" == false ]]; then
     echo ""
     echo "  To publish (PyPI + GitHub release):"
-    echo "    bash scripts/release.sh $VERSION --no-build --skip-sign --skip-vt --upload"
+    echo "    bash scripts/internal/release.sh $VERSION --no-build --skip-sign --skip-vt --upload"
     echo ""
     echo "  Signing env vars:  CODESIGN_CERT, CODESIGN_PASSWD, GPG_KEY_ID"
     echo "  VT scan env var:   VT_API_KEY  (skip with --skip-vt)"

@@ -13,7 +13,7 @@ for binary in \
 
     src="$BIN_SRC/$binary"
     if [[ ! -f "$src" ]]; then
-        echo "MISSING: $src — run 'bash scripts/build-server.sh' first" >&2
+        echo "MISSING: $src — run 'bash scripts/internal/build-server.sh' first" >&2
         exit 1
     fi
     cp "$src" "$BIN_DST/$binary"

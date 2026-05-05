@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# scripts/install-mode.sh
+# scripts/internal/install-mode.sh
 #
 # PURPOSE: Shared library sourced by all airgap-cpp-devkit bootstrap/setup
 #          scripts. Detects whether the current user has admin/root privileges,
@@ -10,7 +10,7 @@
 #
 # USAGE:
 #   Source this file early in any bootstrap/setup script:
-#     source "${REPO_ROOT}/scripts/install-mode.sh"
+#     source "${REPO_ROOT}/scripts/internal/install-mode.sh"
 #     install_mode_init "<tool-name>" "<tool-version>"
 #
 #   Optional --prefix override (call before install_mode_init):
