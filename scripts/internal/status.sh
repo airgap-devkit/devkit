@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# scripts/status.sh
+# scripts/internal/status.sh
 #
 # Shows the installation status of all airgap-cpp-devkit tools.
 # Reads install receipts and verifies binaries are executable.

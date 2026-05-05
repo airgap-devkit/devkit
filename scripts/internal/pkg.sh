@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/pkg.sh — Package management helper for airgap-devkit forks
+# scripts/internal/pkg.sh — Package management helper for airgap-devkit forks
 #
 # Use this script when customising a fork: add, remove, or re-version tools
 # without having to hunt down every config file manually.

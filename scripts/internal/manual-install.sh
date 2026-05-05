@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Author: Nima Shafie
 # =============================================================================
-# scripts/manual-install.sh
+# scripts/internal/manual-install.sh
 #
 # PURPOSE: Fallback installer for when the devkit-ui web application cannot
 #          complete an installation due to OS integration errors or permission
