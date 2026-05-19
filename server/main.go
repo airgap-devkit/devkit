@@ -61,10 +61,19 @@ func main() {
 		cfg.SetupComplete = true
 	}
 
-	if cfg.Port != 8080 && *port == 8080 {
+	portExplicit, hostExplicit := false, false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "port" {
+			portExplicit = true
+		}
+		if f.Name == "host" {
+			hostExplicit = true
+		}
+	})
+	if !portExplicit && cfg.Port != 0 {
 		*port = cfg.Port
 	}
-	if cfg.Hostname != "127.0.0.1" && *host == "127.0.0.1" {
+	if !hostExplicit && cfg.Hostname != "" {
 		*host = cfg.Hostname
 	}
 
