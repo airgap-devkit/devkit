@@ -234,7 +234,6 @@ fi
 # ── Download, repack, and split assets ───────────────────────────────────────
 
 declare -A WIN_ASSETS LIN_ASSETS  # maps: filename → sha256 (or "parts" if split)
-declare -A WIN_PART_SHAS LIN_PART_SHAS  # maps: part filename → sha256
 
 download_and_stage() {
     local os_target="$1"
@@ -258,7 +257,6 @@ download_and_stage() {
 
     # ── Repack if needed ───────────────────────────────────────────────────
     local base="${fname%.*}"
-    local ext="${fname##*.}"
 
     # Determine final staged filename and repack strategy
     staged_file="$raw_dl"
@@ -295,15 +293,6 @@ download_and_stage() {
 
     if (( size_bytes > limit_bytes )); then
         split_parts "$staged_file" "$DEST_DIR" "$staged_name"
-        # Compute part SHAs
-        for part_file in "$DEST_DIR/${staged_name}.part-"*; do
-            local part_sha; part_sha=$(sha256 "$part_file")
-            if [[ "$os_target" == "windows" ]]; then
-                WIN_PART_SHAS["$(basename "$part_file")"]="$part_sha"
-            else
-                LIN_PART_SHAS["$(basename "$part_file")"]="$part_sha"
-            fi
-        done
         if [[ "$os_target" == "windows" ]]; then
             WIN_ASSETS["$staged_name"]="parts"
         else

@@ -23,16 +23,13 @@ source "$SCRIPT_DIR/lib/devkit-prebuilt.sh"
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 JSON_MODE=false
-INCLUDE_PRERELEASE=false
 
 for arg in "$@"; do
     case "$arg" in
-        --json)               JSON_MODE=true ;;
-        --include-prerelease) INCLUDE_PRERELEASE=true ;;
+        --json)    JSON_MODE=true ;;
         -h|--help)
-            echo "Usage: bash check-updates.sh [--json] [--include-prerelease]"
-            echo "  --json               Machine-readable JSON array output"
-            echo "  --include-prerelease Include pre-release and RC tags"
+            echo "Usage: bash check-updates.sh [--json]"
+            echo "  --json  Machine-readable JSON array output"
             exit 0 ;;
     esac
 done
@@ -174,7 +171,7 @@ while IFS= read -r -d '' devkit_file; do
     T_CURRENTS+=("$t_ver")
     T_LATESTS+=("${latest_ver:-}")
     T_STATUSES+=("$t_status")
-    T_NOTES+=("${t_check_url:-}")
+    T_NOTES+=("$t_note")
 
     python3 -c "
 import json, sys
