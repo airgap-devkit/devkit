@@ -40,6 +40,19 @@ done
 command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 is required" >&2; exit 2; }
 command -v curl    >/dev/null 2>&1 || { echo "ERROR: curl is required"    >&2; exit 2; }
 
+# ── Network preflight ─────────────────────────────────────────────────────────
+# Fail fast instead of timing out on every tool (15 s × N tools).
+if ! curl -sf --max-time 5 -o /dev/null "https://api.github.com" 2>/dev/null; then
+    if [[ "$JSON_MODE" == true ]]; then
+        echo "[]"
+    else
+        printf '\nERROR: Cannot reach api.github.com — internet access is required.\n' >&2
+        printf 'This script is for internet-connected machines only.\n' >&2
+        printf 'On an air-gapped system, run it on a connected machine and commit prebuilt/ to the repo.\n' >&2
+    fi
+    exit 2
+fi
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 # Semver comparison: returns 0 (true) if version $1 is strictly greater than $2.
