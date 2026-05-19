@@ -1,0 +1,128 @@
+name: Check Tool Updates
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'   # Every Monday at 07:00 UTC
+  workflow_dispatch:        # Allow manual trigger from the Actions tab
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-updates:
+    name: Check tool versions against upstream
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: false  # tools/ submodule only; prebuilt/ not needed
+
+      - run: git submodule update --init tools
+
+      - name: Check for updates
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          bash scripts/internal/check-updates.sh --json > /tmp/updates.json
+          EXIT_CODE=$?
+          set -e
+
+          # Exit 0 = all up-to-date, Exit 1 = updates available, Exit 2 = error
+          if [[ $EXIT_CODE -eq 2 ]]; then
+            echo "check-updates.sh returned a fatal error" >&2
+            cat /tmp/updates.json >&2
+            exit 2
+          fi
+
+          UPDATES_AVAILABLE=$(python3 -c "
+import json, sys
+data = json.load(open('/tmp/updates.json'))
+has = any(t['status'] == 'update available' for t in data)
+print('true' if has else 'false')
+")
+          echo "updates_available=$UPDATES_AVAILABLE" >> "$GITHUB_OUTPUT"
+
+      - name: Format issue body
+        id: format
+        if: steps.check.outputs.updates_available == 'true'
+        run: |
+          python3 - /tmp/updates.json <<'PYEOF' > /tmp/issue_body.md
+import json, sys
+from datetime import date
+
+data = json.load(open(sys.argv[1]))
+today = date.today().isoformat()
+
+lines = [
+    f'## Tool Update Report — {today}',
+    '',
+    '| Tool | Current | Latest | Status |',
+    '|------|---------|--------|--------|',
+]
+for t in sorted(data, key=lambda x: (x['status'] != 'update available', x['name'])):
+    status = t['status']
+    latest = t.get('latest_version') or '—'
+    if status == 'manual-check':
+        latest = f"[check]({t.get('check_url', '#')})"
+    elif status == 'no-source':
+        latest = 'N/A'
+    lines.append(f"| {t['name']} | `{t['current_version']}` | `{latest}` | {status} |")
+
+lines += [
+    '',
+    '### How to apply an update',
+    '',
+    '```bash',
+    'bash scripts/internal/apply-tool-update.sh <tool-id> <new-version>',
+    '# then:',
+    'bash scripts/internal/generate-sbom.sh',
+    'bash scripts/internal/release.sh <app-version> --no-build --skip-sign --skip-vt --upload',
+    '```',
+    '',
+    '_Generated automatically by [check-updates.yml](.github/workflows/check-updates.yml)_',
+]
+print('\n'.join(lines))
+PYEOF
+
+      - name: Find or update tracking issue
+        if: steps.check.outputs.updates_available == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh issue list \
+            --label "tool-updates" \
+            --state open \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty')
+
+          TITLE="[tool-updates] Upstream tool versions available — $(date +%Y-%m-%d)"
+
+          if [[ -n "$EXISTING" ]]; then
+            gh issue comment "$EXISTING" --body-file /tmp/issue_body.md
+            echo "Added comment to existing issue #$EXISTING"
+          else
+            gh issue create \
+              --title "$TITLE" \
+              --body-file /tmp/issue_body.md \
+              --label "tool-updates"
+          fi
+
+      - name: All tools up to date
+        if: steps.check.outputs.updates_available == 'false'
+        run: echo "All GitHub-tracked tools are at their latest stable release."
+
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-report-${{ github.run_id }}
+          path: /tmp/updates.json
+          retention-days: 30
