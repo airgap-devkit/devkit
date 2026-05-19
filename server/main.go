@@ -191,10 +191,7 @@ func openBrowser(url string) {
 
 	switch runtime.GOOS {
 	case "windows":
-		if err := exec.Command("powershell.exe", "-NoProfile", "-Command",
-			"Start-Process", url).Start(); err != nil {
-			_ = exec.Command("cmd", "/c", "start", "", url).Start()
-		}
+		_ = exec.Command("cmd", "/c", "start", "", url).Start()
 	case "darwin":
 		_ = exec.Command("open", url).Start()
 	default:

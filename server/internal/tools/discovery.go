@@ -49,6 +49,7 @@ type Tool struct {
 	License      string        `json:"license,omitempty"`
 	GithubRepo   string        `json:"github_repo,omitempty"`
 	AssetMatch   string        `json:"asset_match,omitempty"`
+	TagPrefix    string        `json:"tag_prefix,omitempty"`
 }
 
 var scanPatterns = []struct {

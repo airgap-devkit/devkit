@@ -1951,6 +1951,12 @@ window._toolCache = {};
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
         Logs
       </button>
+      <button class="tab-btn" data-tab="plugins" onclick="showTab('plugins')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .555.26.532.57a48.039 48.039 0 01-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 00.657-.643v0c0-.355-.186-.676-.401-.959a1.647 1.647 0 01-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.401.604-.401.959v0c0 .333.277.599.61.58a48.1 48.1 0 005.427-.63 48.05 48.05 0 00.582-4.717.532.532 0 00-.533-.57v0c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.036 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.959.401v0a.656.656 0 00.658-.663 48.422 48.422 0 00-.37-5.36c-1.886.342-3.81.574-5.766.689a.578.578 0 01-.61-.58v0z"/>
+        </svg>
+        Plugins
+      </button>
     </div>
 
     <!-- ── Tab: Tools ── -->
@@ -2064,7 +2070,7 @@ window._toolCache = {};
         </div>
         <div class="bundle-grid">
           {{range .Bundles}}
-          <div class="tool-card bundle-card{{if .Installed}} installed{{else if .UpdateAvailable}} update-available{{else if not .Available}} unavailable{{end}}" id="card-{{.ID | lower}}" data-tool-id="{{.ID}}" onclick="showToolDetail('{{.ID}}')" style="cursor:pointer;">
+          <div class="tool-card bundle-card{{if .Installed}} installed{{else if .UpdateAvailable}} update-available{{else if not .Available}} unavailable{{end}}" id="card-{{.ID | lower}}" data-tool-id="{{.ID}}" data-bundle-type="{{.BundleType}}" onclick="showToolDetail('{{.ID}}')" style="cursor:pointer;">
             <div class="tool-card-header">
               <div>
                 <div class="tool-card-name">{{.Name}}</div>
@@ -2118,6 +2124,16 @@ window._toolCache = {};
         </div>
       </div>
       {{end}}
+      <script nonce="{{nonce}}">
+      (function() {
+        document.querySelectorAll('.bundles-section [data-bundle-type="pip"], .bundles-section [data-bundle-type="vscode"]').forEach(function(el) { el.style.display = 'none'; });
+        var grid = document.querySelector('.bundles-section .bundle-grid');
+        if (grid && !grid.querySelector('[data-tool-id]:not([style*="display: none"])')) {
+          var sec = document.querySelector('.bundles-section');
+          if (sec) sec.style.display = 'none';
+        }
+      })();
+      </script>
     </div>
 
     <!-- ── Tab: Profiles ── -->
@@ -2495,6 +2511,64 @@ window._toolCache = {};
           </p>
         </div>
       </div>
+    </div>
+
+    <!-- ── Tab: Plugins ── -->
+    <div id="panel-plugins" class="tab-panel">
+
+      <div class="plugins-panel-header">
+        <div>
+          <div class="page-title">Plugins &amp; Extensions</div>
+          <div class="page-subtitle">Manage pip packages and VS Code extensions — all installed offline from vendored bundles.</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="_refreshPluginsTab()" title="Re-check install status">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+          </svg>
+          Refresh Status
+        </button>
+      </div>
+
+      <!-- Python Pip Packages -->
+      <div class="card mb-4" id="plugins-pip-card">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75"/>
+          </svg>
+          <span class="card-title">Python Pip Packages</span>
+          <span class="badge badge-gray" id="plugins-pip-count" style="margin-left:auto;">Loading…</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted text-sm mb-4">Vendored pip wheels for data science, web, CLI, and testing. Requires Python to be installed first. Packages are sorted A→Z within each category.</p>
+          <div id="plugins-pip-sections" class="plugins-pkg-sections">
+            <div class="plugins-loading">
+              <span class="pkg-status-spinner"></span>
+              <span class="text-muted text-sm">Loading packages…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VS Code Extensions -->
+      <div class="card" id="plugins-vscode-card">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/>
+          </svg>
+          <span class="card-title">VS Code Extensions</span>
+          <span class="badge badge-gray" id="plugins-vscode-count" style="margin-left:auto;">Loading…</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted text-sm mb-4">Offline bundle of essential VS Code extensions for C++ development, testing, and Python. Alphabetically sorted.</p>
+          <div id="plugins-vscode-sections" class="plugins-pkg-sections">
+            <div class="plugins-loading">
+              <span class="pkg-status-spinner"></span>
+              <span class="text-muted text-sm">Loading extensions…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <footer class="site-footer">
@@ -2963,7 +3037,7 @@ function loadProfilesList() {
               </div>
             </div>
             <div class="profile-card-actions">
-              <button class="btn btn-primary btn-sm" style="flex:1" onclick="installProfile('${id}','${safeName}')">Install</button>
+              <button class="btn btn-primary btn-sm" onclick="installProfile('${id}','${safeName}')">Install</button>
               <button class="btn btn-ghost btn-sm" onclick="openProfileEditorById('${id}')">Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteProfile('${id}','${safeName}')">Delete</button>
             </div>
@@ -3133,13 +3207,14 @@ function _applyFavorites() {
   _updateFavSection();
 }
 
-// Extend showTab to init package manager, profiles list, and logs on tab open
+// Extend showTab to init package manager, profiles list, logs, and plugins on tab open
 const _origShowTab2 = showTab;
 showTab = function(id) {
   _origShowTab2(id);
   if (id === 'packages') renderPackageManager();
   if (id === 'profiles') loadProfilesList();
   if (id === 'logs')     _renderLogsTab();
+  if (id === 'plugins')  loadPluginsTab();
 };
 
 function _renderLogsTab() {
@@ -3295,6 +3370,161 @@ function _renderMimModal() {
 
   body.innerHTML = html;
 }
+</script>
+
+<script nonce="{{nonce}}">
+// ── Plugins tab ────────────────────────────────────────────────────────────────
+
+var _pluginsLoaded = { 'pip-packages': false, 'vscode-extensions': false };
+
+function loadPluginsTab() {
+  ['pip-packages', 'vscode-extensions'].forEach(function(toolId) {
+    if (_pluginsLoaded[toolId]) return;
+    _pluginsLoaded[toolId] = true;
+    _renderPluginSection(toolId);
+  });
+}
+
+function _renderPluginSection(toolId) {
+  var sectionElId = toolId === 'pip-packages' ? 'plugins-pip-sections' : 'plugins-vscode-sections';
+  var sectionEl   = document.getElementById(sectionElId);
+  if (!sectionEl) return;
+
+  var toolData = window._toolCache && window._toolCache[toolId];
+  if (!toolData || !toolData.packages || toolData.packages.length === 0) {
+    sectionEl.innerHTML = '<p class="text-muted text-sm">No packages defined.</p>';
+    return;
+  }
+
+  var pkgs = toolData.packages;
+
+  // Build category → packages map
+  var cats = {};
+  pkgs.forEach(function(p) {
+    var cat = (p.category && p.category.trim()) ||
+              (toolData.bundle_type === 'vscode' ? 'Extensions' : 'General');
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push(p);
+  });
+
+  // Sort packages A→Z within each category; sort categories A→Z
+  var sortedCats = Object.keys(cats).sort(function(a, b) { return a.localeCompare(b); });
+  sortedCats.forEach(function(cat) {
+    cats[cat].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+  });
+
+  // Render skeleton from static cache data
+  sectionEl.innerHTML = sortedCats.map(function(cat) {
+    var items = cats[cat];
+    return '<div class="plugins-cat-group">' +
+      '<div class="plugins-cat-label">' + escHtml(cat) +
+        '<span class="plugins-cat-count">' + items.length + '</span>' +
+      '</div>' +
+      '<div class="plugins-card-grid">' +
+        items.map(function(p) {
+          var pkgKey = encodeURIComponent(p.id || p.name);
+          var actId  = _pkgActId(toolId, pkgKey);
+          var subline = toolId === 'vscode-extensions'
+            ? escHtml(p.id || '')
+            : escHtml(p.version || '');
+          return '<div class="plugin-card" id="plcard-' + actId + '">' +
+            '<div class="plugin-card-header">' +
+              '<div class="plugin-card-name">' + escHtml(p.name || '') + '</div>' +
+              '<div class="plugin-card-sub">' + subline + '</div>' +
+            '</div>' +
+            '<div class="plugin-card-desc">' + escHtml(p.description || '') + '</div>' +
+            '<div class="plugin-card-footer">' +
+              '<span class="badge badge-gray plugin-cat-chip">' + escHtml(cat) + '</span>' +
+              '<span class="badge badge-gray plugin-ver-badge">' + escHtml(p.version || '') + '</span>' +
+              '<div class="plugin-card-actions" id="' + actId + '">' +
+                '<span class="pkg-status-spinner"></span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // Update count badge
+  var countId = toolId === 'pip-packages' ? 'plugins-pip-count' : 'plugins-vscode-count';
+  var countEl = document.getElementById(countId);
+  if (countEl) {
+    countEl.textContent = toolData.version_label ||
+      (pkgs.length + (toolId === 'vscode-extensions' ? ' extensions' : ' packages'));
+  }
+
+  // Fetch live install status and populate action cells
+  fetch('/api/tool/' + encodeURIComponent(toolId) + '/packages/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) { _applyPluginStatus(toolId, d.packages || []); })
+    .catch(function() {
+      sectionEl.querySelectorAll('.plugin-card-actions').forEach(function(el) {
+        el.innerHTML = '<span style="font-size:0.65rem;color:var(--danger)">unavailable</span>';
+      });
+    });
+}
+
+function _applyPluginStatus(toolId, packages) {
+  packages.forEach(function(p) {
+    var pkgKey = encodeURIComponent(p.id || p.name);
+    var actEl  = document.getElementById(_pkgActId(toolId, pkgKey));
+    var cardEl = document.getElementById('plcard-' + _pkgActId(toolId, pkgKey));
+    if (!actEl) return;
+
+    if (p.installed) {
+      if (cardEl) cardEl.classList.add('plugin-card-installed');
+      var ver = escHtml(p.installed_version || 'Installed');
+      actEl.innerHTML =
+        '<span class="badge badge-success plugin-installed-badge">' + ver + '</span>' +
+        '<button class="btn btn-ghost btn-sm plugin-action-btn" style="color:var(--danger)" ' +
+          'onclick="removePkg(\'' + escJs(toolId) + '\',\'' + pkgKey + '\',\'' + escJs(p.name || '') + '\',this)">' +
+          'Remove' +
+        '</button>';
+    } else {
+      if (cardEl) cardEl.classList.remove('plugin-card-installed');
+      actEl.innerHTML =
+        '<button class="btn btn-primary btn-sm plugin-action-btn" ' +
+          'onclick="installPkg(\'' + escJs(toolId) + '\',\'' + pkgKey + '\',\'' + escJs(p.name || '') + '\',this)">' +
+          'Install' +
+        '</button>';
+    }
+  });
+}
+
+function _refreshPluginsTab() {
+  _pluginsLoaded = { 'pip-packages': false, 'vscode-extensions': false };
+  ['plugins-pip-sections', 'plugins-vscode-sections'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML =
+      '<div class="plugins-loading">' +
+        '<span class="pkg-status-spinner"></span>' +
+        '<span class="text-muted text-sm">Refreshing…</span>' +
+      '</div>';
+  });
+  ['plugins-pip-count', 'plugins-vscode-count'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = 'Loading…';
+  });
+  loadPluginsTab();
+}
+
+// After install/remove, also refresh plugin cards if that panel is visible
+(function() {
+  var _origRBP = window._refreshBundlePackages;
+  if (typeof _origRBP === 'function') {
+    window._refreshBundlePackages = function(toolId) {
+      _origRBP(toolId);
+      var pluginsPanel = document.getElementById('panel-plugins');
+      if (pluginsPanel && pluginsPanel.classList.contains('active')) {
+        fetch('/api/tool/' + encodeURIComponent(toolId) + '/packages/status')
+          .then(function(r) { return r.json(); })
+          .then(function(d) { _applyPluginStatus(toolId, d.packages || []); })
+          .catch(function() {});
+      }
+    };
+  }
+})();
 </script>
 
 <!-- ── Manual Install Fallback Modal ── -->

@@ -25,14 +25,10 @@ type NetworkStatus struct {
 	LatencyMs int64 `json:"latency_ms"`
 }
 
-func checkNetwork(allowEgress bool) NetworkStatus {
-	if !allowEgress {
-		return NetworkStatus{}
-	}
+func checkNetwork() NetworkStatus {
 	start := time.Now()
 	conn, err := net.DialTimeout("tcp", "8.8.8.8:53", 3*time.Second)
 	if err != nil {
-		// fallback: try 1.1.1.1
 		conn2, err2 := net.DialTimeout("tcp", "1.1.1.1:53", 3*time.Second)
 		if err2 != nil {
 			return NetworkStatus{}
@@ -45,7 +41,7 @@ func checkNetwork(allowEgress bool) NetworkStatus {
 }
 
 func (s *Server) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
-	jsonOK(w, checkNetwork(s.Config.AllowEgress))
+	jsonOK(w, checkNetwork())
 }
 
 // ── Update check ───────────────────────────────────────────────────────────
@@ -85,7 +81,11 @@ func (s *Server) handleCheckUpdates(w http.ResponseWriter, r *http.Request) {
 	}
 	_updateCache.mu.RUnlock()
 
-	ns := checkNetwork(s.Config.AllowEgress)
+	if !s.Config.AllowEgress {
+		jsonOK(w, map[string]any{"online": false, "updates": []any{}, "cached": false})
+		return
+	}
+	ns := checkNetwork()
 	if !ns.Online {
 		jsonOK(w, map[string]any{"online": false, "updates": []any{}, "cached": false})
 		return
@@ -110,7 +110,7 @@ func (s *Server) handleCheckUpdates(w http.ResponseWriter, r *http.Request) {
 				assetMatch = "linux"
 			}
 		}
-		tag, ver, dlURL, asset, err := fetchGitHubLatest(client, t.GithubRepo, assetMatch)
+		tag, ver, dlURL, asset, err := fetchGitHubLatest(client, t.GithubRepo, assetMatch, t.TagPrefix)
 		if err != nil {
 			continue
 		}
@@ -120,7 +120,7 @@ func (s *Server) handleCheckUpdates(w http.ResponseWriter, r *http.Request) {
 			CurrentVersion: t.Version,
 			LatestTag:      tag,
 			LatestVersion:  ver,
-			Available:      !strings.HasPrefix(tag, "v"+t.Version) && ver != t.Version,
+			Available:      ver != t.Version,
 			DownloadURL:    dlURL,
 			AssetName:      asset,
 		})
@@ -135,7 +135,7 @@ func (s *Server) handleCheckUpdates(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, map[string]any{"online": true, "updates": updates, "cached": false})
 }
 
-func fetchGitHubLatest(client *http.Client, repo, assetMatch string) (tag, version, downloadURL, assetName string, err error) {
+func fetchGitHubLatest(client *http.Client, repo, assetMatch, tagPrefix string) (tag, version, downloadURL, assetName string, err error) {
 	url := "https://api.github.com/repos/" + repo + "/releases/latest"
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -163,8 +163,13 @@ func fetchGitHubLatest(client *http.Client, repo, assetMatch string) (tag, versi
 	}
 
 	tag = release.TagName
-	// Clean version: strip leading "v", strip ".windows.N" suffix
-	version = strings.TrimPrefix(tag, "v")
+	// Clean version: strip tag_prefix (default "v"), then strip ".windows.N" suffix.
+	// Using TrimPrefix so tools with no "v" tag (e.g. osslsigncode "2.13") are unchanged.
+	prefix := tagPrefix
+	if prefix == "" {
+		prefix = "v"
+	}
+	version = strings.TrimPrefix(tag, prefix)
 	version = regexp.MustCompile(`\.windows\.\d+$`).ReplaceAllString(version, "")
 
 	lowerMatch := strings.ToLower(assetMatch)
@@ -199,9 +204,14 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ns := checkNetwork(s.Config.AllowEgress)
+	if !s.Config.AllowEgress {
+		sse.Send("ERROR: Egress is disabled. Set allow_egress: true in devkit.config.json to enable update downloads.")
+		sse.Done("failed")
+		return
+	}
+	ns := checkNetwork()
 	if !ns.Online {
-		sse.Send("ERROR: Egress is disabled or no internet connection. Set allow_egress: true in devkit.config.json to enable update downloads.")
+		sse.Send("ERROR: No internet connection.")
 		sse.Done("failed")
 		return
 	}
@@ -218,7 +228,7 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tag, ver, dlURL, assetName, err := fetchGitHubLatest(client, t.GithubRepo, assetMatch)
+	tag, ver, dlURL, assetName, err := fetchGitHubLatest(client, t.GithubRepo, assetMatch, t.TagPrefix)
 	if err != nil {
 		sse.Send("ERROR: " + err.Error())
 		sse.Done("failed")
@@ -228,7 +238,7 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 	sse.Send(fmt.Sprintf("Current version : %s", t.Version))
 	sse.Send(fmt.Sprintf("Latest release  : %s (tag: %s)", ver, tag))
 
-	if strings.HasPrefix(tag, "v"+t.Version) || ver == t.Version {
+	if ver == t.Version {
 		sse.Send("Already at latest version — nothing to download.")
 		sse.Done("success")
 		return
