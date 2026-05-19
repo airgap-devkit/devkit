@@ -41,55 +41,13 @@ jobs:
             exit 2
           fi
 
-          UPDATES_AVAILABLE=$(python3 -c "
-import json, sys
-data = json.load(open('/tmp/updates.json'))
-has = any(t['status'] == 'update available' for t in data)
-print('true' if has else 'false')
-")
+          UPDATES_AVAILABLE=$(python3 -c "import json; d=json.load(open('/tmp/updates.json')); print('true' if any(t['status']=='update available' for t in d) else 'false')")
           echo "updates_available=$UPDATES_AVAILABLE" >> "$GITHUB_OUTPUT"
 
       - name: Format issue body
         id: format
         if: steps.check.outputs.updates_available == 'true'
-        run: |
-          python3 - /tmp/updates.json <<'PYEOF' > /tmp/issue_body.md
-import json, sys
-from datetime import date
-
-data = json.load(open(sys.argv[1]))
-today = date.today().isoformat()
-
-lines = [
-    f'## Tool Update Report — {today}',
-    '',
-    '| Tool | Current | Latest | Status |',
-    '|------|---------|--------|--------|',
-]
-for t in sorted(data, key=lambda x: (x['status'] != 'update available', x['name'])):
-    status = t['status']
-    latest = t.get('latest_version') or '—'
-    if status == 'manual-check':
-        latest = f"[check]({t.get('check_url', '#')})"
-    elif status == 'no-source':
-        latest = 'N/A'
-    lines.append(f"| {t['name']} | `{t['current_version']}` | `{latest}` | {status} |")
-
-lines += [
-    '',
-    '### How to apply an update',
-    '',
-    '```bash',
-    'bash scripts/internal/apply-tool-update.sh <tool-id> <new-version>',
-    '# then:',
-    'bash scripts/internal/generate-sbom.sh',
-    'bash scripts/internal/release.sh <app-version> --no-build --skip-sign --skip-vt --upload',
-    '```',
-    '',
-    '_Generated automatically by [check-updates.yml](.github/workflows/check-updates.yml)_',
-]
-print('\n'.join(lines))
-PYEOF
+        run: python3 scripts/internal/lib/format-update-report.py /tmp/updates.json > /tmp/issue_body.md
 
       - name: Find or update tracking issue
         if: steps.check.outputs.updates_available == 'true'

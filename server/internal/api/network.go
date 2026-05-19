@@ -41,6 +41,10 @@ func checkNetwork() NetworkStatus {
 }
 
 func (s *Server) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
+	if !s.Config.AllowEgress {
+		jsonOK(w, NetworkStatus{})
+		return
+	}
 	jsonOK(w, checkNetwork())
 }
 

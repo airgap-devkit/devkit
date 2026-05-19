@@ -69,6 +69,12 @@ done
 command -v python3 >/dev/null 2>&1 || fail "python3 is required"
 command -v curl    >/dev/null 2>&1 || fail "curl is required"
 
+# ── Network preflight ─────────────────────────────────────────────────────────
+if [[ -z "${DRY_RUN:-}" ]]; then
+    curl -sf --max-time 5 -o /dev/null "https://api.github.com" 2>/dev/null || \
+        fail "Cannot reach api.github.com — internet access is required.\n       Run this script on an internet-connected machine, then commit prebuilt/ to the repo."
+fi
+
 [[ -n "${DRY_RUN:-}" ]] && log "DRY RUN — no files will be downloaded or modified"
 
 # ── Locate devkit.json ────────────────────────────────────────────────────────
