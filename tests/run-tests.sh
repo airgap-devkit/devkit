@@ -85,7 +85,8 @@ _check_bin() {
   local args=("$@")
   if command -v "${cmd}" &>/dev/null; then
     local out
-    if out="$("${cmd}" "${args[@]}" 2>&1 | head -1)"; then
+    if out="$("${cmd}" "${args[@]}" 2>&1)"; then
+      out="${out%%$'\n'*}"
       if [[ "${VERBOSE}" == "true" ]]; then
         _ok "${label}: ${out}"
       else
@@ -170,8 +171,8 @@ echo ""
 _sep
 echo "  [1] Toolchains"
 _sep
-_check_bin_receipt "clang-format 22.1.4" "toolchains/llvm" clang-format --version
-_check_bin_receipt "clang-tidy 22.1.4"   "toolchains/llvm" clang-tidy   --version
+_check_bin_receipt "clang-format 22.1.4" "clang-llvm" clang-format --version
+_check_bin_receipt "clang-tidy 22.1.4"   "clang-llvm" clang-tidy   --version
 
 # ---------------------------------------------------------------------------
 # 2. Build tools
@@ -263,7 +264,7 @@ echo "  [6] Style Formatter"
 _sep
 HOOK="${REPO_ROOT}/.git/hooks/pre-commit"
 [[ -f "${HOOK}" ]] && _ok "pre-commit hook installed" || _fail "pre-commit hook missing"
-_check_bin_receipt "clang-format (hook)" "toolchains/llvm" clang-format --version
+_check_bin_receipt "clang-format (hook)" "clang-llvm" clang-format --version
 
 # ---------------------------------------------------------------------------
 # 7. Python sanity check

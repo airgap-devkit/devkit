@@ -635,7 +635,11 @@ _devkit_prefix="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 for _d in "$_devkit_prefix"/*/bin "$_devkit_prefix"/*/*/bin; do
     [[ -d "$_d" ]] && export PATH="$_d:$PATH"
 done
-unset _devkit_prefix _d
+# Expose vendored Perl libs so lcov/genhtml can load their modules
+for _plib in "$_devkit_prefix/lcov/lib" "$_devkit_prefix/lcov/lib/lcov"; do
+    [[ -d "$_plib" ]] && export PERL5LIB="${_plib}${PERL5LIB:+:${PERL5LIB}}"
+done
+unset _devkit_prefix _d _plib
 ENVSH
 chmod +x "${ENV_FILE}"
 
