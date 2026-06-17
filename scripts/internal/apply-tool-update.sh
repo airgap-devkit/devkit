@@ -49,16 +49,19 @@ TOOL_ID="${1:-}"
 NEW_VERSION="${2:-}"
 DRY_RUN="${DRY_RUN:-}"
 ALL_PLATFORMS="${ALL_PLATFORMS:-}"
+TAG_OVERRIDE=""  # --tag <tag>: override the release tag (for tools like GCC/WinLibs)
 
 shift 2 2>/dev/null || true
-for arg in "$@"; do
-    case "$arg" in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --dry-run)       DRY_RUN=1 ;;
         --all-platforms) ALL_PLATFORMS=1 ;;
+        --tag)           TAG_OVERRIDE="${2:-}"; shift ;;
         -h|--help)
             sed -n '2,/^# Environment:/p' "${BASH_SOURCE[0]}" | grep '^#' | sed 's/^# //'
             exit 0 ;;
     esac
+    shift
 done
 
 [[ -z "$TOOL_ID" || -z "$NEW_VERSION" ]] && {
@@ -128,7 +131,7 @@ log "Current OS   : $CURRENT_OS"
 
 # ── Build the expected GitHub tag ────────────────────────────────────────────
 EFFECTIVE_PREFIX="${TAG_PREFIX:-v}"
-EXPECTED_TAG="${EFFECTIVE_PREFIX}${NEW_VERSION}"
+EXPECTED_TAG="${TAG_OVERRIDE:-${EFFECTIVE_PREFIX}${NEW_VERSION}}"
 
 log "GitHub repo  : ${GITHUB_REPO:-N/A}"
 log "Release tag  : $EXPECTED_TAG"
@@ -149,19 +152,22 @@ fi
 
 # ── Resolve asset download URLs ───────────────────────────────────────────────
 
-# resolve_asset_url <release_json> <match_str> → prints URL or fails
+# resolve_asset_url <match_str> [exclude_str] → prints URL or fails
+# Reads release JSON from $release_json (global), uses stdin-pipe to avoid arg-length limits.
 resolve_asset_url() {
-    local json="$1" match="$2"
-    python3 -c "
+    local match="$1" exclude="${2:-}"
+    echo "$release_json" | python3 -c "
 import json, sys
-data = json.loads(sys.argv[1])
-match = sys.argv[2].lower()
+data = json.load(sys.stdin)
+match   = sys.argv[1].lower()
+exclude = sys.argv[2].lower() if len(sys.argv) > 2 else ''
 for a in data.get('assets', []):
-    if match in a['name'].lower():
+    name = a['name'].lower()
+    if match in name and (not exclude or exclude not in name):
         print(a['browser_download_url'])
         sys.exit(0)
 sys.exit(1)
-" "$json" "$match" || fail "No asset matching '${match}' in release '${EXPECTED_TAG}' of ${GITHUB_REPO}"
+" "$match" "$exclude" || fail "No asset matching '${match}' in release '${EXPECTED_TAG}' of ${GITHUB_REPO}"
 }
 
 # Build download URL for a given platform
@@ -169,19 +175,20 @@ sys.exit(1)
 asset_for_platform() {
     local os_target="$1"
 
-    # VS Code: use download_url_template fields (assets not on GitHub releases)
+    # VS Code: use download_url_template fields (assets not on GitHub releases).
+    # The CDN URL path ends in "stable" so we derive a real filename from the URL segments.
     if [[ "$os_target" == "windows" && -n "$DL_TPL_WIN" ]]; then
         local url="${DL_TPL_WIN//\{version\}/$NEW_VERSION}"
-        # Derive filename from URL path, or construct one
-        local fname="${url##*/}"
-        [[ "$fname" == "stable" ]] && fname="${TOOL_ID}-${NEW_VERSION}-windows-x64.$(echo "$url" | grep -o 'exe\|rpm\|deb' | head -1 || echo bin)"
+        local fname="VSCodeUserSetup-x64-${NEW_VERSION}.exe"
+        # Generic fallback for non-VS Code tools using this field
+        [[ "$TOOL_ID" != "vscode" ]] && fname="${TOOL_ID}-${NEW_VERSION}-windows-x64.exe"
         echo "$url $fname"
         return
     fi
     if [[ "$os_target" == "linux" && -n "$DL_TPL_LIN" ]]; then
         local url="${DL_TPL_LIN//\{version\}/$NEW_VERSION}"
-        local fname="${url##*/}"
-        [[ "$fname" == "stable" ]] && fname="${TOOL_ID}-${NEW_VERSION}-linux-x64.rpm"
+        local fname="code-${NEW_VERSION}.el8.x86_64.rpm"
+        [[ "$TOOL_ID" != "vscode" ]] && fname="${TOOL_ID}-${NEW_VERSION}-linux-x64.rpm"
         echo "$url $fname"
         return
     fi
@@ -204,7 +211,10 @@ asset_for_platform() {
     fi
     [[ -z "$match" ]] && { warn "No asset_match for $os_target; skipping"; return 1; }
 
-    local url; url=$(resolve_asset_url "$release_json" "$match")
+    # Read optional asset_exclude field (e.g. "net48" for Servy to skip .NET Framework variant)
+    local asset_exclude; asset_exclude=$(json_field "$DEVKIT_JSON" "asset_exclude")
+
+    local url; url=$(resolve_asset_url "$match" "$asset_exclude")
     local fname="${url##*/}"
     echo "$url $fname"
 }
