@@ -11,6 +11,46 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.5] — 2026-07-01
+
+### Changed
+
+#### Tool version bumps
+- **LLVM/Clang** 22.1.4 → 22.1.8
+- **clang-style-formatter** 22.1.4 → 22.1.8
+- **CMake** 4.3.2 → 4.3.4
+- **Conan** 2.28.0 → 2.30.0
+- **GCC (WinLibs)** 15.1.1 → 16.1.0 (GCC 16.1.0, mingw-w64-ucrt 14.0.0-r3; archive format changed tar.xz → zip)
+- **Git** 2.54.0 → 2.55.0
+- **gRPC** 1.80.0 → 1.81.1
+- **Notepad++** 8.9.4 → 8.9.6.4
+- **.NET SDK** 10.0.203 → 10.0.301
+- **PuTTY** 0.83 → 0.84
+- **Python** 3.14.4 → 3.14.6
+- **Servy** 8.3 → 8.5
+- **7-Zip** 26.01 → 26.02
+- **SQLite CLI** 3.53.0 → 3.53.3
+- **SourceTree** 3.4.30 → 3.4.31
+- **VS Code** 1.117.0 → 1.127.0
+
+### Added
+
+#### Update automation
+- `scripts/internal/check-updates.sh` — scans all tools against GitHub releases and upstream sources; outputs a color-coded table or `--json` for CI consumption; exit 1 when updates are available
+- `scripts/internal/apply-tool-update.sh` — downloads, repacks, splits, and stages a tool update end-to-end; writes `manifest.json`; updates `devkit.json` version and `setup.sh` VERSION line
+- `scripts/internal/lib/devkit-prebuilt.sh` — shared shell helpers (`dl`, `sha256`, `repack_xz_strip1`, `repack_xz_flat`, `split_parts`, `json_field`) sourced by both scripts above
+- `scripts/internal/lib/generate-manifest.py` — generates `prebuilt/<category>/<tool>/<version>/manifest.json` from staged files; handles whole archives and split-part files via Python `hashlib`
+- `scripts/internal/lib/format-update-report.py` — formats `check-updates.sh --json` output as a GitHub issue Markdown body
+- `.github/workflows/check-updates.yml` — weekly automated check (Monday 07:00 UTC) that creates or updates a `tool-updates` GitHub issue when upstream versions are newer
+- `github_repo`, `asset_match`, `tag_prefix`, `asset_exclude`, `check_url` fields added to all tool `devkit.json` files to power the update infrastructure
+- `download_url_template_windows/linux` fields added to VS Code and .NET SDK `devkit.json` for CDN-hosted tools not distributed via GitHub release assets
+
+#### Go server
+- `server/internal/tools/discovery.go` — `Tool` struct gains `TagPrefix` field (`json:"tag_prefix"`) for repos whose release tags don't follow the standard `v`-prefix convention (e.g. LLVM uses `llvmorg-22.1.8`)
+- `server/internal/api/network.go` — `fetchGitHubLatest` now reads `TagPrefix` and strips the tool-specific prefix instead of always assuming `v`; fixes LLVM version tracking in the devkit-ui update checker
+
+---
+
 ## [1.3.4] — 2026-05-04
 
 ### Fixed

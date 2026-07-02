@@ -94,7 +94,7 @@ sbom="${REPO_ROOT}/sbom.spdx.json"
 if [[ ! -f "${sbom}" ]]; then
   echo "  [FAIL] Missing: ${sbom}" >&2
   ALL_OK=false
-elif python3 -c "import json,sys; json.load(open('${sbom}'))" 2>/dev/null; then
+elif python3 -m json.tool "${sbom}" > /dev/null 2>&1; then
   echo "  [PASS] ${sbom#"${REPO_ROOT}"/}"
 else
   echo "  [FAIL] Invalid JSON: ${sbom}" >&2
