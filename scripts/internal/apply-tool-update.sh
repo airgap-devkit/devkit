@@ -104,7 +104,12 @@ done
 TOOL_NAME=$(json_field     "$DEVKIT_JSON" "name")
 CURRENT_VER=$(json_field   "$DEVKIT_JSON" "version")
 GITHUB_REPO=$(json_field   "$DEVKIT_JSON" "github_repo")
-TAG_PREFIX=$(json_field    "$DEVKIT_JSON" "tag_prefix")
+# tag_prefix: distinguish absent (default "v") from explicitly "" (no prefix, e.g. Conan, 7zip)
+TAG_PREFIX=$(python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+print(d['tag_prefix'] if 'tag_prefix' in d else '__ABSENT__')
+" "$DEVKIT_JSON")
 ASSET_MATCH=$(json_field   "$DEVKIT_JSON" "asset_match")
 ASSET_MATCH_LIN=$(json_field "$DEVKIT_JSON" "asset_match_linux")
 DL_TPL_WIN=$(json_field    "$DEVKIT_JSON" "download_url_template_windows")
@@ -130,7 +135,8 @@ log "Current OS   : $CURRENT_OS"
 [[ -n "$ALL_PLATFORMS" ]] && log "Staging both Windows + Linux assets (ALL_PLATFORMS=1)"
 
 # ── Build the expected GitHub tag ────────────────────────────────────────────
-EFFECTIVE_PREFIX="${TAG_PREFIX:-v}"
+# If tag_prefix key was absent use "v" as default; if present (even "") use as-is
+[[ "$TAG_PREFIX" == "__ABSENT__" ]] && EFFECTIVE_PREFIX="v" || EFFECTIVE_PREFIX="$TAG_PREFIX"
 EXPECTED_TAG="${TAG_OVERRIDE:-${EFFECTIVE_PREFIX}${NEW_VERSION}}"
 
 log "GitHub repo  : ${GITHUB_REPO:-N/A}"
@@ -175,20 +181,34 @@ sys.exit(1)
 asset_for_platform() {
     local os_target="$1"
 
-    # VS Code: use download_url_template fields (assets not on GitHub releases).
-    # The CDN URL path ends in "stable" so we derive a real filename from the URL segments.
+    # download_url_template fields (VS Code CDN, .NET SDK, etc.)
     if [[ "$os_target" == "windows" && -n "$DL_TPL_WIN" ]]; then
         local url="${DL_TPL_WIN//\{version\}/$NEW_VERSION}"
-        local fname="VSCodeUserSetup-x64-${NEW_VERSION}.exe"
-        # Generic fallback for non-VS Code tools using this field
-        [[ "$TOOL_ID" != "vscode" ]] && fname="${TOOL_ID}-${NEW_VERSION}-windows-x64.exe"
+        # Use the real filename from the URL if it has a file extension; otherwise construct one.
+        local url_path="${url%%\?*}"
+        local fname="${url_path##*/}"
+        if [[ "$fname" == "stable" || "$fname" != *.* ]]; then
+            # CDN URL with no real filename (VS Code pattern)
+            if [[ "$TOOL_ID" == "vscode" ]]; then
+                fname="VSCodeUserSetup-x64-${NEW_VERSION}.exe"
+            else
+                fname="${TOOL_ID}-${NEW_VERSION}-windows-x64.bin"
+            fi
+        fi
         echo "$url $fname"
         return
     fi
     if [[ "$os_target" == "linux" && -n "$DL_TPL_LIN" ]]; then
         local url="${DL_TPL_LIN//\{version\}/$NEW_VERSION}"
-        local fname="code-${NEW_VERSION}.el8.x86_64.rpm"
-        [[ "$TOOL_ID" != "vscode" ]] && fname="${TOOL_ID}-${NEW_VERSION}-linux-x64.rpm"
+        local url_path="${url%%\?*}"
+        local fname="${url_path##*/}"
+        if [[ "$fname" == "stable" || "$fname" != *.* ]]; then
+            if [[ "$TOOL_ID" == "vscode" ]]; then
+                fname="code-${NEW_VERSION}.el8.x86_64.rpm"
+            else
+                fname="${TOOL_ID}-${NEW_VERSION}-linux-x64.bin"
+            fi
+        fi
         echo "$url $fname"
         return
     fi
@@ -287,7 +307,13 @@ download_and_stage() {
             fi
             ;;
         *.tar.gz|*.tgz)
-            local xz_name="${base}.tar.xz"
+            # Strip compound extension correctly (.tar.gz → not just .gz)
+            local xz_name
+            if [[ "$fname" == *.tar.gz ]]; then
+                xz_name="${fname%.tar.gz}.tar.xz"
+            else
+                xz_name="${fname%.tgz}.tar.xz"
+            fi
             staged_file="$TMP_DIR/$xz_name"
             staged_name="$xz_name"
             repack_xz_flat "$raw_dl" "$staged_file"
