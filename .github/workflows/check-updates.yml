@@ -54,6 +54,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Ensure the label exists (idempotent — creates or updates in place)
+          gh label create "tool-updates" \
+            --description "Upstream tool version updates available" \
+            --color "0e8a16" \
+            --force
+
           EXISTING=$(gh issue list \
             --label "tool-updates" \
             --state open \
