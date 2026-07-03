@@ -263,11 +263,9 @@ fi
 
 # ── Download, repack, and split assets ───────────────────────────────────────
 
-declare -A WIN_ASSETS LIN_ASSETS  # maps: filename → sha256 (or "parts" if split)
-
 download_and_stage() {
     local os_target="$1"
-    local url fname staged_file staged_name staged_sha
+    local url fname staged_file staged_name
 
     if ! read -r url fname < <(asset_for_platform "$os_target"); then
         warn "Skipping $os_target asset for $TOOL_ID"
@@ -329,19 +327,8 @@ download_and_stage() {
 
     if (( size_bytes > limit_bytes )); then
         split_parts "$staged_file" "$DEST_DIR" "$staged_name"
-        if [[ "$os_target" == "windows" ]]; then
-            WIN_ASSETS["$staged_name"]="parts"
-        else
-            LIN_ASSETS["$staged_name"]="parts"
-        fi
     else
         cp "$staged_file" "$DEST_DIR/$staged_name"
-        staged_sha=$(sha256 "$DEST_DIR/$staged_name")
-        if [[ "$os_target" == "windows" ]]; then
-            WIN_ASSETS["$staged_name"]="$staged_sha"
-        else
-            LIN_ASSETS["$staged_name"]="$staged_sha"
-        fi
         ok "Staged: $staged_name ($(( size_bytes / 1024 / 1024 )) MB)"
     fi
 }
