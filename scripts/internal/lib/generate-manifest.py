@@ -29,7 +29,31 @@ def sha256file(path: str) -> str:
 
 def is_linux(name: str) -> bool:
     n = name.lower()
-    return "linux" in n or n.endswith(".rpm") or n.endswith(".deb")
+    # Beyond bare "linux": distro/host tags (e.g. llvm-mingw's *ubuntu* build).
+    linux_tags = ("linux", "ubuntu", "debian", "rhel", "el8", "el9", "musl", "-gnu")
+    return any(t in n for t in linux_tags) or n.endswith(".rpm") or n.endswith(".deb")
+
+
+def _extract_cmd(fname: str) -> str:
+    """Return the OS-native extraction command for a whole archive."""
+    if fname.endswith(".zip"):
+        return f"unzip -o {fname}"
+    if fname.endswith(".tar.gz") or fname.endswith(".tgz"):
+        return f"tar -xzf {fname}"
+    if fname.endswith(".tar.xz"):
+        return f"tar -xJf {fname}"
+    return ""
+
+
+def _reassemble_cmd(base: str) -> str:
+    """Return the command that concatenates parts and extracts the whole archive."""
+    if base.endswith(".zip"):
+        return f"cat {base}.part-* > {base} && unzip -o {base}"
+    if base.endswith(".tar.gz") or base.endswith(".tgz"):
+        return f"cat {base}.part-* | tar -xz"
+    if base.endswith(".tar.xz"):
+        return f"cat {base}.part-* | tar -xJ"
+    return f"cat {base}.part-* > {base}"
 
 
 def make_entry(fname: str, sha: str = None, parts: dict = None) -> dict:
@@ -37,10 +61,11 @@ def make_entry(fname: str, sha: str = None, parts: dict = None) -> dict:
         return {
             "archive": fname,
             "part_sha256": dict(sorted(parts.items())),
-            "reassemble": f"cat {fname}.part-* | tar -xJ",
+            "reassemble": _reassemble_cmd(fname),
         }
-    if fname.endswith(".tar.xz"):
-        return {"archive": fname, "sha256": sha, "reassemble": f"tar -xJf {fname}"}
+    cmd = _extract_cmd(fname)
+    if cmd:
+        return {"archive": fname, "sha256": sha, "reassemble": cmd}
     ext = fname.rsplit(".", 1)[-1]
     key = "package" if ext in ("rpm", "deb") else ("installer" if ext == "exe" else "archive")
     return {key: fname, "sha256": sha}
@@ -57,6 +82,7 @@ def main():
     all_entries = [
         f for f in os.listdir(dest_dir)
         if not f.startswith(".") and f != "manifest.json"
+        and os.path.isfile(os.path.join(dest_dir, f))   # skip subdirs (e.g. wheels/)
     ]
     part_files  = [f for f in all_entries if ".part-" in f]
     whole_files = [f for f in all_entries if ".part-" not in f]
@@ -79,12 +105,23 @@ def main():
         plat  = "linux-x64" if is_linux(base) else "windows"
         platforms.setdefault(plat, entry)
 
+    # Canonical staged formats: .zip (Windows) / .tar.gz (Linux). Report whichever
+    # formats actually appear so the manifest self-documents without assuming xz.
+    def _fmt(entry: dict) -> str:
+        name = entry.get("archive") or entry.get("package") or entry.get("installer") or ""
+        for ext in (".tar.gz", ".tar.xz", ".zip", ".rpm", ".deb", ".exe"):
+            if name.endswith(ext):
+                return ext.lstrip(".")
+        return ""
+
+    formats = sorted({f for f in (_fmt(e) for e in platforms.values()) if f})
+
     manifest: dict = {
         "tool":        tool_id,
         "version":     version,
         "source":      f"https://github.com/{github_repo}/releases/tag/{tag}" if github_repo else "",
         "platforms":   platforms,
-        "compression": "tar.xz",
+        "compression": "+".join(formats) if formats else "",
     }
     if part_files:
         manifest["part_size_mb"] = 50

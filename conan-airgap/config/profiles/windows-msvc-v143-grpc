@@ -1,0 +1,14 @@
+# Windows x64, MSVC v143 (Visual Studio 2022) — ABI-matched to the devkit's
+# prebuilt gRPC package `grpc-1.81.1-msvc143` (default gRPC toolset).
+#
+# runtime=static (/MT) is REQUIRED to link against that gRPC package: it is built
+# /MT, and mixing /MD and /MT produces LNK2038 RuntimeLibrary mismatch errors.
+# Use this profile for Conan deps in any app that also links the prebuilt gRPC.
+[settings]
+os=Windows
+arch=x86_64
+compiler=msvc
+compiler.version=194
+compiler.cppstd=17
+compiler.runtime=static
+build_type=Release

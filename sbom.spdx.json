@@ -2,196 +2,18 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-07-02T04:13:09Z",
+    "created": "2026-07-04T19:36:55Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
     ],
-    "comment": "Root aggregate SBOM for airgap-cpp-devkit. References all subproject SBOMs."
+    "comment": "Self-contained root SBOM for airgap-cpp-devkit. Package checksums are the SHA-256 of the prebuilt artifacts under prebuilt/."
   },
   "name": "airgap-cpp-devkit",
   "dataLicense": "CC0-1.0",
   "documentNamespace": "https://airgap-cpp-devkit.internal/sbom.spdx.json",
   "documentDescribes": [
     "SPDXRef-airgap-cpp-devkit"
-  ],
-  "externalDocumentRefs": [
-    {
-      "externalDocumentId": "DocumentRef-toolchains-llvm",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/llvm/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-toolchains-llvm-mingw",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/llvm-mingw/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-toolchains-ninja",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/ninja/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-toolchains-gcc",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/gcc/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-toolchains-lcov",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/lcov/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-llvm-style-formatter",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/toolchains/llvm/style-formatter/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-build-tools-cmake",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/build-tools/cmake/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-build-tools-lcov",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/build-tools/lcov/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-conan",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/conan/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-servy",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/servy/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-sqlite",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/sqlite/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-git-bundle",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/git-bundle/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-frameworks-grpc",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/frameworks/grpc/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-languages-python",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-languages-dotnet",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/dotnet/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-devkit-ui",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/devkit-ui/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-python-pip-packages",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/languages/python/pip-packages/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-filezilla",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/filezilla/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-gdb",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/gdb/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-notepadpp",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/notepadpp/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-putty",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/putty/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    },
-    {
-      "externalDocumentId": "DocumentRef-dev-tools-sourcetree",
-      "spdxDocument": "https://airgap-cpp-devkit.internal/tools/dev-tools/sourcetree/sbom.spdx.json",
-      "checksum": {
-        "algorithm": "SHA1",
-        "checksumValue": "0000000000000000000000000000000000000000"
-      }
-    }
   ],
   "packages": [
     {
@@ -210,7 +32,7 @@
     {
       "SPDXID": "SPDXRef-toolchains-llvm",
       "name": "toolchains/llvm",
-      "versionInfo": "22.1.3",
+      "versionInfo": "22.1.8",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -218,7 +40,431 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "LLVM/Clang 22.1.3 prebuilt (Windows + Linux) and source build. Includes clang, clang++, clang-format, clang-tidy, lld. Full prebuilt split at 50MB (.tar.xz)."
+      "comment": "LLVM/Clang 22.1.3 prebuilt (Windows + Linux) and source build. Includes clang, clang++, clang-format, clang-tidy, lld. Full prebuilt split at 50MB (.tar.xz).",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4f4a6c0a7ba1fcf602c49ef1f90b0e69713419f3599b3b32a9f0c0187608ed58"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "25cea9dea58be44cb37a6760b4452776b29a875e10b8274cb07c191a98b0aacb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d859cd864b60bf83a3d18d61955eabf4f6bb48c56bc4ff2f79e8234763be764b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ed7e471367a3ac13de242d477dcddcc3775f39d8e4a2d6f78afe78deea0498c4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a28d0921141a7c5a5962496640a67fe8a74eb412f8cd876619edeceb61a38128"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "115fe74236d8a270a52868111d34a045bd6825764cb6f812c428f1ea3831434f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a87a7468c5086b92a19e8a2a4e871094f01eabf04d313e2420d3caec5c4b736e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1e449b1830a713aa642c4e1cf0a55cd1aa98212705a4769d79b140a5a962e056"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "81c12c9690e707ca0465ebe6c2d0544027287634d88ca638c38de456be6490b4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "af8fa3a882fda1b54a733225b5cd9a194ff103c237fa563a825f35663a1e4a30"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c305128b51d3205db633ed26e90a206aefc3bddb7dfcb8822c1125e70276d05d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ecb0a4abe9570ce1dfd1b0049c65151a1248b6e06ce24e0b5b9471dbe43d5678"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c97f0626e866706f359f5b0865e3de90187b36f85f0aaa59617b46d3916b1f4c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5bbaa21bd5da595e9fe27385e6e0ba5fb78d925d16a114900a117038857d7b08"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "01dbe5ab7dc7ef866ae77432d6bc4c32ffdf9356e2d8c9120397feac59918d2d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f50e98b7e2382bcf7e033f8123a79c72ab3412dc540820e947de7a150c204b26"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5b7675f5f5b35e57e9fad005568e568397c0fc97b4a4efd30497193f2181020e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "293d088e891f514e0381cd93b2c83ebb7f167c4e3db1f64a5f30827ff1c3d246"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3e645ec8f723755dd029e5cfd658a1b7145cb96bfe94832342dd9de716790f3f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "925cbadd4bb92b271a8bff69300897a3612b4865ce540d2693d883484b66b7be"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "32b14baa79424f45ef70b0fe47c8c911a244bd664b879ba645a63c15e9b139ce"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "43498171da41c4a120b874de466ff933e047867ee878c590edffd7a74e3b1620"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "454061d910fd8347f8ab40cfe29acfc1eaf6f096ee636cdfc17061aa5e2bf4ab"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4577bab960348dc18c62b7a4e3144f3fe185c1472cf551385fc019715ba7b38c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "212f2699a1952fde7f720be2d01cf16beda7f4cbca0a752cf7d53f8020a914d0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a13b4cf5522140988c8758bf58d46bc56b1ffa602927caab4c064e53feb03561"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3b7878559c62e859b98797021eb3f2b0e0fcacec2f121db6c27aaf7c8bc142aa"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "53bc0f56fc9a643a010ecca46cf313cb988249fb7bfb89ad6f31a847bda05925"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "abce8f2d755d5fbb544b1a0c571199dc8305c320ebc2986572e918a1894e5bc2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "efa323e77f93cc2c9a7342caf5723d04e80e610ba34dc2e43e3853387d46964a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5ea929f02bbb30b718ece8e7f381674180f7e7f209627c2382aba59202ef9907"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6e3c50001471de6d5625523d6706c3228925ee83dcbed55b4c230d8c8da88751"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4d7942660ef764d84dfc26025eee25db2743582c8e16351e2dc28f4660569bb6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d82bb7a9cd63312e8c81a98a682e4fdbe14de01f01853fff0ead6b1f75b9353f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "16656e711acc63e1b1421b2324d922bd37b7c177cd8f583abaec5d5b96b2e785"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b018f84a9c102efb9222ae8a26cc485d4701249deb0d97e85f64f7dde32af02f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "722421f98743a214ba2bfe709b9d35c27cb329230065bcc47a8e803963fb2005"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31630e6de5b632c99bdaf9194689a2869e33b456f96398f0a36c44cec36e7bbe"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9fef1554c0fd6403bc00fce66f652754906a73f240d4f193d17b5f84e31bb2ba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6cbeaf76632073c923dc5d2f3d25f1d70255bf719a54b1d097ac0a5779885e91"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a9b9efa85b348dd67ccf18a4c92612888eb332f2f96c907e3697a14629765bcf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f30b10b1eea1ae89e16755705a77142eefffb5862bf1425e376e3c15876d4b1e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7a085b3551a74191ce537b1fe498efec02b6ec92e6cbc9bce5a90e2a549edfee"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "64776f222e17e113e5f43ca2475f5402371cb61b7ebc30c42adf2b7f8455b500"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2b93fb7194d9042b3ab4460cb4763f0d3bee105bc807a9d4a14a37b309f34164"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "492a38f3970873ca26d5d388918926eea2e036b939ef7d2e0159a32228aeea99"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1615aae57beb762109072ec70bb1661499397bcf3432fdc13f41845a6a3b8e9b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "275c1f349cd13a8a6d8a4f6115a6943a2039c92e3781d8030233374e2991bb64"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0287100c840f681bb576bff4a5277803bc94fc8ad2b4dff937126a9421250fe4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9ec77c18742f3e44dcce6dfe933d5ef048777a015a886a65f6052b4241444172"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c4f41dfbc951a27a746b2b7d8157c51a3f361c7aff7b4820adac63a245f35964"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "38215499ebf7045b00fb5da6caf50a972609facf0f6fccadb02edb8d509c0988"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7ebc6cccef7cca6b9c23f3b7c18173f8d1250c323602bacdc7e7157e0db6ee34"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3a1302177a7a4cdb2fa162dacb446c09c042e2c810ad66374c63d3dc9e5f7cb9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cfd800974a332e005d492c39af5e054912f59a51c2164d3c43a26820a61f5c4f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2d303fbed562a3ec2b3d284aa29aedd9cde5c012f7916bd9de23872593df5994"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ac6171a0837e1a96cbb2479d668dbbd05b351f8ac1ada346e8ce7f509d69de95"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "85b876c1bc9db6a2f063ff9908775760c0d4c8c4804eb2a9b36bb26b719eae05"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3ff2f582038f234f423abe40dce146f8afe7638ef688baabb7f648a77c28b0fc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "efec849b698ea9a131de33cb26b978d547776c382225f0e7f78d7e5253f8daa6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fe3a91d614a3f5f2f15749c274f9d0fa4af2e48c8c9c284ee05bb83ced346f02"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fd04d8cd583cd2b3aecc9b5040103883fb2d87f976a9dc501cd3eb16d4c99e0b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2dd80f2cc3c4332156f7fce78c526bbe5421b8193608529ff622d59558fc10cc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8f7b0d82e5557dbec60d1d4495b8e33c3f246c111dcecb2380a7892e61370513"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eed7e976c7ba3488f2eba1ccb860cba3df040aa96a78da724513b5fc658f68e2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "271dec89686c22d25c89cd450a3251b571dae935bdb622d37a286584e413cc97"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "23af802fc8a03ff74a2cbec4888858fa5402feaad11c037d55876930485b648c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6ff7c8e5e7082362f99888037751fde08ea6e0f1b6948d125455e387bf9cb8a5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "aeac98627ed4c8e493402b66da5be68a998a234481d0122ce505d653caa7ef12"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "60938f5a3fce2d7392dfa065073b0bf39af3c51cbc946ccd17f83bf38d49e57e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a6b16d45df2bac77c6c9278fb224084c6b308b2f8927db34c341b02b724ad988"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dd098faf2aa0cb5a7ff67f10a3c19afc99c3ca48dd90f4859e8e0ec72808859d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "972793d6226357723becf93aeee133e6f158dd5bc94bdbba767f110ceb049afa"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "61b4355b0546b4210a7526d26a4d3dd4833094af971a1b30599b1322e27791a7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6f050181c0533d60584d4a945e2a7cb13b9f7e5fe8fc0e94a8c1e46058286460"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b72aaba2c73f3f643cc48aaec07c47c885eb5127fb5e7abaebacade62d1af081"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "71aff0c60d4d781fc89d495d387a9ec7a9c5afd17286b2c19b90ccae44421de2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6a230abee3abb3ae3fd5198ab1c339084f4c3e9a687f13c79ad94593dbe15d3b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "17660b261c9984aac742e48b7db2c56a2d75533e29fd5e2aecaa2d68c4140d3b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "37c7ba1e1357a215c4c1c5c0011e15f4d4a1c13ebd96f15695caf43a45b87371"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c030f7593f8dad2ca87821107a24b9847d4a0c706096ac7f47c2374bc8287d09"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fcb42d225638113f3f7829aecd1aad08944a01fac1c9eedc4956d9b4b3358436"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "94d7c985600061289fbd2ebef56fcc48b063df36ca25cc3e02c8f0d4cb2a90ec"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "db139d1e3f7fc0ee98a9dbc1109a07b576f06a955b898b74d273a8d2971a2179"
+        }
+      ],
+      "attributionTexts": [
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-aa SHA256:4f4a6c0a7ba1fcf602c49ef1f90b0e69713419f3599b3b32a9f0c0187608ed58",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ab SHA256:25cea9dea58be44cb37a6760b4452776b29a875e10b8274cb07c191a98b0aacb",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ac SHA256:d859cd864b60bf83a3d18d61955eabf4f6bb48c56bc4ff2f79e8234763be764b",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ad SHA256:ed7e471367a3ac13de242d477dcddcc3775f39d8e4a2d6f78afe78deea0498c4",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ae SHA256:a28d0921141a7c5a5962496640a67fe8a74eb412f8cd876619edeceb61a38128",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-af SHA256:115fe74236d8a270a52868111d34a045bd6825764cb6f812c428f1ea3831434f",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ag SHA256:a87a7468c5086b92a19e8a2a4e871094f01eabf04d313e2420d3caec5c4b736e",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ah SHA256:1e449b1830a713aa642c4e1cf0a55cd1aa98212705a4769d79b140a5a962e056",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ai SHA256:81c12c9690e707ca0465ebe6c2d0544027287634d88ca638c38de456be6490b4",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-aj SHA256:af8fa3a882fda1b54a733225b5cd9a194ff103c237fa563a825f35663a1e4a30",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ak SHA256:c305128b51d3205db633ed26e90a206aefc3bddb7dfcb8822c1125e70276d05d",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-al SHA256:ecb0a4abe9570ce1dfd1b0049c65151a1248b6e06ce24e0b5b9471dbe43d5678",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-am SHA256:c97f0626e866706f359f5b0865e3de90187b36f85f0aaa59617b46d3916b1f4c",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-an SHA256:5bbaa21bd5da595e9fe27385e6e0ba5fb78d925d16a114900a117038857d7b08",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ao SHA256:01dbe5ab7dc7ef866ae77432d6bc4c32ffdf9356e2d8c9120397feac59918d2d",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ap SHA256:f50e98b7e2382bcf7e033f8123a79c72ab3412dc540820e947de7a150c204b26",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-aq SHA256:5b7675f5f5b35e57e9fad005568e568397c0fc97b4a4efd30497193f2181020e",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ar SHA256:293d088e891f514e0381cd93b2c83ebb7f167c4e3db1f64a5f30827ff1c3d246",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-as SHA256:3e645ec8f723755dd029e5cfd658a1b7145cb96bfe94832342dd9de716790f3f",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-at SHA256:925cbadd4bb92b271a8bff69300897a3612b4865ce540d2693d883484b66b7be",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-au SHA256:32b14baa79424f45ef70b0fe47c8c911a244bd664b879ba645a63c15e9b139ce",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-av SHA256:43498171da41c4a120b874de466ff933e047867ee878c590edffd7a74e3b1620",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-aw SHA256:454061d910fd8347f8ab40cfe29acfc1eaf6f096ee636cdfc17061aa5e2bf4ab",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ax SHA256:4577bab960348dc18c62b7a4e3144f3fe185c1472cf551385fc019715ba7b38c",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ay SHA256:212f2699a1952fde7f720be2d01cf16beda7f4cbca0a752cf7d53f8020a914d0",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-az SHA256:a13b4cf5522140988c8758bf58d46bc56b1ffa602927caab4c064e53feb03561",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ba SHA256:3b7878559c62e859b98797021eb3f2b0e0fcacec2f121db6c27aaf7c8bc142aa",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bb SHA256:53bc0f56fc9a643a010ecca46cf313cb988249fb7bfb89ad6f31a847bda05925",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bc SHA256:abce8f2d755d5fbb544b1a0c571199dc8305c320ebc2986572e918a1894e5bc2",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bd SHA256:efa323e77f93cc2c9a7342caf5723d04e80e610ba34dc2e43e3853387d46964a",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-be SHA256:5ea929f02bbb30b718ece8e7f381674180f7e7f209627c2382aba59202ef9907",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bf SHA256:6e3c50001471de6d5625523d6706c3228925ee83dcbed55b4c230d8c8da88751",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bg SHA256:4d7942660ef764d84dfc26025eee25db2743582c8e16351e2dc28f4660569bb6",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bh SHA256:d82bb7a9cd63312e8c81a98a682e4fdbe14de01f01853fff0ead6b1f75b9353f",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bi SHA256:16656e711acc63e1b1421b2324d922bd37b7c177cd8f583abaec5d5b96b2e785",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bj SHA256:b018f84a9c102efb9222ae8a26cc485d4701249deb0d97e85f64f7dde32af02f",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bk SHA256:722421f98743a214ba2bfe709b9d35c27cb329230065bcc47a8e803963fb2005",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bl SHA256:31630e6de5b632c99bdaf9194689a2869e33b456f96398f0a36c44cec36e7bbe",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bm SHA256:9fef1554c0fd6403bc00fce66f652754906a73f240d4f193d17b5f84e31bb2ba",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bn SHA256:6cbeaf76632073c923dc5d2f3d25f1d70255bf719a54b1d097ac0a5779885e91",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bo SHA256:a9b9efa85b348dd67ccf18a4c92612888eb332f2f96c907e3697a14629765bcf",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bp SHA256:f30b10b1eea1ae89e16755705a77142eefffb5862bf1425e376e3c15876d4b1e",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bq SHA256:7a085b3551a74191ce537b1fe498efec02b6ec92e6cbc9bce5a90e2a549edfee",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-br SHA256:64776f222e17e113e5f43ca2475f5402371cb61b7ebc30c42adf2b7f8455b500",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bs SHA256:2b93fb7194d9042b3ab4460cb4763f0d3bee105bc807a9d4a14a37b309f34164",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bt SHA256:492a38f3970873ca26d5d388918926eea2e036b939ef7d2e0159a32228aeea99",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bu SHA256:1615aae57beb762109072ec70bb1661499397bcf3432fdc13f41845a6a3b8e9b",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bv SHA256:275c1f349cd13a8a6d8a4f6115a6943a2039c92e3781d8030233374e2991bb64",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bw SHA256:0287100c840f681bb576bff4a5277803bc94fc8ad2b4dff937126a9421250fe4",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bx SHA256:9ec77c18742f3e44dcce6dfe933d5ef048777a015a886a65f6052b4241444172",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-by SHA256:c4f41dfbc951a27a746b2b7d8157c51a3f361c7aff7b4820adac63a245f35964",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-bz SHA256:38215499ebf7045b00fb5da6caf50a972609facf0f6fccadb02edb8d509c0988",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ca SHA256:7ebc6cccef7cca6b9c23f3b7c18173f8d1250c323602bacdc7e7157e0db6ee34",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-cb SHA256:3a1302177a7a4cdb2fa162dacb446c09c042e2c810ad66374c63d3dc9e5f7cb9",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-cc SHA256:cfd800974a332e005d492c39af5e054912f59a51c2164d3c43a26820a61f5c4f",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-cd SHA256:2d303fbed562a3ec2b3d284aa29aedd9cde5c012f7916bd9de23872593df5994",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-ce SHA256:ac6171a0837e1a96cbb2479d668dbbd05b351f8ac1ada346e8ce7f509d69de95",
+        "linux-x64: LLVM-22.1.8-Linux-X64.tar.gz.part-cf SHA256:85b876c1bc9db6a2f063ff9908775760c0d4c8c4804eb2a9b36bb26b719eae05",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-aa SHA256:3ff2f582038f234f423abe40dce146f8afe7638ef688baabb7f648a77c28b0fc",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ab SHA256:efec849b698ea9a131de33cb26b978d547776c382225f0e7f78d7e5253f8daa6",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ac SHA256:fe3a91d614a3f5f2f15749c274f9d0fa4af2e48c8c9c284ee05bb83ced346f02",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ad SHA256:fd04d8cd583cd2b3aecc9b5040103883fb2d87f976a9dc501cd3eb16d4c99e0b",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ae SHA256:2dd80f2cc3c4332156f7fce78c526bbe5421b8193608529ff622d59558fc10cc",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-af SHA256:8f7b0d82e5557dbec60d1d4495b8e33c3f246c111dcecb2380a7892e61370513",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ag SHA256:eed7e976c7ba3488f2eba1ccb860cba3df040aa96a78da724513b5fc658f68e2",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ah SHA256:271dec89686c22d25c89cd450a3251b571dae935bdb622d37a286584e413cc97",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ai SHA256:23af802fc8a03ff74a2cbec4888858fa5402feaad11c037d55876930485b648c",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-aj SHA256:6ff7c8e5e7082362f99888037751fde08ea6e0f1b6948d125455e387bf9cb8a5",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ak SHA256:aeac98627ed4c8e493402b66da5be68a998a234481d0122ce505d653caa7ef12",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-al SHA256:60938f5a3fce2d7392dfa065073b0bf39af3c51cbc946ccd17f83bf38d49e57e",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-am SHA256:a6b16d45df2bac77c6c9278fb224084c6b308b2f8927db34c341b02b724ad988",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-an SHA256:dd098faf2aa0cb5a7ff67f10a3c19afc99c3ca48dd90f4859e8e0ec72808859d",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ao SHA256:972793d6226357723becf93aeee133e6f158dd5bc94bdbba767f110ceb049afa",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ap SHA256:61b4355b0546b4210a7526d26a4d3dd4833094af971a1b30599b1322e27791a7",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-aq SHA256:6f050181c0533d60584d4a945e2a7cb13b9f7e5fe8fc0e94a8c1e46058286460",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ar SHA256:b72aaba2c73f3f643cc48aaec07c47c885eb5127fb5e7abaebacade62d1af081",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-as SHA256:71aff0c60d4d781fc89d495d387a9ec7a9c5afd17286b2c19b90ccae44421de2",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-at SHA256:6a230abee3abb3ae3fd5198ab1c339084f4c3e9a687f13c79ad94593dbe15d3b",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-au SHA256:17660b261c9984aac742e48b7db2c56a2d75533e29fd5e2aecaa2d68c4140d3b",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-av SHA256:37c7ba1e1357a215c4c1c5c0011e15f4d4a1c13ebd96f15695caf43a45b87371",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-aw SHA256:c030f7593f8dad2ca87821107a24b9847d4a0c706096ac7f47c2374bc8287d09",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ax SHA256:fcb42d225638113f3f7829aecd1aad08944a01fac1c9eedc4956d9b4b3358436",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-ay SHA256:94d7c985600061289fbd2ebef56fcc48b063df36ca25cc3e02c8f0d4cb2a90ec",
+        "windows: clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.zip.part-az SHA256:db139d1e3f7fc0ee98a9dbc1109a07b576f06a955b898b74d273a8d2971a2179"
+      ]
     },
     {
       "SPDXID": "SPDXRef-toolchains-llvm-mingw",
@@ -231,7 +477,46 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "llvm-mingw 20260407 UCRT MinGW-w64 cross-compiler toolchain for Windows and Linux. Split at 50MB (.tar.xz)."
+      "comment": "llvm-mingw 20260407 UCRT MinGW-w64 cross-compiler toolchain for Windows and Linux. Split at 50MB (.tar.xz).",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "27275f560de71f6813f0daaf8dc0e6ee6d3fbf33fd9dbcb66fd2b0f0113f714b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7d0cb48a04304bb25293c3f3333061fa21d94ef3f301be1ac1a4f871b20c1e15"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a7aa9b51f69843bf1c58290c58cad6eb228cafebb5d4c06e623ca712302aca61"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d3eed3b0075f326ed664a341e5dc24fdbae9495e01282e756dd7319cb53b3bd7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "03cfc4dbe52c942d2c29266fd7013afd47b26dec02a124e9b97567abde177ac7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1a9ae85722a8604b8275e85f5e433f9ddee43bbdacba2efd2bba5f2725b339ff"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "65082d54d6dc9f82a6d7daf6bc04d580ddedb6a3b5868817603c74d3b65f6760"
+        }
+      ],
+      "attributionTexts": [
+        "linux-x64: llvm-mingw-20260407-ucrt-ubuntu-22.04-x86_64.tar.gz.part-aa SHA256:27275f560de71f6813f0daaf8dc0e6ee6d3fbf33fd9dbcb66fd2b0f0113f714b",
+        "linux-x64: llvm-mingw-20260407-ucrt-ubuntu-22.04-x86_64.tar.gz.part-ab SHA256:7d0cb48a04304bb25293c3f3333061fa21d94ef3f301be1ac1a4f871b20c1e15",
+        "linux-x64: llvm-mingw-20260407-ucrt-ubuntu-22.04-x86_64.tar.gz.part-ac SHA256:a7aa9b51f69843bf1c58290c58cad6eb228cafebb5d4c06e623ca712302aca61",
+        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-aa SHA256:d3eed3b0075f326ed664a341e5dc24fdbae9495e01282e756dd7319cb53b3bd7",
+        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-ab SHA256:03cfc4dbe52c942d2c29266fd7013afd47b26dec02a124e9b97567abde177ac7",
+        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-ac SHA256:1a9ae85722a8604b8275e85f5e433f9ddee43bbdacba2efd2bba5f2725b339ff",
+        "windows: llvm-mingw-20260407-ucrt-x86_64.zip.part-ad SHA256:65082d54d6dc9f82a6d7daf6bc04d580ddedb6a3b5868817603c74d3b65f6760"
+      ]
     },
     {
       "SPDXID": "SPDXRef-toolchains-ninja",
@@ -244,12 +529,26 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Ninja 1.13.2 build system. Prebuilt single-binary for Windows and Linux. Source build supported."
+      "comment": "Ninja 1.13.2 build system. Prebuilt single-binary for Windows and Linux. Source build supported.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7a9da8821e4663ed97ca04081969b156a1b1b07683f86058b4c35a7a58758b90"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d6bfb86c1bed1516237a0118cf0197a2f6517ab59f7e924d6ccd3a59df9887d3"
+        }
+      ],
+      "attributionTexts": [
+        "linux-x64: ninja-1.13.2-linux.tar.gz SHA256:7a9da8821e4663ed97ca04081969b156a1b1b07683f86058b4c35a7a58758b90",
+        "windows: ninja-1.13.2-windows.zip SHA256:d6bfb86c1bed1516237a0118cf0197a2f6517ab59f7e924d6ccd3a59df9887d3"
+      ]
     },
     {
       "SPDXID": "SPDXRef-toolchains-gcc",
       "name": "toolchains/gcc",
-      "versionInfo": "15.2.0",
+      "versionInfo": "16.1.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -257,7 +556,81 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "GCC 15.2.0. Windows: WinLibs GCC 15.2.0 mingw-w64ucrt 14.0.0 r7 (.tar.xz 4 parts). Linux: gcc-toolset-15 RHEL 8 RPMs (.tar.xz 2 parts). Includes gcov."
+      "comment": "GCC 15.2.0. Windows: WinLibs GCC 15.2.0 mingw-w64ucrt 14.0.0 r7 (.tar.xz 4 parts). Linux: gcc-toolset-15 RHEL 8 RPMs (.tar.xz 2 parts). Includes gcov.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6260349fcfdbb8804f67a2a43fc18ce7e2a6497c70948fce6651a661b51c8600"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cbe10ed3e4d2486ed47fb2581e7fedcdad030b8b7b4788cdeed886f34241936f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ab3ef8553f4dc40368486180d2acde117115bec8f2a65d9cff0114a39456e7e0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0b4128c1a8f1c8221145e445bf48a950ec192274d08a870fdb225c76742bfa8a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c89c6a422ae52950e74928f8ce86d35e315f50515243ab5220b9b79522772ae3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bec5f1548c10043b7602fbb3749b81fad00f870d6cc22eff543fcecaae7fef4d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c326d392f9ee53ecdb9608d6f48d1f72e83d3189fad034bc2eb6ae8ca3da2833"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "68310fb285172b0c8432b2f6b5bbb6c266d9533f7bbf294f6d9146dde576a06d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "541bff3b912c1f46c0bb22e55ffad428c030db1bc5ec18f95a7d8f3ab0710ec8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "81bc5f5a263b96176b98e033bf97aed0dbf042bac7a28ad02e6f7fb8fb6128a2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "94323bb0585ffaa6aeceb0cd56ad4862eee71e90b20678310d126d3def00c699"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cf2c770c4653e7c9cd3e49062944be2a039fea03f89116e3d91251532ab5e68b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "95b96b5a29cb6479035ed570433ea060d116069d56be9d9ca0d82505d157106d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cc8e460bd0c1712f26002e7c5bbe5f7c6d164473d858e8e60f5ea70688917643"
+        }
+      ],
+      "attributionTexts": [
+        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-aa SHA256:6260349fcfdbb8804f67a2a43fc18ce7e2a6497c70948fce6651a661b51c8600",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ab SHA256:cbe10ed3e4d2486ed47fb2581e7fedcdad030b8b7b4788cdeed886f34241936f",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ac SHA256:ab3ef8553f4dc40368486180d2acde117115bec8f2a65d9cff0114a39456e7e0",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ad SHA256:0b4128c1a8f1c8221145e445bf48a950ec192274d08a870fdb225c76742bfa8a",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-ae SHA256:c89c6a422ae52950e74928f8ce86d35e315f50515243ab5220b9b79522772ae3",
+        "windows: winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r3.zip.part-af SHA256:bec5f1548c10043b7602fbb3749b81fad00f870d6cc22eff543fcecaae7fef4d",
+        "linux-x64: gcc-toolset-15-rhel8-rpms.zip.part-aa SHA256:c326d392f9ee53ecdb9608d6f48d1f72e83d3189fad034bc2eb6ae8ca3da2833",
+        "linux-x64: gcc-toolset-15-rhel8-rpms.zip.part-ab SHA256:68310fb285172b0c8432b2f6b5bbb6c266d9533f7bbf294f6d9146dde576a06d",
+        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-aa SHA256:541bff3b912c1f46c0bb22e55ffad428c030db1bc5ec18f95a7d8f3ab0710ec8",
+        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ab SHA256:81bc5f5a263b96176b98e033bf97aed0dbf042bac7a28ad02e6f7fb8fb6128a2",
+        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ac SHA256:94323bb0585ffaa6aeceb0cd56ad4862eee71e90b20678310d126d3def00c699",
+        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ad SHA256:cf2c770c4653e7c9cd3e49062944be2a039fea03f89116e3d91251532ab5e68b",
+        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-ae SHA256:95b96b5a29cb6479035ed570433ea060d116069d56be9d9ca0d82505d157106d",
+        "windows: winlibs-x86_64-posix-seh-gcc-15.2.0-mingw-w64ucrt-14.0.0-r7.zip.part-af SHA256:cc8e460bd0c1712f26002e7c5bbe5f7c6d164473d858e8e60f5ea70688917643"
+      ]
     },
     {
       "SPDXID": "SPDXRef-toolchains-lcov",
@@ -270,7 +643,21 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "lcov 2.4 code coverage frontend for gcov. Linux only. RPM for RHEL 8 + source tarball. Requires Perl."
+      "comment": "lcov 2.4 code coverage frontend for gcov. Linux only. RPM for RHEL 8 + source tarball. Requires Perl.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bcfef562a5e9c5c617ee21790e647cd7c1a6adeaa613b0ebb6a610a5f59b6e25"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1993bb929a4c5b24b891bae0ab5391895fb48da72f1da4bf5ce14f182f5ba006"
+        }
+      ],
+      "attributionTexts": [
+        "linux-x64: linux-x64 SHA256:bcfef562a5e9c5c617ee21790e647cd7c1a6adeaa613b0ebb6a610a5f59b6e25",
+        "windows: lcov-2.4.zip SHA256:1993bb929a4c5b24b891bae0ab5391895fb48da72f1da4bf5ce14f182f5ba006"
+      ]
     },
     {
       "SPDXID": "SPDXRef-llvm-style-formatter",
@@ -288,7 +675,7 @@
     {
       "SPDXID": "SPDXRef-build-tools-cmake",
       "name": "build-tools/cmake",
-      "versionInfo": "4.3.1",
+      "versionInfo": "4.3.3",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -296,12 +683,31 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64. Single .tar.xz per platform, no split required."
+      "comment": "CMake 4.3.1 prebuilt for Windows x64 and Linux x86_64. Single .tar.xz per platform, no split required.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fc95d4a2547b308f1282dad4b35353987912a84e9334f799c03cbf023aafc69f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c0e529c559666ea550316fe2d146be9b2478832f2eb520b0e601b4e2d5d2ae3a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f"
+        }
+      ],
+      "attributionTexts": [
+        "windows: cmake-4.3.3-windows-x86_64.zip SHA256:fc95d4a2547b308f1282dad4b35353987912a84e9334f799c03cbf023aafc69f",
+        "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-aa SHA256:c0e529c559666ea550316fe2d146be9b2478832f2eb520b0e601b4e2d5d2ae3a",
+        "linux-x64: cmake-4.3.3-linux-x86_64.tar.gz.part-ab SHA256:f2cfefb94d7b6c7324bc1339ae1579ed059cccf1717a011c9e12e58465d8ea8f"
+      ]
     },
     {
       "SPDXID": "SPDXRef-conan",
       "name": "dev-tools/conan",
-      "versionInfo": "2.27.1",
+      "versionInfo": "2.30.0",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -309,12 +715,26 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Conan 2.27.1 C/C++ package manager. Windows: .tar.xz. Linux: .deb."
+      "comment": "Conan 2.27.1 C/C++ package manager. Windows: .tar.xz. Linux: .deb.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7956bbf45bdac0e14cf36e439f772daa0089c4f7551fe935121599f4d999b6f9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d2ea64d2691e39da286b51e1a54fe80fa02c9734168fbfed3d302f54b299a29a"
+        }
+      ],
+      "attributionTexts": [
+        "linux-x64: conan-2.30.0-linux-x86_64.tar.gz SHA256:7956bbf45bdac0e14cf36e439f772daa0089c4f7551fe935121599f4d999b6f9",
+        "windows: conan-2.30.0-windows-x86_64.zip SHA256:d2ea64d2691e39da286b51e1a54fe80fa02c9734168fbfed3d302f54b299a29a"
+      ]
     },
     {
       "SPDXID": "SPDXRef-servy",
       "name": "dev-tools/servy",
-      "versionInfo": "7.9",
+      "versionInfo": "8.5",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -322,12 +742,26 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Servy 7.9 Windows service manager. Windows only. Portable .tar.xz."
+      "comment": "Servy 7.9 Windows service manager. Windows only. Portable .tar.xz.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "726c63b602b684aa9b923eb47e8f6716e5f567c12a4c674203f011e7dbe6260d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "98ce86865eaf93d2b5226bee94635bca3770ce106fd8c82ef30c5072e97bcb98"
+        }
+      ],
+      "attributionTexts": [
+        "windows: servy-8.5-x64-installer.exe.part-aa SHA256:726c63b602b684aa9b923eb47e8f6716e5f567c12a4c674203f011e7dbe6260d",
+        "windows: servy-8.5-x64-installer.exe.part-ab SHA256:98ce86865eaf93d2b5226bee94635bca3770ce106fd8c82ef30c5072e97bcb98"
+      ]
     },
     {
       "SPDXID": "SPDXRef-sqlite",
       "name": "dev-tools/sqlite",
-      "versionInfo": "3.53.0",
+      "versionInfo": "3.53.3",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -335,7 +769,16 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "SQLite 3.53.0 CLI. Windows and Linux .tar.xz. RHEL 8 .rpm."
+      "comment": "SQLite 3.53.0 CLI. Windows and Linux .tar.xz. RHEL 8 .rpm.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45"
+        }
+      ],
+      "attributionTexts": [
+        "windows: sqlite-tools-win-x64-3530300.zip SHA256:c90fe36442cf573e8a19b3e8733d121622b8e2d5a0c47cbda97aeba9517d1c45"
+      ]
     },
     {
       "SPDXID": "SPDXRef-dev-tools-git-bundle",
@@ -353,7 +796,7 @@
     {
       "SPDXID": "SPDXRef-frameworks-grpc",
       "name": "frameworks/grpc",
-      "versionInfo": "1.80.0",
+      "versionInfo": "1.81.1",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -361,7 +804,128 @@
       "licenseDeclared": "Apache-2.0",
       "copyrightText": "Copyright 2015 gRPC authors.",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "gRPC v1.80.0 for Windows C++. Prebuilt .tar.xz. Source build supported."
+      "comment": "gRPC v1.81.1 for Windows C++. Prebuilt .zip per MSVC toolset (v142/v143/v145), split parts.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0229b40f72975efb30d2b625654b1a5622274eda2a7d6a384e27572fe01734d8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c00e7d3dafc99656bc729e0394f2b041ec0bf76de4ff5529796fdc318bc37b1b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ec3ddc072721007541aec8756d6e65db47f272cd6cf4b56bdedad0b0348b506e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a313ffde182e245f956b495fab8ffeb8e73559781b053e38d3de65ba1ee44fbf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1be2eb587916790972f4e819f5c935c32eeb40f91928daa48c1abcd3aec6ab64"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b99e5342aa2645f6b4f22c5123ad37fc462b48243144ebaac53afafb32f645b9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1b248828798126d4283b07f4cab520970cef93778fb941e5acb5bb91f68d27e2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "050bfbafcd9e05bc2a47b429394406c3e2ffbccc5fb58d68070475771b3f4856"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "aa8af21062b7d984086a9d9e51e2364d3b65d25484a96b575c2f3c88b822377e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b7886485dea2fac8a9756e68dff7f5a0cc5f235b4846dbfa3348a94fcb37e8c7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "81c00e5c4d6bacb04741af1a468cf346d47ff6934cde3015806d50f35d9748e6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dcb5ccc36ee9b642b199234304141c2f4f8f2be1e9a6932c6fb5678fe2a30ee7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2c1b5d31635f1e9bb5760d78d9b3987b38008e8a97b8dbb08f6e152607c1d1ba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "32f4ac2f80dd70a12b12fe0108e83a0419c688895a891492d8774cb2cba4323c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cdb9042e7d45285deb08eabbadabf42d93ad890c4e8ecb604f81d2e9d74c93bf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c87d7c37226f4addb275df7e70734df6631b2d99a5ad4ef2f9c714483860f838"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f54e0eb13cf739f279fa2b7eb29ed65371e2399454f893d4422574059eab09fd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "17c9cf56d9d896f647645a239725fc5b281ae7a6a23fc7616fb3a756f9b87090"
+        }
+      ],
+      "attributionTexts": [
+        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip SHA256:0229b40f72975efb30d2b625654b1a5622274eda2a7d6a384e27572fe01734d8",
+        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-aa SHA256:c00e7d3dafc99656bc729e0394f2b041ec0bf76de4ff5529796fdc318bc37b1b",
+        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ab SHA256:ec3ddc072721007541aec8756d6e65db47f272cd6cf4b56bdedad0b0348b506e",
+        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ac SHA256:a313ffde182e245f956b495fab8ffeb8e73559781b053e38d3de65ba1ee44fbf",
+        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ad SHA256:1be2eb587916790972f4e819f5c935c32eeb40f91928daa48c1abcd3aec6ab64",
+        "windows-msvc143: grpc-1.81.1-msvc143-x64-release.zip.part-ae SHA256:b99e5342aa2645f6b4f22c5123ad37fc462b48243144ebaac53afafb32f645b9",
+        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip SHA256:1b248828798126d4283b07f4cab520970cef93778fb941e5acb5bb91f68d27e2",
+        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-aa SHA256:050bfbafcd9e05bc2a47b429394406c3e2ffbccc5fb58d68070475771b3f4856",
+        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ab SHA256:aa8af21062b7d984086a9d9e51e2364d3b65d25484a96b575c2f3c88b822377e",
+        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ac SHA256:b7886485dea2fac8a9756e68dff7f5a0cc5f235b4846dbfa3348a94fcb37e8c7",
+        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ad SHA256:81c00e5c4d6bacb04741af1a468cf346d47ff6934cde3015806d50f35d9748e6",
+        "windows-msvc145: grpc-1.81.1-msvc145-x64-release.zip.part-ae SHA256:dcb5ccc36ee9b642b199234304141c2f4f8f2be1e9a6932c6fb5678fe2a30ee7",
+        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip SHA256:2c1b5d31635f1e9bb5760d78d9b3987b38008e8a97b8dbb08f6e152607c1d1ba",
+        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-aa SHA256:32f4ac2f80dd70a12b12fe0108e83a0419c688895a891492d8774cb2cba4323c",
+        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ab SHA256:cdb9042e7d45285deb08eabbadabf42d93ad890c4e8ecb604f81d2e9d74c93bf",
+        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ac SHA256:c87d7c37226f4addb275df7e70734df6631b2d99a5ad4ef2f9c714483860f838",
+        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ad SHA256:f54e0eb13cf739f279fa2b7eb29ed65371e2399454f893d4422574059eab09fd",
+        "windows-msvc142: grpc-1.81.1-msvc142-x64-release.zip.part-ae SHA256:17c9cf56d9d896f647645a239725fc5b281ae7a6a23fc7616fb3a756f9b87090"
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-lib-zlib",
+      "name": "lib/zlib",
+      "versionInfo": "1.3.2",
+      "supplier": "Organization: airgap-cpp-devkit",
+      "downloadLocation": "https://airgap-cpp-devkit.internal",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Zlib",
+      "licenseDeclared": "Zlib",
+      "copyrightText": "Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "zlib 1.3.2 gzip/DEFLATE compression library, built from vendored source via CMake (headers + static and shared libs). Windows x64 source .zip and Linux x64 source .tar.gz.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e8bf55f3017aa181690990cb58a994e77885da140609fc8f94abe9b65d2cae28"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+        }
+      ],
+      "attributionTexts": [
+        "windows: zlib132.zip SHA256:e8bf55f3017aa181690990cb58a994e77885da140609fc8f94abe9b65d2cae28",
+        "linux-x64: zlib-1.3.2.tar.gz SHA256:bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+      ]
     },
     {
       "SPDXID": "SPDXRef-languages-python",
@@ -374,12 +938,36 @@
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Python 3.14.4. Windows: full .zip and embeddable .zip. Linux: cpython standalone .tar.xz 2 parts. Source build supported."
+      "comment": "Python 3.14.4. Windows: full .zip and embeddable .zip. Linux: cpython standalone .tar.xz 2 parts. Source build supported.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "11a6f5f5e7defeaa67a0b8e797f0eabec6e4499e663815319a0e0d360091f906"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ec3630899fc6834971002388cc6471bfa5cea50b495c5279f064c2416c10e887"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4e5be3f73013ea89c56f099285e5d372f6986e79d3080e41608722025eb2a2b4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31e428174680378df2d9452b7066c9458966e5a4ebee763db76ca7e34c46fb92"
+        }
+      ],
+      "attributionTexts": [
+        "windows: python-3.14.4-amd64.zip SHA256:11a6f5f5e7defeaa67a0b8e797f0eabec6e4499e663815319a0e0d360091f906",
+        "linux-x64: cpython-3.14.4-linux-x64.tar.gz.part-aa SHA256:ec3630899fc6834971002388cc6471bfa5cea50b495c5279f064c2416c10e887",
+        "linux-x64: cpython-3.14.4-linux-x64.tar.gz.part-ab SHA256:4e5be3f73013ea89c56f099285e5d372f6986e79d3080e41608722025eb2a2b4",
+        "linux-x64: cpython-3.14.4-linux-x64.tar.gz.part-ac SHA256:31e428174680378df2d9452b7066c9458966e5a4ebee763db76ca7e34c46fb92"
+      ]
     },
     {
       "SPDXID": "SPDXRef-languages-dotnet",
       "name": "languages/dotnet",
-      "versionInfo": "10.0.202",
+      "versionInfo": "10.0.301",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -387,7 +975,66 @@
       "licenseDeclared": "MIT",
       "copyrightText": "Copyright (c) .NET Foundation and Contributors",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "NET SDK 10.0.202. Windows and Linux .tar.xz split at 50MB (4 and 3 parts respectively). No installer required."
+      "comment": "NET SDK 10.0.202. Windows and Linux .tar.xz split at 50MB (4 and 3 parts respectively). No installer required.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "79c90245f9500b91133d5319899165279ef6601aa8a78225d51454dba0968789"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "03a5328e74548ad39254487fcba60d220a6ed2271920703fd99ebab6f7d59487"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "947343c57e2433344666254208dac7402a3e727b6105509d57cd53168d6ebe7e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f4fd1fd7fd65a92fd19e485d9e19a613a1867547f33df250d65613388c50b678"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a5583f7ca7a76c3e4c000acd6a263551bf40666605de9c03ed97fb5dee9f5f00"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b8498e9f27f5a3d662967e6e73ddb7980ee91807baf5189e6a8020bb3ebe2750"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "732ecab415b6cf8c63dc628b5661d8318223e859898b8953d146b3ce5744b54e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9fa69df9c27cc287dec85c955a9a9487252931cb018a7579a4e70231a8ceb721"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f247f1e66b808cc6e25c50bf4a643bc33ec753740f025e35ac3d9e391aa2d1ff"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7e97bc0d6bdff5d246a8a09ab5b439056c05d8e95044df6f6777a923e18a45ca"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "135753d261b210c134a822b48bbdcde8f7f41e8cd63d8b0c079087e1e8ac0f28"
+        }
+      ],
+      "attributionTexts": [
+        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-aa SHA256:79c90245f9500b91133d5319899165279ef6601aa8a78225d51454dba0968789",
+        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ab SHA256:03a5328e74548ad39254487fcba60d220a6ed2271920703fd99ebab6f7d59487",
+        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ac SHA256:947343c57e2433344666254208dac7402a3e727b6105509d57cd53168d6ebe7e",
+        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ad SHA256:f4fd1fd7fd65a92fd19e485d9e19a613a1867547f33df250d65613388c50b678",
+        "linux-x64: dotnet-sdk-10.0.301-linux-x64.tar.gz.part-ae SHA256:a5583f7ca7a76c3e4c000acd6a263551bf40666605de9c03ed97fb5dee9f5f00",
+        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-aa SHA256:b8498e9f27f5a3d662967e6e73ddb7980ee91807baf5189e6a8020bb3ebe2750",
+        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ab SHA256:732ecab415b6cf8c63dc628b5661d8318223e859898b8953d146b3ce5744b54e",
+        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ac SHA256:9fa69df9c27cc287dec85c955a9a9487252931cb018a7579a4e70231a8ceb721",
+        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ad SHA256:f247f1e66b808cc6e25c50bf4a643bc33ec753740f025e35ac3d9e391aa2d1ff",
+        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-ae SHA256:7e97bc0d6bdff5d246a8a09ab5b439056c05d8e95044df6f6777a923e18a45ca",
+        "windows: dotnet-sdk-10.0.301-win-x64.zip.part-af SHA256:135753d261b210c134a822b48bbdcde8f7f41e8cd63d8b0c079087e1e8ac0f28"
+      ]
     },
     {
       "SPDXID": "SPDXRef-dev-tools-devkit-ui",
@@ -426,7 +1073,21 @@
       "licenseDeclared": "GPL-2.0-or-later",
       "copyrightText": "Copyright (C) 2004-2025 Tim Kosse",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "FileZilla 3.70.4 FTP/SFTP client. Windows: prebuilt NSIS installer. Linux: prebuilt binary tarball."
+      "comment": "FileZilla 3.70.4 FTP/SFTP client. Windows: prebuilt NSIS installer. Linux: prebuilt binary tarball.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3d3b6d6d55858f72b12cc4a55d8fec6950e56bdd0507b6bab2fc2b160dc055bd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2792cfc5bfe80c771915c0cc8c9bb67cbd06fd8544681a24336b38c89c382496"
+        }
+      ],
+      "attributionTexts": [
+        "windows: FileZilla_3.70.4_win64_sponsored2-setup.exe SHA256:3d3b6d6d55858f72b12cc4a55d8fec6950e56bdd0507b6bab2fc2b160dc055bd",
+        "linux-x64: FileZilla_3.70.4_x86_64-linux-gnu.tar.gz SHA256:2792cfc5bfe80c771915c0cc8c9bb67cbd06fd8544681a24336b38c89c382496"
+      ]
     },
     {
       "SPDXID": "SPDXRef-dev-tools-gdb",
@@ -444,7 +1105,7 @@
     {
       "SPDXID": "SPDXRef-dev-tools-notepadpp",
       "name": "dev-tools/notepadpp",
-      "versionInfo": "8.9.3",
+      "versionInfo": "8.9.6.4",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -452,7 +1113,16 @@
       "licenseDeclared": "GPL-3.0-or-later",
       "copyrightText": "Copyright (C) 2003 Don Ho",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "Notepad++ 8.9.3 text editor. Windows only. Portable zip (no admin required) + NSIS installer."
+      "comment": "Notepad++ 8.9.3 text editor. Windows only. Portable zip (no admin required) + NSIS installer.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cb902f8a9628324dbe5233b5202e716ea469720c9a1ac968007df2288e4ed2ea"
+        }
+      ],
+      "attributionTexts": [
+        "windows: npp.8.9.6.4.Installer.x64.exe SHA256:cb902f8a9628324dbe5233b5202e716ea469720c9a1ac968007df2288e4ed2ea"
+      ]
     },
     {
       "SPDXID": "SPDXRef-dev-tools-putty",
@@ -465,7 +1135,16 @@
       "licenseDeclared": "MIT",
       "copyrightText": "Copyright 1997-2025 Simon Tatham",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "PuTTY 0.83 SSH/SCP client. Windows: prebuilt MSI. Linux: source build from vendored putty-0.83.tar.gz using CMake (CLI tools only)."
+      "comment": "PuTTY 0.83 SSH/SCP client. Windows: prebuilt MSI. Linux: source build from vendored putty-0.83.tar.gz using CMake (CLI tools only).",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "aa8e5036d973688f1e8622fbe9ab22e037346e0def0197bf5e7cdf37da4e223d"
+        }
+      ],
+      "attributionTexts": [
+        "windows: putty-64bit-0.83-installer.msi SHA256:aa8e5036d973688f1e8622fbe9ab22e037346e0def0197bf5e7cdf37da4e223d"
+      ]
     },
     {
       "SPDXID": "SPDXRef-dev-tools-sourcetree",
@@ -478,7 +1157,16 @@
       "licenseDeclared": "LicenseRef-Atlassian-EULA",
       "copyrightText": "Copyright (C) Atlassian Pty Ltd",
       "primaryPackagePurpose": "APPLICATION",
-      "comment": "SourceTree 3.4.30 Git GUI client. Windows only. Squirrel installer installs to %LocalAppData%\\SourceTree."
+      "comment": "SourceTree 3.4.30 Git GUI client. Windows only. Squirrel installer installs to %LocalAppData%\\SourceTree.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "07271493c0de23157563b10151db1f9fd7cc8bfcf2507ea3894087e5f9c3529f"
+        }
+      ],
+      "attributionTexts": [
+        "windows: SourceTreeSetup-3.4.30.exe SHA256:07271493c0de23157563b10151db1f9fd7cc8bfcf2507ea3894087e5f9c3529f"
+      ]
     }
   ],
   "relationships": [
@@ -546,6 +1234,11 @@
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-frameworks-grpc"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-lib-zlib"
     },
     {
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",

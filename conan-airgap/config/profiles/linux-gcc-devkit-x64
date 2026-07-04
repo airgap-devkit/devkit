@@ -1,0 +1,13 @@
+# RHEL 8/9 x64 using the devkit's gcc-toolset-15 (GCC 15) instead of system GCC.
+# Enable the toolset first:  scl enable gcc-toolset-15 bash
+[settings]
+os=Linux
+arch=x86_64
+compiler=gcc
+compiler.version=15
+compiler.cppstd=17
+compiler.libcxx=libstdc++11
+build_type=Release
+
+[conf]
+tools.build:compiler_executables={"c": "gcc", "cpp": "g++"}

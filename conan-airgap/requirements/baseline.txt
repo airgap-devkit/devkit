@@ -1,0 +1,17 @@
+# conan-airgap requirements — one Conan reference per line.
+# Edit this to match what your teams actually build against, then run
+# scripts/seed-export.sh on a network-connected machine to fetch them.
+#
+# Lines beginning with # and blank lines are ignored.
+# Format: <name>/<version>   (a full Conan reference)
+
+# --- common C/C++ libraries (examples; uncomment/extend as needed) ---
+fmt/10.2.1
+spdlog/1.14.1
+nlohmann_json/3.11.3
+zlib/1.3.1
+# openssl/3.2.2
+# boost/1.84.0
+# gtest/1.14.0
+# eigen/3.4.0
+# catch2/3.6.0

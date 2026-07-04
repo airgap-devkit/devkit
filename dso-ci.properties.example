@@ -1,0 +1,43 @@
+# dso-ci.properties (example) — per-network config for the dso-jenkins-lib backbone.
+#
+# Copy to `dso-ci.properties` at the repo root on each Jenkins controller and fill
+# in the network-specific values. This file is the ONLY thing that changes between
+# air-gapped networks; the Jenkinsfile and the shared-library .groovy stay identical.
+# Blank values are ignored (they never override a good default), so an all-blank
+# file is a safe, fully air-gapped (silent) configuration.
+#
+# Every key can also be supplied via its DSO_CI_* env var, or inline via
+# dsoConfig(...). Resolution order (later wins):
+#   defaults < these keys < <network>.key profiles < DSO_CI_* env < inline
+#
+# See ci/jenkins/DSO-SHARED-LIBRARY.md for the one-time controller setup.
+
+# ── Source control ──────────────────────────────────────────────────────────
+gitCredentialsId=git-ssh-key
+defaultBranch=main
+
+# ── Artifact publishing (blank = disabled; safe air-gapped default) ─────────
+nexusCredentialsId=nexus-auth-id
+nexusBaseUrl=
+artifactRepoType=nexus
+sharePath=
+
+# ── Notifications (blank = silent; correct when air-gapped) ─────────────────
+# Set notifyEmail to receive build pass/fail emails from the post{} notify() step.
+notifyEmail=
+mailFrom=
+# Chat webhook (Slack/Teams/Mattermost). Blank = no chat.
+webhookUrl=
+webhookCredentialsId=
+
+# ── Network egress (set only on connected networks; BLANK when air-gapped) ──
+httpProxy=
+httpsProxy=
+noProxy=localhost,127.0.0.1,.internal
+disableSslVerify=false
+
+# ── Downstream job names (the cross-project integrity/transfer pipelines) ───
+# These wire airgap-devkit into the dso-suite tooling: the checksum_generator
+# drift gate and the git_bundles air-gap transfer job on this controller.
+checksumJobName=checksum-generator-pipeline
+bundleJobName=git-bundles-pipeline

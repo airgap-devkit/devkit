@@ -1,0 +1,9 @@
+# Windows x64, MSVC (Visual Studio 2022 17.10+). Default Windows target.
+[settings]
+os=Windows
+arch=x86_64
+compiler=msvc
+compiler.version=194
+compiler.cppstd=17
+compiler.runtime=dynamic
+build_type=Release

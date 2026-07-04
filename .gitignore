@@ -1,6 +1,9 @@
 # Logs
 *.log
 
+# dso-jenkins-lib per-network config (the .example is tracked; the real one is not)
+/dso-ci.properties
+
 # Build output
 /build/
 /out/

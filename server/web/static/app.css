@@ -1239,7 +1239,7 @@ input, select, textarea { font-family: inherit; }
   border-radius: 16px;
   box-shadow: 0 25px 60px rgba(0,0,0,0.25), 0 8px 20px rgba(0,0,0,0.15);
   width: 100%;
-  max-width: 640px;
+  max-width: 880px;
   max-height: 90vh;
   overflow-y: auto;
   animation: modal-slide-up 0.18s ease;
@@ -1411,7 +1411,26 @@ input, select, textarea { font-family: inherit; }
   background: var(--surface-2);
   gap: 10px;
 }
-#modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+#modal-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.variant-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+.variant-select-label { color: var(--text-muted, #64748b); font-weight: 600; white-space: nowrap; }
+.variant-select select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  color: inherit;
+  font-size: 0.8rem;
+}
 
 /* ── Tool Edit Panel ── */
 .edit-panel {

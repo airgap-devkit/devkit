@@ -19,6 +19,18 @@ type PackageItem struct {
 	Description string `json:"description,omitempty"`
 }
 
+// Variant is a user-selectable install option for a tool that ships more than
+// one prebuilt package (e.g. gRPC, one static-lib package per MSVC toolset).
+// The label is surfaced in the UI/CLI; SetupArgs are passed to the setup script.
+type Variant struct {
+	ID        string   `json:"id"`
+	Label     string   `json:"label"`
+	Toolset   string   `json:"toolset,omitempty"`
+	Archive   string   `json:"archive,omitempty"`
+	SetupArgs []string `json:"setup_args,omitempty"`
+	Default   bool     `json:"default,omitempty"`
+}
+
 type Tool struct {
 	Hidden       bool          `json:"hidden"`
 	ID           string        `json:"id"`
@@ -42,6 +54,8 @@ type Tool struct {
 	InstallLabel string        `json:"install_label,omitempty"`
 	BundleType   string        `json:"bundle_type,omitempty"` // "pip" | "vscode"
 	Packages     []PackageItem `json:"packages,omitempty"`
+	VariantLabel string        `json:"variant_label,omitempty"`
+	Variants     []Variant     `json:"variants,omitempty"`
 	Source       string        `json:"source"`
 	UploadedBy   string        `json:"uploaded_by,omitempty"`
 	UploadedAt   string        `json:"uploaded_at,omitempty"`
@@ -149,4 +163,53 @@ func (t Tool) ResolvedCheckCmd(goos string) string {
 		}
 	}
 	return t.CheckCmd
+}
+
+// DefaultVariant returns the variant flagged default, or the first variant,
+// or nil when the tool has no variants.
+func (t Tool) DefaultVariant() *Variant {
+	if len(t.Variants) == 0 {
+		return nil
+	}
+	for i := range t.Variants {
+		if t.Variants[i].Default {
+			return &t.Variants[i]
+		}
+	}
+	return &t.Variants[0]
+}
+
+// FindVariant returns the variant with the given id (case-insensitive), or nil.
+func (t Tool) FindVariant(id string) *Variant {
+	for i := range t.Variants {
+		if strings.EqualFold(t.Variants[i].ID, id) {
+			return &t.Variants[i]
+		}
+	}
+	return nil
+}
+
+// InstallArgs returns the setup-script arguments for the given variant id.
+// When the tool has variants, an unknown/empty id falls back to the default
+// variant. A variant with explicit SetupArgs uses them; otherwise a
+// "--toolset <toolset>" pair is synthesised. Tools without variants return
+// their static SetupArgs unchanged.
+func (t Tool) InstallArgs(variantID string) []string {
+	if len(t.Variants) == 0 {
+		return t.SetupArgs
+	}
+	v := t.FindVariant(variantID)
+	if v == nil {
+		v = t.DefaultVariant()
+	}
+	if v == nil {
+		return t.SetupArgs
+	}
+	if len(v.SetupArgs) > 0 {
+		return append(append([]string{}, t.SetupArgs...), v.SetupArgs...)
+	}
+	if v.Toolset != "" {
+		return append(append([]string{}, t.SetupArgs...), "--toolset", v.Toolset)
+	}
+	return t.SetupArgs
 }

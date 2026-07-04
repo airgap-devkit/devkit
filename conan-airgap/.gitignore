@@ -1,0 +1,14 @@
+# Generated transport bundles
+dist/
+
+# Conan generator output if templates are built in place
+build/
+CMakeUserPresets.json
+conan_toolchain.cmake
+*conanbuild*.bat
+*conanbuild*.sh
+*conanrun*.bat
+*conanrun*.sh
+deactivate_*.bat
+deactivate_*.sh
+graph_info.json

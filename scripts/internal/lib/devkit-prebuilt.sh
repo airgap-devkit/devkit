@@ -28,35 +28,124 @@ dl() {
 # Compute SHA256 of a file.
 sha256() { sha256sum "$1" | awk '{print $1}'; }
 
-# Repack a zip or tar.gz as tar.xz, stripping the top-level wrapper directory.
-# Used for archives where contents are nested under e.g. cmake-4.3.2-windows-x86_64/.
-repack_xz_strip1() {
-    local src="$1" dest="$2"
-    local tmp; tmp="$(mktemp -d -p "${TMP_DIR:-/tmp}")"
-    echo "    Extracting $(basename "$src")..."
-    case "$src" in
-        *.zip)           unzip -q "$src" -d "$tmp/raw" ;;
-        *.tar.gz|*.tgz)  mkdir -p "$tmp/raw"; tar -xzf "$src" -C "$tmp/raw" ;;
-        *)               fail "repack_xz_strip1: unsupported format: $src" ;;
-    esac
-    local topdir; topdir="$(ls "$tmp/raw" | head -1)"
-    echo "    Repackaging → $(basename "$dest") (xz, no wrapper)..."
-    tar -cJf "$dest" -C "$tmp/raw/$topdir" .
-    rm -rf "$tmp"
+# Canonical staged formats are the ones a bare, no-admin target can extract with
+# OS-native tooling: .zip on Windows (Explorer / Expand-Archive) and .tar.gz on
+# Linux (base tar). We never stage .tar.xz or .7z — those need extra unpackers.
+
+# devkit_platform_ext PLATFORM → echo the canonical archive extension.
+#   windows → zip     linux (anything else) → tar.gz
+devkit_platform_ext() {
+    [[ "$1" == "windows" ]] && echo "zip" || echo "tar.gz"
 }
 
-# Repack a zip or tar.gz as tar.xz WITHOUT stripping (contents already at root).
-repack_xz_flat() {
+# _devkit_zip_dir SRC_ROOT DEST_ZIP
+# Create DEST_ZIP from the CONTENTS of SRC_ROOT (flat — no wrapper directory).
+# Prefers `zip`, then `7za`, then python3's zipfile (always available since
+# python3 is already a hard dependency of the staging scripts).
+_devkit_zip_dir() {
+    local root="$1" dest="$2"
+    dest="$(cd "$(dirname "$dest")" && pwd)/$(basename "$dest")"   # absolutize
+    rm -f "$dest"
+    if command -v zip &>/dev/null; then
+        ( cd "$root" && zip -qr "$dest" . )
+    elif command -v 7za &>/dev/null; then
+        ( cd "$root" && 7za a -tzip -bso0 -bsp0 "$dest" . >/dev/null )
+    else
+        ( cd "$root" && python3 - "$dest" <<'PY'
+import os, sys, zipfile
+dest = sys.argv[1]
+with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as z:
+    for dirpath, _, files in os.walk("."):
+        for f in files:
+            full = os.path.join(dirpath, f)
+            z.write(full, os.path.relpath(full, "."))
+PY
+        )
+    fi
+    [[ -f "$dest" ]] || fail "zip creation failed: $dest"
+}
+
+# devkit_make_archive SRC_ROOT DEST
+# Archive the CONTENTS of SRC_ROOT into DEST; the DEST extension picks the format
+# (.zip → zip, .tar.gz → gzip). Contents land at the archive root (no wrapper).
+devkit_make_archive() {
+    local root="$1" dest="$2"
+    case "$dest" in
+        *.zip)     _devkit_zip_dir "$root" "$dest" ;;
+        *.tar.gz)  tar -czf "$dest" -C "$root" . ;;
+        *)         fail "devkit_make_archive: unsupported dest format: $dest" ;;
+    esac
+}
+
+# devkit_transcode_targz SRC DEST
+# Convert a Linux tar archive (.tar.xz/.tar.gz/.tgz) to .tar.gz WITHOUT extracting
+# it — the tar payload is preserved byte-for-byte, so POSIX symlinks and the
+# internal directory layout survive intact. This is mandatory on Windows/MSYS,
+# where extracting a Linux tarball cannot recreate symlinks (they become copies
+# or hard-fail). Because nothing is extracted, the wrapper dir is NOT stripped;
+# the install side strips to match the archive's existing layout.
+devkit_transcode_targz() {
     local src="$1" dest="$2"
+    case "$src" in
+        *.tar.gz|*.tgz)
+            cp -f "$src" "$dest" ;;
+        *.tar.xz)
+            if command -v xz &>/dev/null; then
+                xz -dc "$src" | gzip -nc > "$dest"
+            else
+                # Portable fallback: stream xz→gz via Python stdlib (no extraction).
+                python3 - "$src" "$dest" <<'PY'
+import lzma, gzip, shutil, sys
+with lzma.open(sys.argv[1], "rb") as fi, gzip.open(sys.argv[2], "wb", 6) as fo:
+    shutil.copyfileobj(fi, fo, 1024 * 1024)
+PY
+            fi ;;
+        *) fail "devkit_transcode_targz: unsupported source: $src" ;;
+    esac
+    [[ -s "$dest" ]] || fail "devkit_transcode_targz: produced empty file: $dest"
+}
+
+# devkit_repack SRC DEST [auto|strip1|flat]
+# Extract SRC (.zip/.tar.gz/.tgz/.tar.xz/.7z) and repackage into DEST (.zip/.tar.gz).
+#   auto   — strip a single top-level wrapper DIRECTORY if (and only if) that is
+#            the sole root entry; otherwise keep contents flat (default). This is
+#            correct whether the payload is wrapped (cmake-4.3.3-*/) or is a bare
+#            file at the root (e.g. ninja).
+#   strip1 — force-strip the single top-level wrapper dir (no-op if it is a file).
+#   flat   — always keep contents at the root as-is.
+devkit_repack() {
+    local src="$1" dest="$2" mode="${3:-auto}"
     local tmp; tmp="$(mktemp -d -p "${TMP_DIR:-/tmp}")"
     echo "    Extracting $(basename "$src")..."
+    mkdir -p "$tmp/raw"
     case "$src" in
         *.zip)           unzip -q "$src" -d "$tmp/raw" ;;
-        *.tar.gz|*.tgz)  mkdir -p "$tmp/raw"; tar -xzf "$src" -C "$tmp/raw" ;;
-        *)               fail "repack_xz_flat: unsupported format: $src" ;;
+        *.tar.gz|*.tgz)  tar -xzf "$src" -C "$tmp/raw" ;;
+        *.tar.xz)        tar -xJf "$src" -C "$tmp/raw" ;;
+        *.7z)
+            command -v 7za &>/dev/null || command -v 7z &>/dev/null \
+                || fail "devkit_repack: 7za/7z required to unpack $src"
+            local sz; sz="$(command -v 7za || command -v 7z)"
+            "$sz" x -y -o"$tmp/raw" "$src" >/dev/null ;;
+        *)               fail "devkit_repack: unsupported source format: $src" ;;
     esac
-    echo "    Repackaging → $(basename "$dest") (xz, flat)..."
-    tar -cJf "$dest" -C "$tmp/raw" .
+
+    # Decide the archive root. Only strip a wrapper when the sole top-level entry
+    # is a directory — never when it is a single file.
+    local root="$tmp/raw"
+    local entries=("$tmp"/raw/*)
+    case "$mode" in
+        auto|strip1)
+            if [[ ${#entries[@]} -eq 1 && -d "${entries[0]}" ]]; then
+                root="${entries[0]}"
+            fi
+            ;;
+        flat) ;;
+        *) fail "devkit_repack: unknown mode: $mode" ;;
+    esac
+
+    echo "    Repackaging → $(basename "$dest")..."
+    devkit_make_archive "$root" "$dest"
     rm -rf "$tmp"
 }
 

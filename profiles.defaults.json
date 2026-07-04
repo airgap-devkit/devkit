@@ -1,0 +1,27 @@
+{
+  "_doc": "Single source of truth for the devkit's default install profiles. The Go server loads this at startup and falls back to compiled-in defaults if the file is absent or invalid. Runtime user customizations are layered on top via profiles.json (do not edit that file by hand). ci/config.json keeps a synced copy for CI reference (maintained by scripts/internal/pkg.sh). The 'full' profile uses the __all__ sentinel, which the server expands to every discovered tool id.",
+  "minimal": {
+    "name": "Minimal",
+    "description": "Required tools only",
+    "color": "gray",
+    "tool_ids": ["toolchains/clang", "cmake", "python", "style-formatter"]
+  },
+  "cpp-dev": {
+    "name": "C++ Developer",
+    "description": "Core C++ development tools",
+    "color": "blue",
+    "tool_ids": ["toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite", "zlib"]
+  },
+  "devops": {
+    "name": "DevOps",
+    "description": "Infrastructure and automation tools",
+    "color": "green",
+    "tool_ids": ["cmake", "python", "conan", "sqlite"]
+  },
+  "full": {
+    "name": "Full Install",
+    "description": "All available tools",
+    "color": "purple",
+    "tool_ids": ["__all__"]
+  }
+}
