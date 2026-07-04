@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -293,6 +295,20 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 		sse.Send(fmt.Sprintf("Downloaded %.1f MB → %s", float64(written)/1024/1024, destFile))
 	}
 
+	// Compute and record the checksum so subsequent air-gapped installs can
+	// verify this asset (the bash install path checks it via manifest.json).
+	sum, sumErr := sha256File(destFile)
+	if sumErr != nil {
+		sse.Send("WARNING: could not compute sha256: " + sumErr.Error())
+	} else {
+		sse.Send("sha256          : " + sum)
+		if err := writePrebuiltManifest(destDir, id, ver, s.OS, assetName, dlURL, sum); err != nil {
+			sse.Send(fmt.Sprintf("WARNING: could not write manifest.json: %v", err))
+		} else {
+			sse.Send("Wrote manifest.json with checksum.")
+		}
+	}
+
 	// Update devkit.json version
 	devkitPath := findDevkitJSON(s.RepoRoot, id)
 	if devkitPath != "" {
@@ -330,6 +346,7 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 		FromVersion: t.Version,
 		ToVersion:   ver,
 		Asset:       assetName,
+		Sha256:      sum,
 		Host:        hostname,
 		PerformedAt: time.Now().UTC().Format(time.RFC3339),
 	})
@@ -346,8 +363,42 @@ type UpdateHistoryEntry struct {
 	FromVersion string `json:"from_version"`
 	ToVersion   string `json:"to_version"`
 	Asset       string `json:"asset"`
+	Sha256      string `json:"sha256,omitempty"`
 	Host        string `json:"host"`
 	PerformedAt string `json:"performed_at"`
+}
+
+// sha256File returns the hex-encoded SHA-256 of the file at path.
+func sha256File(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// writePrebuiltManifest writes a minimal prebuilt manifest.json recording the
+// downloaded asset and its checksum, in the format the bash install path reads
+// (devkit_verify_archive). osKey is "windows" or "linux".
+func writePrebuiltManifest(dir, tool, version, osKey, archive, source, sum string) error {
+	m := map[string]any{
+		"tool":    tool,
+		"version": version,
+		"source":  source,
+		"platforms": map[string]any{
+			osKey: map[string]string{"archive": archive, "sha256": sum},
+		},
+	}
+	b, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, "manifest.json"), append(b, '\n'), 0o640)
 }
 
 func (s *Server) updateHistoryPath() string {

@@ -1,0 +1,9 @@
+{
+  "remotes": [
+    {
+      "name": "internal",
+      "url": "https://REPLACE-ME.internal/artifactory/api/conan/conan-local",
+      "verify_ssl": true
+    }
+  ]
+}

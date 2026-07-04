@@ -9,6 +9,62 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+#### dso-suite integration (hub + independent spokes)
+- **Shared Jenkins CI backbone.** `Jenkinsfile` opts into `dso-jenkins-lib` via
+  `@Library` for offline version stamping (`computeVersion`), build naming
+  (`stampBuild`), and config-driven `notify` in `post{}`. All calls are guarded
+  so a controller without the library still runs the pipeline. Added
+  `dso-ci.properties.example` + `ci/jenkins/DSO-SHARED-LIBRARY.md`.
+- **Conan ↔ gRPC ABI-matched profiles.** `conan-airgap/config/profiles/`
+  `windows-msvc-v14{2,3,5}-grpc` use the static CRT (`/MT`) so Conan deps link
+  cleanly against the matching prebuilt gRPC toolset package.
+- **Cross-project integrity gate.** Vendored the dso-suite stdlib `checksum_generator`
+  engine (`scripts/internal/lib/checksum_generator.py`) with a wrapper
+  `scripts/internal/checksum-verify.sh` (whole-tree drift gate, exit 3). Additive —
+  does not replace the prebuilt manifests or SBOM checksum flow.
+- **Self-verifying air-gap transfer.** `scripts/internal/airgap-transfer.sh` bundles
+  the super-repo + submodules with a `SHA256SUMS` manifest and a dependency-free
+  `verify.sh` (exit 3 on drift), interoperable with dso-suite's `git_bundles` /
+  `airgap-package.sh` contract. Overview: `ci/DSO-INTEGRATION.md`.
+
+### Changed
+
+#### gRPC — replaced with dso-suite prebuilt distribution (1.80.0 → 1.81.1)
+- The gRPC tool now ships the complete, relocatable **prebuilt gRPC 1.81.1** SDK
+  (bin + include + lib + cmake + `activate.ps1` + `grpc-toolchain.cmake`) vendored
+  from the dso-suite maintainer build. This replaces the previous source-only
+  package and its unreliable ~40-minute source-build path.
+- **Per-MSVC-toolset packages with a user-facing selector.** Three release
+  packages ship — `v142` (Visual Studio 2019), `v143` (Visual Studio 2022,
+  default), and `v145` (Visual Studio 2026). devkit-ui shows a Visual Studio
+  version selector on the gRPC tool; `install-cli.sh` prompts for it; and
+  `setup.sh` takes `--toolset <v142|v143|v145>`. Each toolset installs into its
+  own directory (`grpc-1.81.1-msvc<NNN>`) so multiple toolsets coexist.
+- Added `tools/frameworks/grpc/Check-Environment.ps1` (detects the installed
+  MSVC toolset/CMake and prints the matching package + configure command), a
+  tool README, and a vendored `example-project/` copy-and-go starter (echo
+  service, cross-IDE `CMakePresets.json`, VS Code / VS 2022 / VS 2026 walkthrough).
+- Added `scripts/internal/import-grpc-prebuilt.sh` — the upstream→downstream sync
+  that stages the dso-suite release packages into `prebuilt/` as checksummed
+  split parts with a multi-variant `manifest.json`.
+
+### Fixed
+- `install-cli.sh` invoked a non-existent `setup_grpc.sh`; it now calls the real
+  `setup.sh`. `status.sh` probes the new per-toolset install directories.
+
+---
+
+## [1.3.6] — 2026-07-03
+
+### Changed
+
+#### Tool version bumps
+- **Servy** 8.4 → 8.5
+- **VS Code** 1.124.2 → 1.127.0
+- **SQLite CLI** 3.53.2 → 3.53.3
+
 ---
 
 ## [1.3.5] — 2026-07-01

@@ -5,7 +5,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.3.5** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.6** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -54,6 +54,11 @@ override it for a single session.
 >
 > **No UI needed?** Use the CLI directly: `bash scripts/internal/install-cli.sh`
 > For headless/CI installs: `bash scripts/internal/install-cli.sh --yes --profile cpp-dev`
+
+> **Deploying for a team or a locked-down laptop?** See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+> for the two supported models: an admin hosting one shared server for the whole
+> team (`bash scripts/serve.sh`), or per-user no-admin local installs
+> (`bash scripts/launch.sh`).
 
 ---
 
@@ -307,7 +312,8 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/toolchains/gcc/windows/`](tools/toolchains/gcc/windows/README.md) | GCC 15.2.0 + MinGW-w64 13.0.0 UCRT for Windows | No |
 | [`tools/dev-tools/servy/`](tools/dev-tools/servy/README.md) | Servy 7.9 — Windows service manager (no-op on Linux) | No |
 | [`tools/dev-tools/conan/`](tools/dev-tools/conan/README.md) | Conan 2.27.1 — C/C++ package manager, no Python required | No |
-| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.80.0 for Windows — prebuilt or source build (~40 min) | No |
+| [`tools/frameworks/grpc/`](tools/frameworks/grpc/README.md) | gRPC v1.81.1 for Windows — prebuilt per MSVC toolset (VS 2019/2022/2026), pick your version | No |
+| [`tools/lib/zlib/`](tools/lib/zlib/) | zlib 1.3.2 — gzip/DEFLATE compression library; vendored source, CMake build; Windows + Linux | No |
 | [`tools/dev-tools/filezilla/`](tools/dev-tools/filezilla/README.md) | FileZilla 3.70.4 — FTP/SFTP client; Windows + Linux | No |
 | [`tools/dev-tools/gdb/`](tools/dev-tools/gdb/README.md) | GDB 17.1 — Linux source build (~25 min) | No |
 | [`tools/dev-tools/notepadpp/`](tools/dev-tools/notepadpp/README.md) | Notepad++ 8.9.3 — Windows only; portable zip or NSIS installer | No |

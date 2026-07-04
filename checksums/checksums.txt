@@ -1,0 +1,7 @@
+# DIRECTORY: Root Workspace Cluster [.]
+# Context Summary: Contains 2 files direct
+=========================================================================================
+FILE PATH     CRC32      SHA256 CHECKSUM
+=========================================================================================
+a.txt         48d4fcc1   95d4a8bf9504563a65654a4afa0725866bf7570d109a59203d50d8bee9899277 [MODIFIED]
+b.txt         dd3861a8   e258d248fda94c63753607f7c4494ee0fcbe92f1a76bfdac795c9d84101eb317 [UNCHANGED]

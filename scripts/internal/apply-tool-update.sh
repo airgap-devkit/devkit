@@ -14,7 +14,7 @@
 #   1. Confirms the release tag exists on GitHub
 #   2. Resolves the asset download URL using asset_match / asset_match_linux
 #   3. Downloads to a temp directory
-#   4. Repacks archives (zip/tar.gz → tar.xz) where needed
+#   4. Repacks archives into the platform-native format (Windows → .zip, Linux → .tar.gz)
 #   5. Splits files >50MB into alphabetic part- files (matching prebuilt convention)
 #   6. Writes prebuilt/<category>/<tool>/<version>/manifest.json
 #   7. Updates tools/<category>/<tool>/devkit.json "version" field
@@ -283,41 +283,40 @@ download_and_stage() {
     local raw_dl="$TMP_DIR/$fname"
     dl "$url" "$raw_dl"
 
-    # ── Repack if needed ───────────────────────────────────────────────────
-    local base="${fname%.*}"
+    # ── Repack into the platform-native format ─────────────────────────────
+    # Windows → .zip (Explorer / Expand-Archive, no admin), Linux → .tar.gz
+    # (base tar). Installers (.exe/.rpm/.deb) are staged as-is — they are not
+    # archives we extract. Compressed archives are always repacked so the payload
+    # lands at the archive root (no wrapper dir) and no .tar.xz/.7z is ever staged.
+    local target_ext; target_ext="$(devkit_platform_ext "$os_target")"
 
-    # Determine final staged filename and repack strategy
+    # Strip the source's compound extension to get a clean base name.
+    local base="$fname"
+    case "$fname" in
+        *.tar.gz) base="${fname%.tar.gz}" ;;
+        *.tgz)    base="${fname%.tgz}" ;;
+        *.tar.xz) base="${fname%.tar.xz}" ;;
+        *)        base="${fname%.*}" ;;
+    esac
+
     staged_file="$raw_dl"
     staged_name="$fname"
 
     case "$fname" in
-        *.zip)
-            # Decide strip1 vs flat: inspect the zip root
-            local nroots
-            nroots=$(unzip -l "$raw_dl" | awk 'NR>3{print $4}' | cut -d'/' -f1 | sort -u | grep -v '^\s*$' | wc -l)
-            local xz_name="${base}.tar.xz"
-            staged_file="$TMP_DIR/$xz_name"
-            staged_name="$xz_name"
-            if (( nroots == 1 )); then
-                repack_xz_strip1 "$raw_dl" "$staged_file"
+        *.zip|*.tar.gz|*.tgz|*.tar.xz|*.7z)
+            staged_name="${base}.${target_ext}"
+            staged_file="$TMP_DIR/$staged_name"
+            if [[ "$target_ext" == "tar.gz" ]]; then
+                # Linux: transcode the tar stream (preserves POSIX symlinks; the
+                # installer auto-strips any wrapper dir at extract time).
+                devkit_transcode_targz "$raw_dl" "$staged_file"
             else
-                repack_xz_flat "$raw_dl" "$staged_file"
+                # Windows: extract→zip, auto-normalizing a sole wrapper directory.
+                devkit_repack "$raw_dl" "$staged_file" auto
             fi
             ;;
-        *.tar.gz|*.tgz)
-            # Strip compound extension correctly (.tar.gz → not just .gz)
-            local xz_name
-            if [[ "$fname" == *.tar.gz ]]; then
-                xz_name="${fname%.tar.gz}.tar.xz"
-            else
-                xz_name="${fname%.tgz}.tar.xz"
-            fi
-            staged_file="$TMP_DIR/$xz_name"
-            staged_name="$xz_name"
-            repack_xz_flat "$raw_dl" "$staged_file"
-            ;;
-        *.tar.xz|*.exe|*.rpm|*.deb|*.7z)
-            # Use as-is
+        *.exe|*.rpm|*.deb)
+            # Installer/package — stage as-is.
             ;;
     esac
 

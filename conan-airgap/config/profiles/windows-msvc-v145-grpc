@@ -1,0 +1,16 @@
+# Windows x64, MSVC v145 (Visual Studio 2026) — ABI-matched to the devkit's
+# prebuilt gRPC package `grpc-1.81.1-msvc145`.
+#
+# runtime=static (/MT) is REQUIRED to link against that gRPC package (built /MT;
+# mixing /MD and /MT produces LNK2038 RuntimeLibrary mismatch errors).
+#
+# NOTE: compiler.version=195 (MSVC 14.5x) needs a Conan that recognises it. If
+# your Conan client rejects 195, pin the closest supported value or update Conan.
+[settings]
+os=Windows
+arch=x86_64
+compiler=msvc
+compiler.version=195
+compiler.cppstd=17
+compiler.runtime=static
+build_type=Release

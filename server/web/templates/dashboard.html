@@ -393,6 +393,29 @@ function _populateModal(d) {
   // Action buttons
   const actions = document.getElementById('modal-actions');
   actions.innerHTML = '';
+  // Variant selector — tools that ship multiple prebuilt packages (e.g. gRPC,
+  // one static-lib package per MSVC toolset) let the user pick before install.
+  let getVariant = () => undefined;
+  if (d.available && Array.isArray(d.variants) && d.variants.length) {
+    const vwrap = document.createElement('label');
+    vwrap.className = 'variant-select';
+    const vlabel = document.createElement('span');
+    vlabel.className = 'variant-select-label';
+    vlabel.textContent = (d.variant_label || 'Variant') + ':';
+    const sel = document.createElement('select');
+    sel.id = 'modal-variant-select';
+    d.variants.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.label || v.id;
+      if (v.default) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    vwrap.appendChild(vlabel);
+    vwrap.appendChild(sel);
+    actions.appendChild(vwrap);
+    getVariant = () => sel.value;
+  }
   if (d.available) {
     if (installed) {
       const removeBtn = document.createElement('button');
@@ -406,7 +429,7 @@ function _populateModal(d) {
         updateBtn.title = 'Installs the bundled v' + d.version + ' to this machine (offline — no internet required)';
         const _iLabel = d.install_label || (/^various$/i.test((d.version||'').trim()) ? 'Install' : 'Install v' + d.version);
         updateBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>' + _iLabel;
-        updateBtn.onclick = () => { closeToolModal(); installTool(id, d.name, updateBtn); };
+        updateBtn.onclick = () => { const _v = getVariant(); closeToolModal(); installTool(id, d.name, updateBtn, _v); };
         actions.appendChild(updateBtn);
       }
     } else {
@@ -415,7 +438,7 @@ function _populateModal(d) {
       const _iv = (d.version || '');
       const _ivLabel = d.install_label || (/^various$/i.test(_iv.trim()) ? 'Install' : 'Install v' + _iv);
       installBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>' + _ivLabel;
-      installBtn.onclick = () => { closeToolModal(); installTool(id, d.name, installBtn); };
+      installBtn.onclick = () => { const _v = getVariant(); closeToolModal(); installTool(id, d.name, installBtn, _v); };
       actions.appendChild(installBtn);
     }
   }
@@ -603,7 +626,7 @@ function copyLog() {
 }
 
 // ── Install via SSE ──
-function installTool(id, name, btn) {
+function installTool(id, name, btn, variant) {
   // Hide any leftover manual install hint from a prior failed attempt
   const _hint = document.getElementById('manual-install-hint');
   if (_hint) _hint.style.display = 'none';
@@ -619,7 +642,8 @@ function installTool(id, name, btn) {
   _toolConsole[id].push(_liveEntry);
   if (_modalToolId === id) _renderModalConsole();
 
-  const es = new EventSource('/install/' + encodeURIComponent(id));
+  const _q = variant ? ('?variant=' + encodeURIComponent(variant)) : '';
+  const es = new EventSource('/install/' + encodeURIComponent(id) + _q);
   es.onmessage = e => {
     const line = e.data;
     if (line.startsWith('DONE:')) {

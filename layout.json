@@ -32,7 +32,8 @@
       "sourcetree"
     ],
     "Frameworks": [
-      "grpc"
+      "grpc",
+      "zlib"
     ],
     "Languages": [
       "python",

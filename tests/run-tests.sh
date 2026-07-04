@@ -256,6 +256,13 @@ else
   _na "servy (Windows only)"
 fi
 
+# zlib (library — verify the header shipped)
+if _receipt_exists "zlib"; then
+  _check_file "zlib 1.3.2 (zlib.h)" "${PREFIX}/zlib/include/zlib.h"
+else
+  _skip "zlib (not installed)"
+fi
+
 # ---------------------------------------------------------------------------
 # 6. Style formatter
 # ---------------------------------------------------------------------------

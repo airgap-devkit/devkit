@@ -225,7 +225,8 @@ _check_grpc() {
     fi
     local found=false
     for base in "${ADMIN_PREFIX}" "${USER_PREFIX}"; do
-        for ver in "grpc-1.76.0" "grpc-1.78.1" "grpc-1.80.0"; do
+        for ver in "grpc-1.81.1-msvc142" "grpc-1.81.1-msvc143" "grpc-1.81.1-msvc145" \
+                   "grpc-1.76.0" "grpc-1.78.1" "grpc-1.80.0"; do
             local grpc_dir="${base}/${ver}"
             local plugin="${grpc_dir}/bin/grpc_cpp_plugin.exe"
             if [[ -d "${grpc_dir}" ]]; then
@@ -241,7 +242,7 @@ _check_grpc() {
     done
     if [[ "${found}" == false ]]; then
         _print_not_installed "frameworks/grpc" \
-            "bash tools/frameworks/grpc/setup_grpc.sh"
+            "bash tools/frameworks/grpc/setup.sh --toolset v143"
     fi
 }
 # ---------------------------------------------------------------------------

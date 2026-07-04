@@ -1,0 +1,12 @@
+# RHEL 9 x64, system GCC 11 (glibc 2.34).
+[settings]
+os=Linux
+arch=x86_64
+compiler=gcc
+compiler.version=11
+compiler.cppstd=17
+compiler.libcxx=libstdc++11
+build_type=Release
+
+[conf]
+tools.build:compiler_executables={"c": "gcc", "cpp": "g++"}

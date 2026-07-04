@@ -16,9 +16,10 @@
     "admin_install":   false
   },
 
+  "_profiles_note": "Synced copy for CI reference. Source of truth is profiles.defaults.json at the repo root (loaded by the Go server); keep these tool lists in sync with it.",
   "profiles": {
     "minimal":  ["toolchains/clang", "cmake", "python", "style-formatter"],
-    "cpp-dev":  ["toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite"],
+    "cpp-dev":  ["toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite", "zlib"],
     "devops":   ["cmake", "python", "conan", "sqlite"],
     "full":     ["__all__"]
   },

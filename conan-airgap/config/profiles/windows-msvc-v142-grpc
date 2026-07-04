@@ -1,0 +1,13 @@
+# Windows x64, MSVC v142 (Visual Studio 2019) — ABI-matched to the devkit's
+# prebuilt gRPC package `grpc-1.81.1-msvc142`.
+#
+# runtime=static (/MT) is REQUIRED to link against that gRPC package (built /MT;
+# mixing /MD and /MT produces LNK2038 RuntimeLibrary mismatch errors).
+[settings]
+os=Windows
+arch=x86_64
+compiler=msvc
+compiler.version=192
+compiler.cppstd=17
+compiler.runtime=static
+build_type=Release

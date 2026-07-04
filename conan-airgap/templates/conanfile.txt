@@ -1,0 +1,11 @@
+# Consumer conanfile for a CMake/Eclipse project on an air-gapped host.
+# All requires must already be present in the local cache (seeded via the kit).
+[requires]
+fmt/10.2.1
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout

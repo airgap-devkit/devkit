@@ -108,16 +108,7 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 		token:       tok,
 		allTools:    loaded,
 		prefix:      detectPrefix(currentOS),
-		profiles: map[string]Profile{
-			"minimal": {ID: "minimal", Name: "Minimal", Description: "Required tools only", Color: "gray",
-				ToolIDs: []string{"toolchains/clang", "cmake", "python", "style-formatter"}},
-			"cpp-dev": {ID: "cpp-dev", Name: "C++ Developer", Description: "Core C++ development tools", Color: "blue",
-				ToolIDs: []string{"toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite"}},
-			"devops": {ID: "devops", Name: "DevOps", Description: "Infrastructure and automation tools", Color: "green",
-				ToolIDs: []string{"cmake", "python", "conan", "sqlite"}},
-			"full": {ID: "full", Name: "Full Install", Description: "All available tools", Color: "purple",
-				ToolIDs: allIDs},
-		},
+		profiles:    defaultProfiles(repoRoot, allIDs),
 	}
 
 	// Load persisted prefix override
@@ -229,6 +220,55 @@ func (s *Server) Routes() http.Handler {
 }
 
 // ── Profile persistence ──────────────────────────────────────────────────────
+
+// defaultProfiles returns the built-in install profiles. If
+// profiles.defaults.json exists at the repo root it is the source of truth
+// (keys beginning with "_" are treated as documentation and skipped; a
+// "__all__" sentinel in tool_ids expands to every discovered tool id).
+// A compiled-in fallback is returned when the file is missing or invalid so
+// the server always has working defaults.
+func defaultProfiles(repoRoot string, allIDs []string) map[string]Profile {
+	builtin := map[string]Profile{
+		"minimal": {ID: "minimal", Name: "Minimal", Description: "Required tools only", Color: "gray",
+			ToolIDs: []string{"toolchains/clang", "cmake", "python", "style-formatter"}},
+		"cpp-dev": {ID: "cpp-dev", Name: "C++ Developer", Description: "Core C++ development tools", Color: "blue",
+			ToolIDs: []string{"toolchains/clang", "cmake", "python", "conan", "vscode-extensions", "sqlite", "zlib"}},
+		"devops": {ID: "devops", Name: "DevOps", Description: "Infrastructure and automation tools", Color: "green",
+			ToolIDs: []string{"cmake", "python", "conan", "sqlite"}},
+		"full": {ID: "full", Name: "Full Install", Description: "All available tools", Color: "purple",
+			ToolIDs: allIDs},
+	}
+
+	data, err := os.ReadFile(filepath.Join(repoRoot, "profiles.defaults.json"))
+	if err != nil {
+		return builtin
+	}
+	// Decode per-key so documentation entries (e.g. "_doc": "...") that are not
+	// profile objects don't fail the whole parse.
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return builtin
+	}
+	out := make(map[string]Profile, len(raw))
+	for id, msg := range raw {
+		if strings.HasPrefix(id, "_") {
+			continue
+		}
+		var p Profile
+		if err := json.Unmarshal(msg, &p); err != nil {
+			continue
+		}
+		p.ID = id
+		if len(p.ToolIDs) == 1 && p.ToolIDs[0] == "__all__" {
+			p.ToolIDs = allIDs
+		}
+		out[id] = p
+	}
+	if len(out) == 0 {
+		return builtin
+	}
+	return out
+}
 
 func (s *Server) profilesPath() string {
 	return filepath.Join(s.RepoRoot, "profiles.json")
@@ -839,7 +879,8 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	env := s.installEnv(t)
-	rc := tools.RunInstall(s.Bash, s.RepoRoot, t, t.SetupArgs, env, pw)
+	installArgs := t.InstallArgs(r.URL.Query().Get("variant"))
+	rc := tools.RunInstall(s.Bash, s.RepoRoot, t, installArgs, env, pw)
 	finalMsg := "✓ Installation complete"
 	doneStatus := "success"
 	if rc != 0 {
@@ -976,7 +1017,8 @@ func (s *Server) handleInstallProfile(w http.ResponseWriter, r *http.Request) {
 		sse.Send(fmt.Sprintf("── %s %s", t.Name, t.Version))
 		pw := newPipe(sse)
 		env := s.installEnv(t)
-		rc := tools.RunInstall(s.Bash, s.RepoRoot, t, t.SetupArgs, env, pw)
+		// Profile installs use each tool's default variant (e.g. gRPC v143).
+		rc := tools.RunInstall(s.Bash, s.RepoRoot, t, t.InstallArgs(""), env, pw)
 		if rc == 0 {
 			sse.Send(fmt.Sprintf("✓ %s done", t.Name))
 		} else {
