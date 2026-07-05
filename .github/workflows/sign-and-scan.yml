@@ -26,7 +26,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - run: git submodule update --init prebuilt
+      - run: git submodule update --init --depth 1 prebuilt
 
       # ── Install signing tools ───────────────────────────────────────────────
       - name: Install osslsigncode

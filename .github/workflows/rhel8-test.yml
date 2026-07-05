@@ -61,7 +61,7 @@ jobs:
 
       - name: Init prebuilt submodule
         run: |
-          git submodule update --init prebuilt
+          git submodule update --init --depth 1 prebuilt
           git -C prebuilt lfs pull 2>/dev/null || true
 
       - name: Init tools submodule
