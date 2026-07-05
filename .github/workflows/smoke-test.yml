@@ -69,8 +69,10 @@ jobs:
       # -- Install ─────────────────────────────────────────────────────────
       - name: Install tools
         shell: bash
+        env:
+          PROFILE_INPUT: ${{ github.event.inputs.profile || 'minimal' }}
         run: |
-          PROFILE="${{ github.event.inputs.profile || 'minimal' }}"
+          PROFILE="$PROFILE_INPUT"
           case "$PROFILE" in
             minimal|cpp-dev|devops|full) ;;
             *) echo "Invalid profile: $PROFILE"; exit 1 ;;

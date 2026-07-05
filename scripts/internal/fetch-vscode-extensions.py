@@ -42,8 +42,17 @@ import os
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
+
+
+def _require_https(url: str) -> str:
+    """Reject anything that is not an https:// URL before opening it, so a
+    redirected or crafted target cannot reach file:// or other local schemes."""
+    if urllib.parse.urlparse(url).scheme != "https":
+        raise ValueError(f"refusing to fetch non-https URL: {url}")
+    return url
 
 MARKETPLACE_QUERY_URL = (
     "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery"
@@ -84,6 +93,7 @@ def _query_marketplace(ext_ids: list[str]) -> dict:
             "User-Agent": "airgap-cpp-devkit/fetch-vscode-extensions",
         },
     )
+    _require_https(req.full_url)
     with urllib.request.urlopen(req, timeout=30) as resp:
         data = json.load(resp)
 
@@ -173,6 +183,7 @@ def _download(url: str, dest: Path, label: str) -> bool:
             url,
             headers={"User-Agent": "airgap-cpp-devkit/fetch-vscode-extensions"},
         )
+        _require_https(req.full_url)
         with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as out:
             total = int(resp.headers.get("Content-Length", 0))
             downloaded = 0
@@ -223,7 +234,8 @@ def _get_installed_extensions() -> list[str]:
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """Construct the CLI argument parser."""
     ap = argparse.ArgumentParser(
         description="Mirror VS Code extensions as .vsix for offline installation."
     )
@@ -262,6 +274,123 @@ def main():
         action="store_true",
         help="Print what would be downloaded without writing any files",
     )
+    return ap
+
+
+def _plan_downloads(plat_vers: dict, want_platforms: set) -> list:
+    """Return the (platform, version) pairs to fetch for one extension."""
+    downloads: list[tuple[str, str]] = []
+    if "universal" in plat_vers:
+        downloads.append(("universal", plat_vers["universal"]))
+    for plat in sorted(want_platforms):
+        if plat in plat_vers:
+            downloads.append((plat, plat_vers[plat]))
+        elif "universal" not in plat_vers:
+            # No universal and no platform build → try anyway (may 404)
+            latest_ver = next(iter(plat_vers.values())) if plat_vers else "latest"
+            downloads.append((plat, latest_ver))
+    return downloads
+
+
+def _make_entry(full_id, name, publisher, version, platform, filename, sha, split) -> dict:
+    """Build a manifest entry dict for a downloaded (or dry-run) .vsix."""
+    return {
+        "id": full_id,
+        "name": name,
+        "publisher": publisher,
+        "version": version,
+        "platform": platform,
+        "filename": filename,
+        "sha256": sha,
+        "split": split,
+        "marketplace_url": f"https://marketplace.visualstudio.com/items?itemName={full_id}",
+    }
+
+
+def _download_one(args, out_dir: Path, meta: dict, platform: str, version: str):
+    """Fetch a single (platform, version) build. Returns a manifest entry dict,
+    or None when the download was skipped."""
+    publisher, name, full_id = meta["publisher"], meta["name"], meta["full_id"]
+    safe_plat = f"-{platform}" if platform != "universal" else ""
+    filename = f"{full_id}-{version}{safe_plat}.vsix"
+    dest = out_dir / filename
+    url = _download_url(publisher, name, version, platform)
+
+    if args.dry_run:
+        print(f"  [dry-run] Would download: {filename}")
+        print(f"            {url}")
+        return _make_entry(full_id, name, publisher, version, platform, filename,
+                           "DRY_RUN", False)
+
+    # Skip if already downloaded and non-zero
+    if dest.exists() and dest.stat().st_size > 0:
+        print(f"  [cached] {filename}")
+        sha = _sha256(dest)
+    else:
+        if not _download(url, dest, f"{filename} ({platform})"):
+            return None
+        sha = _sha256(dest)
+        print(f"    sha256: {sha}")
+
+    entry = _make_entry(full_id, name, publisher, version, platform, filename, sha, False)
+
+    size_mb = dest.stat().st_size / 1024 / 1024
+    if not args.no_split and size_mb > SPLIT_THRESHOLD_MB:
+        print(f"    {size_mb:.1f} MB > {SPLIT_THRESHOLD_MB} MB threshold — splitting...")
+        parts = _split_file(dest)
+        dest.unlink()  # remove assembled file; setup.sh will cat it back
+        entry["split"] = True
+        entry["parts"] = parts
+        entry["sha256"] = sha  # sha of the assembled file
+    return entry
+
+
+def _process_extension(eid: str, info: dict, args, out_dir: Path, want_platforms: set) -> list:
+    """Resolve one extension id and return its list of manifest entries."""
+    meta = info.get(eid.lower())
+    if meta is None:
+        print(f"\n[WARN] '{eid}' not found in marketplace — skipping")
+        return []
+
+    print(f"\n-- {meta['full_id']}")
+    downloads = _plan_downloads(meta["platform_versions"], want_platforms)
+    if not downloads:
+        print("  [WARN] No version info — skipping")
+        return []
+
+    entries = []
+    for platform, version in downloads:
+        entry = _download_one(args, out_dir, meta, platform, version)
+        if entry is not None:
+            entries.append(entry)
+    return entries
+
+
+def _write_manifest(manifest_entries: list, out_dir: Path, dry_run: bool) -> None:
+    """Emit the manifest-new.json (or print it in dry-run mode)."""
+    manifest = {
+        "_comment": (
+            "Generated by scripts/internal/fetch-vscode-extensions.py. "
+            "Copy relevant entries into tools/dev-tools/vscode-extensions/manifest.json."
+        ),
+        "schema_version": "1.0",
+        "generated": __import__("datetime").date.today().isoformat(),
+        "extensions": manifest_entries,
+    }
+    manifest_json = json.dumps(manifest, indent=2)
+
+    if dry_run:
+        print("\n-- Manifest (dry-run) --")
+        print(manifest_json)
+        return
+    manifest_out = out_dir / "manifest-new.json"
+    manifest_out.write_text(manifest_json)
+    print(f"\n  Manifest written to: {manifest_out}")
+    print("  Review it, then replace tools/dev-tools/vscode-extensions/manifest.json.")
+
+
+def main():
+    ap = _build_arg_parser()
     args = ap.parse_args()
 
     # Collect extension IDs
@@ -282,113 +411,13 @@ def main():
     except Exception as exc:
         sys.exit(f"[ERROR] Marketplace query failed: {exc}")
 
-    manifest_entries: list[dict] = []
     want_platforms = set(args.platforms)
-
+    manifest_entries: list[dict] = []
     for eid in ext_ids:
-        eid_lower = eid.lower()
-        if eid_lower not in info:
-            print(f"\n[WARN] '{eid}' not found in marketplace — skipping")
-            continue
+        manifest_entries.extend(
+            _process_extension(eid, info, args, out_dir, want_platforms))
 
-        meta       = info[eid_lower]
-        publisher  = meta["publisher"]
-        name       = meta["name"]
-        full_id    = meta["full_id"]
-        plat_vers  = meta["platform_versions"]
-
-        print(f"\n-- {full_id}")
-
-        # Determine which (platform, version) pairs to download
-        downloads: list[tuple[str, str]] = []  # (platform, version)
-
-        if "universal" in plat_vers:
-            downloads.append(("universal", plat_vers["universal"]))
-
-        for plat in sorted(want_platforms):
-            if plat in plat_vers:
-                downloads.append((plat, plat_vers[plat]))
-            elif "universal" not in plat_vers:
-                # No universal and no platform build → try anyway (may 404)
-                latest_ver = next(iter(plat_vers.values())) if plat_vers else "latest"
-                downloads.append((plat, latest_ver))
-
-        if not downloads:
-            print(f"  [WARN] No version info — skipping")
-            continue
-
-        for platform, version in downloads:
-            safe_plat = f"-{platform}" if platform != "universal" else ""
-            filename  = f"{full_id}-{version}{safe_plat}.vsix"
-            dest      = out_dir / filename
-            url       = _download_url(publisher, name, version, platform)
-
-            if args.dry_run:
-                print(f"  [dry-run] Would download: {filename}")
-                print(f"            {url}")
-                manifest_entries.append({
-                    "id": full_id, "name": name, "publisher": publisher,
-                    "version": version, "platform": platform,
-                    "filename": filename, "sha256": "DRY_RUN", "split": False,
-                    "marketplace_url": f"https://marketplace.visualstudio.com/items?itemName={full_id}",
-                })
-                continue
-
-            # Skip if already downloaded and non-zero
-            if dest.exists() and dest.stat().st_size > 0:
-                print(f"  [cached] {filename}")
-                sha = _sha256(dest)
-            else:
-                ok = _download(url, dest, f"{filename} ({platform})")
-                if not ok:
-                    continue
-                sha = _sha256(dest)
-                print(f"    sha256: {sha}")
-
-            size_mb = dest.stat().st_size / 1024 / 1024
-            entry: dict = {
-                "id": full_id,
-                "name": name,
-                "publisher": publisher,
-                "version": version,
-                "platform": platform,
-                "filename": filename,
-                "sha256": sha,
-                "split": False,
-                "marketplace_url": f"https://marketplace.visualstudio.com/items?itemName={full_id}",
-            }
-
-            if not args.no_split and size_mb > SPLIT_THRESHOLD_MB:
-                print(f"    {size_mb:.1f} MB > {SPLIT_THRESHOLD_MB} MB threshold — splitting...")
-                parts = _split_file(dest)
-                dest.unlink()  # remove assembled file; setup.sh will cat it back
-                entry["split"]  = True
-                entry["parts"]  = parts
-                entry["sha256"] = sha  # sha of the assembled file
-
-            manifest_entries.append(entry)
-
-    # Write manifest
-    manifest_out = out_dir / "manifest-new.json" if not args.dry_run else None
-    manifest = {
-        "_comment": (
-            "Generated by scripts/internal/fetch-vscode-extensions.py. "
-            "Copy relevant entries into tools/dev-tools/vscode-extensions/manifest.json."
-        ),
-        "schema_version": "1.0",
-        "generated": __import__("datetime").date.today().isoformat(),
-        "extensions": manifest_entries,
-    }
-    manifest_json = json.dumps(manifest, indent=2)
-
-    if args.dry_run or manifest_out is None:
-        print("\n-- Manifest (dry-run) --")
-        print(manifest_json)
-    else:
-        manifest_out.write_text(manifest_json)
-        print(f"\n  Manifest written to: {manifest_out}")
-        print("  Review it, then replace tools/dev-tools/vscode-extensions/manifest.json.")
-
+    _write_manifest(manifest_entries, out_dir, args.dry_run)
     print("\nDone.")
 
 

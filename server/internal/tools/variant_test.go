@@ -5,14 +5,16 @@ import (
 	"testing"
 )
 
+const flagToolset = "--toolset"
+
 func grpcTool() Tool {
 	return Tool{
 		ID:        "grpc",
 		SetupArgs: []string{},
 		Variants: []Variant{
-			{ID: "v143", Toolset: "v143", SetupArgs: []string{"--toolset", "v143"}, Default: true},
-			{ID: "v145", Toolset: "v145", SetupArgs: []string{"--toolset", "v145"}},
-			{ID: "v142", Toolset: "v142", SetupArgs: []string{"--toolset", "v142"}},
+			{ID: "v143", Toolset: "v143", SetupArgs: []string{flagToolset, "v143"}, Default: true},
+			{ID: "v145", Toolset: "v145", SetupArgs: []string{flagToolset, "v145"}},
+			{ID: "v142", Toolset: "v142", SetupArgs: []string{flagToolset, "v142"}},
 		},
 	}
 }
@@ -21,11 +23,11 @@ func TestInstallArgs(t *testing.T) {
 	tool := grpcTool()
 
 	cases := map[string][]string{
-		"v145": {"--toolset", "v145"},
-		"v142": {"--toolset", "v142"},
-		"V143": {"--toolset", "v143"}, // case-insensitive match
-		"":     {"--toolset", "v143"}, // empty -> default
-		"bogus": {"--toolset", "v143"}, // unknown -> default
+		"v145":  {flagToolset, "v145"},
+		"v142":  {flagToolset, "v142"},
+		"V143":  {flagToolset, "v143"}, // case-insensitive match
+		"":      {flagToolset, "v143"}, // empty -> default
+		"bogus": {flagToolset, "v143"}, // unknown -> default
 	}
 	for in, want := range cases {
 		if got := tool.InstallArgs(in); !reflect.DeepEqual(got, want) {
@@ -38,7 +40,7 @@ func TestInstallArgsSynthesizesToolset(t *testing.T) {
 	tool := Tool{
 		Variants: []Variant{{ID: "v143", Toolset: "v143", Default: true}},
 	}
-	want := []string{"--toolset", "v143"}
+	want := []string{flagToolset, "v143"}
 	if got := tool.InstallArgs(""); !reflect.DeepEqual(got, want) {
 		t.Errorf("synthesised args = %v, want %v", got, want)
 	}

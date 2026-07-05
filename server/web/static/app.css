@@ -32,14 +32,43 @@
   --sidebar-bg:   #f0f3f7;
   --radius:       8px;
   --radius-lg:    12px;
-  --shadow-sm:    0 1px 2px rgba(0,0,0,.08);
-  --shadow:       0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
-  --shadow-md:    0 4px 6px rgba(0,0,0,.1),  0 2px 4px rgba(0,0,0,.08);
-  --shadow-lg:    0 10px 15px rgba(0,0,0,.12),0 4px 6px rgba(0,0,0,.06);
+  --shadow-sm:    0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
+  --shadow:       0 2px 4px rgba(15,23,42,.08),  0 4px 10px rgba(15,23,42,.06);
+  --shadow-md:    0 4px 8px rgba(15,23,42,.10),  0 8px 20px rgba(15,23,42,.08);
+  --shadow-lg:    0 10px 20px rgba(15,23,42,.14), 0 18px 40px rgba(15,23,42,.10);
+
+  /* ── Gradient tokens (light) ── */
+  --grad-surface:      linear-gradient(160deg, #ffffff 0%, #eef2f7 100%);
+  --grad-surface-2:    linear-gradient(160deg, #eef2f7 0%, #e2e8f1 100%);
+  --grad-navbar:       linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+  --grad-sidebar:      linear-gradient(180deg, #f4f7fb 0%, #e9eef5 100%);
+  --grad-accent:       linear-gradient(160deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
+  --grad-accent-hover: linear-gradient(160deg, #2563eb 0%, #1d4ed8 55%, #1e40af 100%);
+  --grad-chip-blue:    linear-gradient(160deg, #eff6ff 0%, #dbeafe 100%);
+  --grad-chip-green:   linear-gradient(160deg, #f0fdf4 0%, #dcfce7 100%);
+  --grad-chip-slate:   linear-gradient(160deg, #f8fafc 0%, #e2e8f0 100%);
+  --grad-chip-purple:  linear-gradient(160deg, #f5f3ff 0%, #ede9fe 100%);
+  --sheen:             rgba(255,255,255,.6);
   --sidebar-w:    260px;
   --nav-h:        67px;
   --font:         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono:    "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace;
+
+  /* ── Terminal palette — light mode ── */
+  --term-bg:               #f6f8fa;
+  --term-header-bg:        #eaeef2;
+  --term-border:           #d0d7de;
+  --term-text:             #1f2328;
+  --term-muted:            #57606a;
+  --term-linenum:          #8c959f;
+  --term-success:          #1a7f37;
+  --term-error:            #cf222e;
+  --term-line-hover:       rgba(0,0,0,0.04);
+  --term-badge-gray-bg:    #f0f0f0;
+  --term-badge-ok-bg:      #dafbe1;
+  --term-badge-ok-border:  #82e09a;
+  --term-badge-err-bg:     #ffebe9;
+  --term-badge-err-border: #ff818266;
 }
 
 /* ── Dark theme ── */
@@ -71,21 +100,50 @@
   --navbar-bg:    #13161f;
   --sidebar-bg:   #13161f;
   --shadow-sm:    0 1px 2px rgba(0,0,0,.4);
-  --shadow:       0 1px 3px rgba(0,0,0,.5),  0 1px 2px rgba(0,0,0,.4);
-  --shadow-md:    0 4px 6px rgba(0,0,0,.5),  0 2px 4px rgba(0,0,0,.4);
-  --shadow-lg:    0 10px 15px rgba(0,0,0,.6),0 4px 6px rgba(0,0,0,.4);
+  --shadow:       0 2px 4px rgba(0,0,0,.5),  0 4px 12px rgba(0,0,0,.45);
+  --shadow-md:    0 4px 8px rgba(0,0,0,.55), 0 10px 24px rgba(0,0,0,.5);
+  --shadow-lg:    0 10px 20px rgba(0,0,0,.6),0 20px 44px rgba(0,0,0,.55);
+
+  /* ── Gradient tokens (dark) ── */
+  --grad-surface:      linear-gradient(160deg, #1e2230 0%, #161925 100%);
+  --grad-surface-2:    linear-gradient(160deg, #171b26 0%, #10131c 100%);
+  --grad-navbar:       linear-gradient(180deg, #171b26 0%, #0f1219 100%);
+  --grad-sidebar:      linear-gradient(180deg, #171b26 0%, #0f1219 100%);
+  --grad-accent:       linear-gradient(160deg, #60a5fa 0%, #3b82f6 55%, #2563eb 100%);
+  --grad-accent-hover: linear-gradient(160deg, #93c5fd 0%, #60a5fa 55%, #3b82f6 100%);
+  --grad-chip-blue:    linear-gradient(160deg, #1e3461 0%, #16223f 100%);
+  --grad-chip-green:   linear-gradient(160deg, #14532d 0%, #0d3a1f 100%);
+  --grad-chip-slate:   linear-gradient(160deg, #1e2535 0%, #161c28 100%);
+  --grad-chip-purple:  linear-gradient(160deg, #3b0764 0%, #29094a 100%);
+  --sheen:             rgba(255,255,255,.06);
+
+  /* ── Terminal palette — dark mode ── */
+  --term-bg:               #0d1117;
+  --term-header-bg:        #161b22;
+  --term-border:           #30363d;
+  --term-text:             #c9d1d9;
+  --term-muted:            #8b949e;
+  --term-linenum:          #484f58;
+  --term-success:          #3fb950;
+  --term-error:            #f85149;
+  --term-line-hover:       rgba(255,255,255,0.04);
+  --term-badge-gray-bg:    #21262d;
+  --term-badge-ok-bg:      #033a16;
+  --term-badge-ok-border:  #196c2e;
+  --term-badge-err-bg:     #3d0a0a;
+  --term-badge-err-border: #8e1a1a;
 }
 
 /* ── Stat chip icon color classes (theme-aware, replaces inline styles) ── */
-.chip-blue   { background: #dbeafe; color: #1d4ed8; }
-.chip-green  { background: #dcfce7; color: #15803d; }
-.chip-slate  { background: #e2e8f0; color: #475569; }
-.chip-purple { background: #ede9fe; color: #6d28d9; }
+.chip-blue   { background: var(--grad-chip-blue);   color: #1d4ed8; }
+.chip-green  { background: var(--grad-chip-green);  color: #15803d; }
+.chip-slate  { background: var(--grad-chip-slate);  color: #475569; }
+.chip-purple { background: var(--grad-chip-purple); color: #6d28d9; }
 
-[data-theme="dark"] .chip-blue   { background: #1e3461; color: #93c5fd; }
-[data-theme="dark"] .chip-green  { background: #14532d; color: #86efac; }
-[data-theme="dark"] .chip-slate  { background: #1e2535; color: #94a3b8; }
-[data-theme="dark"] .chip-purple { background: #3b0764; color: #d8b4fe; }
+[data-theme="dark"] .chip-blue   { color: #93c5fd; }
+[data-theme="dark"] .chip-green  { color: #86efac; }
+[data-theme="dark"] .chip-slate  { color: #94a3b8; }
+[data-theme="dark"] .chip-purple { color: #d8b4fe; }
 
 /* ── Dark mode profile card icon overrides ── */
 [data-theme="dark"] .profile-blue  .profile-card-icon { background: #1e3461; color: #93c5fd; }
@@ -118,6 +176,8 @@
   border-radius: 20px;
   background: var(--surface-2);
   border: 1px solid var(--border);
+  /* Entrance (delay set per nth-child below) */
+  animation: fade-in-down 0.4s ease both;
 }
 .navbar-stat strong {
   color: var(--text-primary);
@@ -152,14 +212,14 @@ input, select, textarea { font-family: inherit; }
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--nav-h);
-  background: var(--navbar-bg);
+  background: var(--grad-navbar);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   padding: 0 20px;
   gap: 12px;
   z-index: 100;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   animation: fade-in-down 0.3s ease both;
   overflow: visible;
 }
@@ -190,13 +250,15 @@ input, select, textarea { font-family: inherit; }
 .navbar-version {
   font-size: 0.7rem;
   font-weight: 600;
-  background: var(--accent-dim);
+  background: var(--grad-chip-blue);
   color: var(--accent-text);
   padding: 2px 8px;
   border-radius: 20px;
   border: 1px solid #bfdbfe;
+  box-shadow: var(--shadow-sm);
 }
 .navbar-team-badge {
+  font-family: inherit;
   font-size: 0.68rem;
   font-weight: 600;
   background: var(--surface-2);
@@ -228,8 +290,9 @@ input, select, textarea { font-family: inherit; }
 /* ── Sidebar ── */
 .sidebar {
   width: var(--sidebar-w);
-  background: var(--sidebar-bg);
+  background: var(--grad-sidebar);
   border-right: 1px solid var(--border);
+  box-shadow: inset -1px 0 0 var(--border-soft), 2px 0 12px rgba(15,23,42,.04);
   position: fixed;
   top: var(--nav-h);
   bottom: 0;
@@ -260,6 +323,8 @@ input, select, textarea { font-family: inherit; }
   background: none;
   width: 100%;
   text-align: left;
+  /* Anchor for the .active::before indicator */
+  position: relative;
 }
 .sidebar-link:hover { background: var(--border-soft); color: var(--text-primary); }
 .sidebar-link.active {
@@ -371,10 +436,10 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Cards / Panels ── */
 .card {
-  background: var(--surface);
+  background: var(--grad-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow);
 }
 .card-header {
   padding: 16px 20px 12px;
@@ -407,21 +472,64 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Tool Card ── */
 .tool-card {
-  background: var(--surface);
+  position: relative;
+  background: var(--grad-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+  transition: box-shadow 0.2s, border-color 0.15s, transform 0.15s;
   overflow: hidden;
+  /* Staggered entrance (delay set per nth-child below) */
+  animation: card-enter 0.3s ease both;
+}
+
+/* Native-button resets for elements that must be real <button>s for a11y. */
+button.stat-chip,
+button.upload-zone {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+/* Full-card "open details" button, stretched behind the card's own controls. */
+.card-open-btn {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  z-index: 0;
+}
+.tool-card .fav-btn,
+.tool-card-footer {
+  position: relative;
+  z-index: 1;
+}
+/* Drawer header title area as a real toggle button. */
+.drawer-toggle-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 .tool-card:hover {
-  box-shadow: var(--shadow-md);
   border-color: #cbd5e1;
-  transform: translateY(-1px);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
-.tool-card.installed { border-left: 3px solid var(--success); }
+.tool-card.installed {
+  border-left: 3px solid var(--success);
+  /* Subtle breathing glow for installed cards */
+  animation: card-enter 0.3s ease both, installed-pulse 3s ease-in-out 1s infinite;
+}
 .tool-card.update-available { border-left: 3px solid var(--warning); }
 .tool-card.unavailable { opacity: 0.55; }
 .tool-card-header {
@@ -457,7 +565,7 @@ input, select, textarea { font-family: inherit; }
 .tool-card-footer {
   padding: 12px 18px;
   border-top: 1px solid var(--border-soft);
-  background: var(--surface-2);
+  background: var(--grad-surface-2);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -516,11 +624,15 @@ input, select, textarea { font-family: inherit; }
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary {
-  background: var(--accent);
+  background: var(--grad-accent);
   color: #fff;
-  border-color: var(--accent);
+  border-color: var(--accent-hover);
+  box-shadow: 0 2px 6px rgba(37,99,235,.35), inset 0 1px 0 rgba(255,255,255,.18);
 }
-.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-primary:hover:not(:disabled) {
+  background: var(--grad-accent-hover);
+  box-shadow: 0 4px 14px rgba(37,99,235,.45), inset 0 1px 0 rgba(255,255,255,.18);
+}
 .btn-secondary {
   background: var(--surface);
   color: var(--text-body);
@@ -557,14 +669,16 @@ input, select, textarea { font-family: inherit; }
   gap: 12px;
 }
 .profile-card {
-  background: var(--surface);
+  background: var(--grad-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow);
   text-align: left;
+  /* Entrance (delay set per nth-child below) */
+  animation: card-enter 0.25s ease both;
 }
 .profile-card:hover {
   border-color: var(--accent);
@@ -578,26 +692,17 @@ input, select, textarea { font-family: inherit; }
   margin-bottom: 10px;
   font-size: 1.1rem;
 }
-.profile-card-name {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-}
-.profile-card-desc {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
 .profile-card-tools {
   font-size: 0.72rem;
   color: var(--text-light);
   margin-top: 8px;
 }
 /* Color variants */
-.profile-blue .profile-card-icon  { background: #dbeafe; color: #1d4ed8; }
-.profile-green .profile-card-icon { background: #dcfce7; color: #15803d; }
-.profile-gray .profile-card-icon  { background: #f1f5f9; color: #475569; }
-.profile-purple .profile-card-icon{ background: #ede9fe; color: #6d28d9; }
+.profile-card-icon { box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen); }
+.profile-blue .profile-card-icon  { background: var(--grad-chip-blue);   color: #1d4ed8; }
+.profile-green .profile-card-icon { background: var(--grad-chip-green);  color: #15803d; }
+.profile-gray .profile-card-icon  { background: var(--grad-chip-slate);  color: #475569; }
+.profile-purple .profile-card-icon{ background: var(--grad-chip-purple); color: #6d28d9; }
 
 /* ── Progress Drawer — always visible, body collapses ── */
 .progress-drawer {
@@ -608,7 +713,7 @@ input, select, textarea { font-family: inherit; }
   box-shadow: 0 -4px 16px rgba(0,0,0,.18);
   z-index: 90;
 }
-.progress-body { display: none; }
+.progress-body { display: none; transition: none; }
 .progress-drawer.drawer-expanded .progress-body { display: flex; flex-direction: column; }
 .progress-drawer-header {
   display: flex;
@@ -618,6 +723,7 @@ input, select, textarea { font-family: inherit; }
   border-bottom: 1px solid var(--term-border);
   background: var(--term-header-bg);
   color: var(--term-text);
+  user-select: none;
 }
 .progress-drawer-header .btn-ghost { color: var(--term-muted); }
 .progress-drawer-header .btn-ghost:hover:not(:disabled) { background: var(--term-line-hover); color: var(--term-text); }
@@ -645,6 +751,7 @@ input, select, textarea { font-family: inherit; }
   align-items: flex-start;
   line-height: 1.65;
   padding: 0;
+  animation: log-line-in 0.15s ease both;
 }
 .progress-log-line:hover { background: var(--term-line-hover); }
 .progress-log-linenum {
@@ -671,8 +778,13 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Terminal status bar & ticker — themed to match drawer ── */
 .progress-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
   background: var(--term-header-bg);
-  border-top: 1px solid var(--term-border);
+  border-top: 1px solid var(--border);
 }
 .progress-status .badge-gray    { background: var(--term-badge-gray-bg);    color: var(--term-muted);   border-color: var(--term-border); }
 .progress-status .badge-success { background: var(--term-badge-ok-bg);      color: var(--term-success); border-color: var(--term-badge-ok-border); }
@@ -683,41 +795,8 @@ input, select, textarea { font-family: inherit; }
   border-top-color: var(--term-border) !important;
 }
 
-/* ── Terminal CSS variables — light mode ── */
-:root {
-  --term-bg:               #f6f8fa;
-  --term-header-bg:        #eaeef2;
-  --term-border:           #d0d7de;
-  --term-text:             #1f2328;
-  --term-muted:            #57606a;
-  --term-linenum:          #8c959f;
-  --term-success:          #1a7f37;
-  --term-error:            #cf222e;
-  --term-line-hover:       rgba(0,0,0,0.04);
-  --term-badge-gray-bg:    #f0f0f0;
-  --term-badge-ok-bg:      #dafbe1;
-  --term-badge-ok-border:  #82e09a;
-  --term-badge-err-bg:     #ffebe9;
-  --term-badge-err-border: #ff818266;
-}
-
-/* ── Terminal CSS variables — dark mode ── */
-[data-theme="dark"] {
-  --term-bg:               #0d1117;
-  --term-header-bg:        #161b22;
-  --term-border:           #30363d;
-  --term-text:             #c9d1d9;
-  --term-muted:            #8b949e;
-  --term-linenum:          #484f58;
-  --term-success:          #3fb950;
-  --term-error:            #f85149;
-  --term-line-hover:       rgba(255,255,255,0.04);
-  --term-badge-gray-bg:    #21262d;
-  --term-badge-ok-bg:      #033a16;
-  --term-badge-ok-border:  #196c2e;
-  --term-badge-err-bg:     #3d0a0a;
-  --term-badge-err-border: #8e1a1a;
-}
+/* Terminal palette variables are defined in the :root / [data-theme="dark"]
+   blocks at the top of this file. */
 
 /* ── Modal log pre ── */
 .modal-log-pre {
@@ -748,16 +827,6 @@ input, select, textarea { font-family: inherit; }
   padding: 4px 6px;
 }
 .card-log-btn:hover { opacity: 1; }
-
-/* ── Status bar at bottom of drawer ── */
-.progress-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  font-size: 0.8rem;
-  border-top: 1px solid var(--border);
-}
 
 /* ── Settings Panel ── */
 .settings-grid {
@@ -824,23 +893,37 @@ input, select, textarea { font-family: inherit; }
   flex-wrap: wrap;
 }
 .stat-chip {
-  background: var(--surface);
+  position: relative;
+  background: var(--grad-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   flex: 1;
   min-width: 160px;
+  overflow: hidden;
 }
+/* Glossy top-edge sheen */
+.stat-chip::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 45%;
+  background: linear-gradient(180deg, var(--sheen) 0%, transparent 100%);
+  pointer-events: none;
+}
+/* Keep chip content above the glossy sheen overlay */
+.stat-chip > * { position: relative; z-index: 1; }
 .stat-chip-icon {
   width: 44px; height: 44px;
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.2rem;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen);
 }
 .stat-chip-val {
   font-size: 1.7rem;
@@ -896,11 +979,25 @@ input, select, textarea { font-family: inherit; }
 /* ── Copyright footer (inside .main, scrolls with content) ── */
 .site-footer {
   text-align: center;
-  padding: 16px 24px 4px;
+  padding: 16px 24px 8px;
   font-size: 0.72rem;
   color: var(--text-light);
   border-top: 1px solid var(--border-soft);
   margin-top: 40px;
+  line-height: 1.7;
+}
+.site-footer .footer-line {
+  display: block;
+}
+.site-footer .footer-meta {
+  color: var(--text-light);
+  opacity: 0.85;
+  font-size: 0.68rem;
+}
+.site-footer .footer-ver {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 600;
 }
 .site-footer a {
   color: var(--text-muted);
@@ -1029,7 +1126,7 @@ input, select, textarea { font-family: inherit; }
 [data-theme="dark"] .tab-btn:hover { color: #e2e8f0; }
 [data-theme="dark"] .tab-btn.active { color: #60a5fa; border-bottom-color: #3b82f6; }
 .tab-panel { display: none; }
-.tab-panel.active { display: block; }
+.tab-panel.active { display: block; animation: tab-panel-in 0.2s ease both; }
 
 /* ── Profiles tab — card grid ── */
 .profiles-cards-grid {
@@ -1077,6 +1174,7 @@ input, select, textarea { font-family: inherit; }
   color: var(--text-muted);
   flex: 1;
   line-height: 1.5;
+  margin-top: 4px;
 }
 .profile-card-meta {
   display: flex;
@@ -1118,7 +1216,6 @@ input, select, textarea { font-family: inherit; }
   max-height: 280px; overflow-y: auto;
   padding: 4px 0;
 }
-.peditor-cat-group {}
 .peditor-cat-label {
   font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--text-muted);
@@ -1570,10 +1667,7 @@ input, select, textarea { font-family: inherit; }
   50%       { box-shadow: 0 0 0 4px rgba(22,163,74,0.15); }
 }
 
-/* ── Tool card entrance (staggered via JS-added animation-delay) ── */
-.tool-card {
-  animation: card-enter 0.3s ease both;
-}
+/* ── Tool card entrance stagger (base animation set on .tool-card above) ── */
 .tool-card:nth-child(1)  { animation-delay: 0.03s; }
 .tool-card:nth-child(2)  { animation-delay: 0.07s; }
 .tool-card:nth-child(3)  { animation-delay: 0.11s; }
@@ -1586,27 +1680,12 @@ input, select, textarea { font-family: inherit; }
 .tool-card:nth-child(10) { animation-delay: 0.33s; }
 .tool-card:nth-child(n+11) { animation-delay: 0.35s; }
 
-/* ── Installed card subtle breathing glow ── */
-.tool-card.installed {
-  animation: card-enter 0.3s ease both, installed-pulse 3s ease-in-out 1s infinite;
-}
-
-/* ── Tab panel fade-in ── */
-.tab-panel.active {
-  animation: tab-panel-in 0.2s ease both;
-}
-
-/* ── Progress log lines ── */
-.progress-log-line {
-  animation: log-line-in 0.15s ease both;
-}
-
 /* ── Button click micro-interaction ── */
 .btn:active {
   animation: btn-ripple 0.15s ease;
 }
 
-/* ── Sidebar active indicator ── */
+/* ── Sidebar active indicator (anchor set on .sidebar-link above) ── */
 .sidebar-link.active::before {
   content: '';
   position: absolute;
@@ -1616,12 +1695,8 @@ input, select, textarea { font-family: inherit; }
   border-radius: 0 3px 3px 0;
   animation: sidebar-indicator 0.2s ease;
 }
-.sidebar-link { position: relative; }
 
-/* ── Navbar stat pills entrance ── */
-.navbar-stat {
-  animation: fade-in-down 0.4s ease both;
-}
+/* ── Navbar stat pills entrance stagger (base animation set above) ── */
 .navbar-stat:nth-child(2) { animation-delay: 0.07s; }
 .navbar-stat:nth-child(3) { animation-delay: 0.14s; }
 
@@ -1630,25 +1705,11 @@ input, select, textarea { font-family: inherit; }
   animation: badge-pulse 1.2s ease-in-out infinite;
 }
 
-/* ── Profile card entrance ── */
-.profile-card {
-  animation: card-enter 0.25s ease both;
-}
+/* ── Profile card entrance stagger (base animation set above) ── */
 .profile-card:nth-child(1) { animation-delay: 0.05s; }
 .profile-card:nth-child(2) { animation-delay: 0.10s; }
 .profile-card:nth-child(3) { animation-delay: 0.15s; }
 .profile-card:nth-child(4) { animation-delay: 0.20s; }
-
-/* ── Progress drawer expand/collapse body animation ── */
-.progress-body {
-  transition: none;
-}
-
-/* ── Tool card hover lift ── */
-.tool-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
-}
 
 /* ── Stats strip count animation helper ── */
 .stat-value-anim {
@@ -1781,15 +1842,6 @@ input, select, textarea { font-family: inherit; }
   padding: 6px 8px;
 }
 
-/* ── Console entry: subtle separator header ── */
-.console-entry-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 8px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-}
 /* Override the colored badge version — just dim text timestamp */
 .console-entry .console-time {
   font-size: 0.68rem;
@@ -1805,9 +1857,6 @@ input, select, textarea { font-family: inherit; }
 }
 #drawer-collapse-icon {
   transition: transform 0.2s ease;
-}
-.progress-drawer-header {
-  user-select: none;
 }
 
 /* ── Upgrade badge (purple gradient — replaces amber for update states) ── */

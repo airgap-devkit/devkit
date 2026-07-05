@@ -71,8 +71,10 @@ jobs:
         run: docker build -f ci/Dockerfile.rhel8-test -t airgap-devkit-rhel8 .
 
       - name: Run install + smoke tests
+        env:
+          PROFILE_INPUT: ${{ github.event.inputs.profile || 'cpp-dev' }}
         run: |
-          PROFILE="${{ github.event.inputs.profile || 'cpp-dev' }}"
+          PROFILE="$PROFILE_INPUT"
           case "$PROFILE" in
             minimal|cpp-dev|devops|full) ;;
             *) echo "Invalid profile: $PROFILE"; exit 1 ;;

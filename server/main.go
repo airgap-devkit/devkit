@@ -41,41 +41,13 @@ func main() {
 	flag.Parse()
 
 	currentOS := detectOS()
-
-	exePath, _ := os.Executable()
-	exeDir := filepath.Dir(exePath)
-	repoRoot := filepath.Join(exeDir, "..", "..")
-	repoRoot, _ = filepath.Abs(repoRoot)
-
-	if *toolsDir == "" {
-		*toolsDir = filepath.Join(repoRoot, "tools")
-	} else {
-		repoRoot, _ = filepath.Abs(filepath.Join(*toolsDir, ".."))
-	}
-	if *prebuilt == "" {
-		*prebuilt = filepath.Join(repoRoot, "prebuilt")
-	}
+	repoRoot := resolvePaths(toolsDir, prebuilt)
 
 	cfg := config.Load(repoRoot)
 	if *skipSetup {
 		cfg.SetupComplete = true
 	}
-
-	portExplicit, hostExplicit := false, false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == "port" {
-			portExplicit = true
-		}
-		if f.Name == "host" {
-			hostExplicit = true
-		}
-	})
-	if !portExplicit && cfg.Port != 0 {
-		*port = cfg.Port
-	}
-	if !hostExplicit && cfg.Hostname != "" {
-		*host = cfg.Hostname
-	}
+	applyConfigDefaults(cfg, port, host)
 
 	sub, err := fs.Sub(webFS, "web")
 	if err != nil {
@@ -96,14 +68,7 @@ func main() {
 	baseURL := fmt.Sprintf("%s://%s:%d", scheme, *host, *port)
 	browserURL := fmt.Sprintf("%s/auth/bootstrap?devkit_token=%s&next=/", baseURL, srv.Token())
 
-	fmt.Printf("╔══════════════════════════════════════════╗\n")
-	fmt.Printf("║  AirGap DevKit  v%-24s║\n", api.AppVersion)
-	fmt.Printf("╠══════════════════════════════════════════╣\n")
-	fmt.Printf("║  UI  →  %-33s║\n", baseURL)
-	fmt.Printf("║  OS  →  %-33s║\n", currentOS)
-	fmt.Printf("╚══════════════════════════════════════════╝\n")
-	fmt.Printf("  Auth token: %s\n", srv.Token())
-	fmt.Printf("  (saved to .devkit-token for API/CI use)\n\n")
+	printBanner(baseURL, currentOS, srv.Token())
 
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(sub)))
@@ -123,16 +88,68 @@ func main() {
 	}
 
 	log.Printf("Listening on %s://%s", scheme, addr)
+	listenAndServe(httpSrv, repoRoot, *tlsFlag)
+}
 
-	if *tlsFlag {
-		certFile, keyFile, tlsErr := ensureTLSCert(repoRoot)
-		if tlsErr != nil {
-			log.Fatalf("TLS cert error: %v", tlsErr)
-		}
-		log.Fatal(httpSrv.ListenAndServeTLS(certFile, keyFile))
+// resolvePaths derives repoRoot from the executable location and fills in the
+// default tools/ and prebuilt/ directories when they were not set on the CLI.
+func resolvePaths(toolsDir, prebuilt *string) string {
+	exePath, _ := os.Executable()
+	repoRoot, _ := filepath.Abs(filepath.Join(filepath.Dir(exePath), "..", ".."))
+	if *toolsDir == "" {
+		*toolsDir = filepath.Join(repoRoot, "tools")
 	} else {
-		log.Fatal(httpSrv.ListenAndServe())
+		repoRoot, _ = filepath.Abs(filepath.Join(*toolsDir, ".."))
 	}
+	if *prebuilt == "" {
+		*prebuilt = filepath.Join(repoRoot, "prebuilt")
+	}
+	return repoRoot
+}
+
+// applyConfigDefaults applies the persisted host/port from cfg unless the user
+// set them explicitly on the command line.
+func applyConfigDefaults(cfg config.Config, port *int, host *string) {
+	portExplicit, hostExplicit := false, false
+	flag.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "port":
+			portExplicit = true
+		case "host":
+			hostExplicit = true
+		}
+	})
+	if !portExplicit && cfg.Port != 0 {
+		*port = cfg.Port
+	}
+	if !hostExplicit && cfg.Hostname != "" {
+		*host = cfg.Hostname
+	}
+}
+
+// printBanner writes the startup banner and auth token to stdout.
+func printBanner(baseURL, currentOS, token string) {
+	fmt.Printf("╔══════════════════════════════════════════╗\n")
+	fmt.Printf("║  AirGap DevKit  v%-24s║\n", api.AppVersion)
+	fmt.Printf("╠══════════════════════════════════════════╣\n")
+	fmt.Printf("║  UI  →  %-33s║\n", baseURL)
+	fmt.Printf("║  OS  →  %-33s║\n", currentOS)
+	fmt.Printf("╚══════════════════════════════════════════╝\n")
+	fmt.Printf("  Auth token: %s\n", token)
+	fmt.Printf("  (saved to .devkit-token for API/CI use)\n\n")
+}
+
+// listenAndServe starts httpSrv over TLS or plain HTTP and blocks until exit.
+func listenAndServe(httpSrv *http.Server, repoRoot string, useTLS bool) {
+	if !useTLS {
+		log.Fatal(httpSrv.ListenAndServe())
+		return
+	}
+	certFile, keyFile, tlsErr := ensureTLSCert(repoRoot)
+	if tlsErr != nil {
+		log.Fatalf("TLS cert error: %v", tlsErr)
+	}
+	log.Fatal(httpSrv.ListenAndServeTLS(certFile, keyFile))
 }
 
 func ensureTLSCert(repoRoot string) (certFile, keyFile string, err error) {
@@ -171,15 +188,27 @@ func ensureTLSCert(repoRoot string) (certFile, keyFile string, err error) {
 	if err != nil {
 		return "", "", err
 	}
-	_ = pem.Encode(cf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	cf.Close()
+	encErr := pem.Encode(cf, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	closeErr := cf.Close()
+	if encErr != nil {
+		return "", "", encErr
+	}
+	if closeErr != nil {
+		return "", "", closeErr
+	}
 
 	kf, err := os.OpenFile(keyFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return "", "", err
 	}
-	_ = pem.Encode(kf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
-	kf.Close()
+	encErr = pem.Encode(kf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+	closeErr = kf.Close()
+	if encErr != nil {
+		return "", "", encErr
+	}
+	if closeErr != nil {
+		return "", "", closeErr
+	}
 
 	log.Printf("TLS: generated self-signed certificate at %s", certFile)
 	return certFile, keyFile, nil

@@ -7,12 +7,30 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nimzshafie/airgap-devkit/server/internal/tools"
 )
+
+// PEP 508 distribution names and version specifiers must not begin with a dash,
+// so a manifest value cannot be smuggled in as a pip option.
+var (
+	rePkgName    = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
+	rePkgVersion = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.+!_-]*$`)
+)
+
+func validPkgSpec(name, version string) bool {
+	if !rePkgName.MatchString(name) {
+		return false
+	}
+	if version != "" && !strings.EqualFold(version, "various") && !rePkgVersion.MatchString(version) {
+		return false
+	}
+	return true
+}
 
 // PackageStatus extends PackageItem with live install state.
 type PackageStatus struct {
@@ -198,21 +216,27 @@ func pipInstalledMap(prefix string) map[string]string {
 
 func pipInstallOne(sse *sseWriter, p *tools.PackageItem, prefix, prebuiltDir string) {
 	py := pipPython(prefix)
+	if !validPkgSpec(p.Name, p.Version) {
+		sse.Send("✗ ERROR: invalid package name or version")
+		sse.Done("failed")
+		return
+	}
 	spec := p.Name
 	if p.Version != "" && !strings.EqualFold(p.Version, "various") {
 		spec = p.Name + "==" + p.Version
 	}
 
-	// Try vendored wheels first; fall back to regular pip install
+	// Try vendored wheels first; fall back to regular pip install. The "--"
+	// terminates option parsing so spec is always treated as a package.
 	vendorDir := filepath.Join(prebuiltDir, "pip-vendor")
 	var cmd *exec.Cmd
 	if _, err := os.Stat(vendorDir); err == nil {
 		sse.Send(fmt.Sprintf("==> Installing %s from local vendor...", spec))
-		cmd = exec.Command(py, "-m", "pip", "install", spec,
-			"--find-links="+vendorDir, "--no-index", "--quiet")
+		cmd = exec.Command(py, "-m", "pip", "install",
+			"--find-links="+vendorDir, "--no-index", "--quiet", "--", spec)
 	} else {
 		sse.Send(fmt.Sprintf("==> Installing %s ...", spec))
-		cmd = exec.Command(py, "-m", "pip", "install", spec, "--quiet")
+		cmd = exec.Command(py, "-m", "pip", "install", "--quiet", "--", spec)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -220,7 +244,7 @@ func pipInstallOne(sse *sseWriter, p *tools.PackageItem, prefix, prebuiltDir str
 		sse.Send(strings.TrimSpace(string(out)))
 	}
 	if err != nil {
-		sse.Send("✗ ERROR: " + err.Error())
+		sse.Send(errLinePrefix + err.Error())
 		sse.Done("failed")
 		return
 	}
@@ -230,14 +254,19 @@ func pipInstallOne(sse *sseWriter, p *tools.PackageItem, prefix, prebuiltDir str
 
 func pipRemoveOne(sse *sseWriter, p *tools.PackageItem, prefix string) {
 	py := pipPython(prefix)
+	if !rePkgName.MatchString(p.Name) {
+		sse.Send("✗ ERROR: invalid package name")
+		sse.Done("failed")
+		return
+	}
 	sse.Send(fmt.Sprintf("==> Removing %s ...", p.Name))
-	cmd := exec.Command(py, "-m", "pip", "uninstall", "-y", p.Name)
+	cmd := exec.Command(py, "-m", "pip", "uninstall", "-y", "--", p.Name)
 	out, err := cmd.CombinedOutput()
 	if len(out) > 0 {
 		sse.Send(strings.TrimSpace(string(out)))
 	}
 	if err != nil {
-		sse.Send("✗ ERROR: " + err.Error())
+		sse.Send(errLinePrefix + err.Error())
 		sse.Done("failed")
 		return
 	}
@@ -264,41 +293,51 @@ func vsCodeInstalledSet() map[string]bool {
 	return m
 }
 
+// resolveVsixPath locates a local .vsix for the package: first by the explicit
+// File field, then by matching the extension ID (publisher.name → name-*.vsix)
+// against files in dir. Returns "" when no local file is found.
+func resolveVsixPath(dir string, p *tools.PackageItem) string {
+	if p.File != "" {
+		candidate := filepath.Join(dir, p.File)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+	if p.ID == "" {
+		return ""
+	}
+	parts := strings.Split(p.ID, ".")
+	if len(parts) < 2 {
+		return ""
+	}
+	namePrefix := strings.ToLower(parts[1]) + "-"
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		name := strings.ToLower(e.Name())
+		if strings.HasPrefix(name, namePrefix) && strings.HasSuffix(name, ".vsix") {
+			return filepath.Join(dir, e.Name())
+		}
+	}
+	return ""
+}
+
 func vscodeInstallOne(sse *sseWriter, p *tools.PackageItem, prebuiltDir string) {
 	sse.Send(fmt.Sprintf("==> Installing extension: %s", p.Name))
 
 	// Prefer local .vsix file if present
-	vsixDir := filepath.Join(prebuiltDir, "dev-tools", "vscode-extensions")
-	vsixPath := ""
-	if p.File != "" {
-		candidate := filepath.Join(vsixDir, p.File)
-		if _, err := os.Stat(candidate); err == nil {
-			vsixPath = candidate
-		}
-	}
-	// Fallback: search by ID pattern (publisher.name-version.vsix)
-	if vsixPath == "" && p.ID != "" {
-		prefix := strings.ReplaceAll(strings.ToLower(p.ID), ".", ".") + "-"
-		entries, _ := os.ReadDir(vsixDir)
-		for _, e := range entries {
-			if strings.HasPrefix(strings.ToLower(e.Name()), strings.ToLower(strings.Split(p.ID, ".")[1])+"-") &&
-				strings.HasSuffix(e.Name(), ".vsix") {
-				vsixPath = filepath.Join(vsixDir, e.Name())
-				break
-			}
-		}
-		_ = prefix
-	}
+	vsixDir := filepath.Join(prebuiltDir, devToolsDir, "vscode-extensions")
+	vsixPath := resolveVsixPath(vsixDir, p)
 
 	var cmd *exec.Cmd
-	if vsixPath != "" {
+	switch {
+	case vsixPath != "":
 		sse.Send("    Source: " + vsixPath)
 		cmd = exec.Command("code", "--install-extension", vsixPath, "--force")
-	} else if p.ID != "" {
+	case p.ID != "":
 		sse.Send("    Note: .vsix not found locally — using extension ID (requires internet)")
 		cmd = exec.Command("code", "--install-extension", p.ID, "--force")
-	} else {
-		sse.Send("✗ ERROR: no vsix file or extension ID available")
+	default:
+		sse.Send(errLinePrefix + "no vsix file or extension ID available")
 		sse.Done("failed")
 		return
 	}
@@ -308,7 +347,7 @@ func vscodeInstallOne(sse *sseWriter, p *tools.PackageItem, prebuiltDir string) 
 		sse.Send(strings.TrimSpace(string(out)))
 	}
 	if err != nil {
-		sse.Send("✗ ERROR: " + err.Error())
+		sse.Send(errLinePrefix + err.Error())
 		sse.Done("failed")
 		return
 	}
@@ -329,7 +368,7 @@ func vscodeRemoveOne(sse *sseWriter, p *tools.PackageItem) {
 		sse.Send(strings.TrimSpace(string(out)))
 	}
 	if err != nil {
-		sse.Send("✗ ERROR: " + err.Error())
+		sse.Send(errLinePrefix + err.Error())
 		sse.Done("failed")
 		return
 	}
