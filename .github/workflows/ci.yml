@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           persist-credentials: false
-      - run: git submodule update --init tools prebuilt
+      - run: git submodule update --init --depth 1 tools prebuilt
       - name: Lint
         run: bash ci/lint.sh
       - name: Validate
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           persist-credentials: false
-      - run: git submodule update --init tools prebuilt
+      - run: git submodule update --init --depth 1 tools prebuilt
       - name: Smoke test
         shell: bash
         env:
