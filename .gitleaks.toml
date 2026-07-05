@@ -4,6 +4,11 @@
 
 title = "airgap-devkit gitleaks config"
 
+# Keep the full built-in ruleset (PyPI tokens, private keys, cloud creds, etc.)
+# active alongside the project allowlist below.
+[extend]
+useDefault = true
+
 [allowlist]
   description = "Placeholder credential strings in documentation"
   regexes = ['''REPLACE_WITH_''']

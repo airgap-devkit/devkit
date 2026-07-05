@@ -22,6 +22,29 @@ def want_platform(key: str, want: str) -> bool:
     return key.startswith("linux")   # linux, linux-x64, ...
 
 
+def _emit_entry(entry: dict) -> None:
+    """Print '<filename>\\t<sha256>' lines for a single platform entry."""
+    parts = entry.get("part_sha256")
+    if parts:
+        for name, sha in parts.items():
+            print(f"{name}\t{sha}")
+        return
+
+    # Whole file: the primary archive/installer/package.
+    name = (entry.get("archive") or entry.get("installer")
+            or entry.get("package") or entry.get("portable"))
+    sha = (entry.get("sha256") or entry.get("installer_sha256")
+           or entry.get("portable_sha256"))
+    if name and sha:
+        print(f"{name}\t{sha}")
+
+    # Some tools list an installer AND a separate portable archive.
+    portable = entry.get("portable")
+    portable_sha = entry.get("portable_sha256")
+    if portable and portable_sha and portable != name:
+        print(f"{portable}\t{portable_sha}")
+
+
 def main() -> int:
     if len(sys.argv) < 3:
         sys.stderr.write("usage: enumerate-artifacts.py <manifest.json> <windows|linux|all>\n")
@@ -34,28 +57,8 @@ def main() -> int:
         return 0
 
     for key, entry in (d.get("platforms") or {}).items():
-        if not want_platform(key, want) or not isinstance(entry, dict):
-            continue
-
-        parts = entry.get("part_sha256")
-        if parts:
-            for name, sha in parts.items():
-                print(f"{name}\t{sha}")
-            continue
-
-        # Whole file: the primary archive/installer/package.
-        name = (entry.get("archive") or entry.get("installer")
-                or entry.get("package") or entry.get("portable"))
-        sha = (entry.get("sha256") or entry.get("installer_sha256")
-               or entry.get("portable_sha256"))
-        if name and sha:
-            print(f"{name}\t{sha}")
-
-        # Some tools list an installer AND a separate portable archive.
-        portable = entry.get("portable")
-        portable_sha = entry.get("portable_sha256")
-        if portable and portable_sha and portable != name:
-            print(f"{portable}\t{portable_sha}")
+        if want_platform(key, want) and isinstance(entry, dict):
+            _emit_entry(entry)
 
     return 0
 

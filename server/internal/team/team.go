@@ -30,14 +30,32 @@ func CustomToolsDir(repoRoot string) string {
 	return filepath.Join(Dir(repoRoot), "tools")
 }
 
+// safeRepoURL accepts only encrypted-transport git URLs and rejects anything
+// that could be parsed by git as an option (leading dash), so the value cannot
+// smuggle flags into the clone command.
+func safeRepoURL(u string) bool {
+	if u == "" || strings.HasPrefix(u, "-") {
+		return false
+	}
+	if strings.HasPrefix(u, "https://") || strings.HasPrefix(u, "ssh://") {
+		return true
+	}
+	at := strings.IndexByte(u, '@')
+	colon := strings.IndexByte(u, ':')
+	return at > 0 && colon > at // git@host:path
+}
+
 // CloneOrPull clones repoURL into destDir if it doesn't exist, otherwise pulls.
 // Returns the short commit hash of HEAD after the operation.
 func CloneOrPull(repoURL, destDir string) (string, error) {
+	if !safeRepoURL(repoURL) {
+		return "", fmt.Errorf("refusing unsafe repo URL")
+	}
 	if _, err := os.Stat(filepath.Join(destDir, ".git")); os.IsNotExist(err) {
 		if err2 := os.MkdirAll(filepath.Dir(destDir), 0o755); err2 != nil {
 			return "", fmt.Errorf("mkdir: %w", err2)
 		}
-		cmd := exec.Command("git", "clone", "--depth=1", repoURL, destDir)
+		cmd := exec.Command("git", "clone", "--depth=1", "--", repoURL, destDir)
 		cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 		if out, err2 := cmd.CombinedOutput(); err2 != nil {
 			return "", fmt.Errorf("git clone: %s", strings.TrimSpace(string(out)))

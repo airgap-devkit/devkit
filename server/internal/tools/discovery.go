@@ -93,49 +93,68 @@ func Load(repoRoot string) ([]Tool, error) {
 		}
 		sort.Strings(matches)
 		for _, path := range matches {
-			data, err := os.ReadFile(path)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "[devkit] warning: cannot read %s: %v\n", path, err)
-				continue
+			if t, ok := loadToolFromFile(repoRoot, path, pat.source, seen); ok {
+				tools = append(tools, t)
 			}
-			var t Tool
-			if err := json.Unmarshal(data, &t); err != nil {
-				fmt.Fprintf(os.Stderr, "[devkit] warning: cannot parse %s: %v\n", path, err)
-				continue
-			}
-			if t.ID == "" || seen[t.ID] || t.Hidden {
-				continue
-			}
-			seen[t.ID] = true
-
-			// Resolve setup path relative to the devkit.json directory
-			if t.Setup != "" {
-				abs := filepath.Join(filepath.Dir(path), t.Setup)
-				rel, err := filepath.Rel(repoRoot, abs)
-				if err == nil {
-					t.Setup = filepath.ToSlash(rel)
-				}
-			}
-			t.Source = pat.source
-			if t.Platform == "" {
-				t.Platform = "both"
-			}
-			if t.Category == "" {
-				t.Category = "Developer Tools"
-			}
-			if t.Estimate == "" {
-				t.Estimate = "~1min"
-			}
-			if t.ReceiptName == "" {
-				t.ReceiptName = t.ID
-			}
-			if t.SetupArgs == nil {
-				t.SetupArgs = []string{}
-			}
-			tools = append(tools, t)
 		}
 	}
 
+	sortTools(tools)
+	return tools, nil
+}
+
+// loadToolFromFile reads and parses a single devkit.json, resolves its setup
+// path, applies field defaults, and records its id in seen. Returns ok=false
+// when the file is unreadable, invalid, hidden, id-less, or a duplicate.
+func loadToolFromFile(repoRoot, path, source string, seen map[string]bool) (Tool, bool) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[devkit] warning: cannot read %s: %v\n", path, err)
+		return Tool{}, false
+	}
+	var t Tool
+	if err := json.Unmarshal(data, &t); err != nil {
+		fmt.Fprintf(os.Stderr, "[devkit] warning: cannot parse %s: %v\n", path, err)
+		return Tool{}, false
+	}
+	if t.ID == "" || seen[t.ID] || t.Hidden {
+		return Tool{}, false
+	}
+	seen[t.ID] = true
+
+	// Resolve setup path relative to the devkit.json directory
+	if t.Setup != "" {
+		abs := filepath.Join(filepath.Dir(path), t.Setup)
+		if rel, err := filepath.Rel(repoRoot, abs); err == nil {
+			t.Setup = filepath.ToSlash(rel)
+		}
+	}
+	t.Source = source
+	applyToolDefaults(&t)
+	return t, true
+}
+
+// applyToolDefaults fills empty optional fields with their default values.
+func applyToolDefaults(t *Tool) {
+	if t.Platform == "" {
+		t.Platform = "both"
+	}
+	if t.Category == "" {
+		t.Category = "Developer Tools"
+	}
+	if t.Estimate == "" {
+		t.Estimate = "~1min"
+	}
+	if t.ReceiptName == "" {
+		t.ReceiptName = t.ID
+	}
+	if t.SetupArgs == nil {
+		t.SetupArgs = []string{}
+	}
+}
+
+// sortTools orders tools by sort order, then category, then name.
+func sortTools(tools []Tool) {
 	sort.Slice(tools, func(i, j int) bool {
 		if tools[i].SortOrder != tools[j].SortOrder {
 			return tools[i].SortOrder < tools[j].SortOrder
@@ -145,7 +164,6 @@ func Load(repoRoot string) ([]Tool, error) {
 		}
 		return strings.ToLower(tools[i].Name) < strings.ToLower(tools[j].Name)
 	})
-	return tools, nil
 }
 
 // ResolvedCheckCmd returns the most specific check command for the given OS:

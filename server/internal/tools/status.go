@@ -133,15 +133,20 @@ func probeSystemInstall(checkCmd, goos string) string {
 	if err != nil {
 		return ""
 	}
-	// Extract first version-like token from output (e.g. "cmake version 4.2.3" → "4.2.3")
-	for _, line := range strings.Split(string(out), "\n") {
+	return extractVersion(string(out))
+}
+
+// extractVersion returns the first version-like token found in command output
+// (e.g. "cmake version 4.2.3" → "4.2.3"), falling back to the truncated first
+// non-empty line, or "" when the output is blank.
+func extractVersion(out string) string {
+	for _, line := range strings.Split(out, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		fields := strings.Fields(line)
-		for _, f := range fields {
-			if len(f) > 0 && (f[0] >= '0' && f[0] <= '9') && strings.Contains(f, ".") {
+		for _, f := range strings.Fields(line) {
+			if len(f) > 0 && f[0] >= '0' && f[0] <= '9' && strings.Contains(f, ".") {
 				return f
 			}
 		}

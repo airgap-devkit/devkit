@@ -301,7 +301,7 @@
 
     <!-- Logo -->
     <div class="setup-logo">
-      <img src="/static/img/airgap-devkit-logo.png" alt="Logo" onerror="this.style.display='none'">
+      <img id="setup-logo-img" src="/static/img/airgap-devkit-logo.png" alt="Logo">
       <span class="setup-logo-text">{{.Config.DevkitName}}</span>
     </div>
 
@@ -390,7 +390,9 @@
 <script nonce="{{nonce}}">
 (function() {
   var t = localStorage.getItem('devkit-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', t);
+  document.documentElement.dataset.theme = t;
+  var logo = document.getElementById('setup-logo-img');
+  if (logo) { logo.addEventListener('error', function() { logo.style.display = 'none'; }); }
 })();
 
 function setRepoMode(mode) {
@@ -451,7 +453,7 @@ function submitSetup() {
     if (d.ok) {
       status.textContent = repoURL ? 'Connected — syncing repo in background…' : 'Saved!';
       status.className = 'setup-status';
-      setTimeout(() => { window.location.href = d.redirect || '/'; }, 800);
+      setTimeout(() => { globalThis.location.href = d.redirect || '/'; }, 800);
     } else {
       btn.disabled = false;
       btn.textContent = 'Continue to Dashboard';

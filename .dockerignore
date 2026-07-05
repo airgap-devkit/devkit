@@ -1,0 +1,39 @@
+# Build-context exclusions for `docker build .` (ci/Dockerfile.rhel8-test).
+# Keeps credentials, runtime state, and large artifacts out of image layers.
+.git
+.gitleaks.toml
+
+# Credentials / tokens / secrets
+.pyirc
+.pypirc
+.netrc
+.devkit-token
+.devkit-team-config
+dso-ci.properties
+.env
+.env.*
+*.pem
+id_rsa
+id_ed25519
+*_rsa
+*_ed25519
+
+# TLS material and runtime state
+devkit-tls.crt
+devkit-tls.key
+devkit-update-history.json
+
+# Local tooling / IDE / agent state
+.claude/
+.vscode/
+.idea/
+.scannerwork/
+
+# Build output & runtime dirs
+dist/
+devkit-logs/
+prebuilt/bin/
+user-packages/
+checksums/
+**/__pycache__/
+*.log

@@ -33,6 +33,24 @@ type ctxKey int
 
 const nonceKey ctxKey = iota
 
+// Shared literals used across the api package.
+const (
+	pathSetup     = "/setup"
+	pathAPIPrefix = "/api/prefix"
+	pathAPILayout = "/api/layout"
+
+	errToolNotFound = "tool not found"
+	errInvalidBody  = "invalid body"
+
+	devkitDirName     = "airgap-cpp-devkit"
+	devToolsDir       = "dev-tools"
+	devkitJSONFile    = "devkit.json"
+	headerContentType = "Content-Type"
+	mimeJSON          = "application/json"
+	noneLabel         = "(none)"
+	errLinePrefix     = "✗ ERROR: "
+)
+
 func generateNonce() string {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
@@ -143,8 +161,16 @@ func responseHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		if r.TLS != nil {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		// Inline <script> blocks carry this per-request nonce; script-src-attr keeps
+		// existing inline event handlers working without a blanket unsafe-inline for
+		// script blocks. Inline style attributes still need unsafe-inline in style-src.
 		w.Header().Set("Content-Security-Policy",
-			"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
+			"default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; "+
+				"script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "+
+				"img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
 		next.ServeHTTP(w, r)
 	})
 }
@@ -153,14 +179,14 @@ func (s *Server) setupCheck(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
 		if s.Config.SetupComplete ||
-			p == "/setup" || p == "/api/setup" ||
+			p == pathSetup || p == "/api/setup" ||
 			strings.HasPrefix(p, "/auth/") ||
 			strings.HasPrefix(p, "/static/") ||
 			p == "/health" {
 			next.ServeHTTP(w, r)
 			return
 		}
-		http.Redirect(w, r, "/setup", http.StatusFound)
+		http.Redirect(w, r, pathSetup, http.StatusFound)
 	})
 }
 
@@ -170,7 +196,7 @@ func (s *Server) Routes() http.Handler {
 	r.Use(s.tokenAuth)
 	r.Use(s.setupCheck)
 	r.Get("/auth/bootstrap", s.handleAuthBootstrap)
-	r.Get("/setup", s.handleSetup)
+	r.Get(pathSetup, s.handleSetup)
 	r.Post("/api/setup", s.handleSaveSetup)
 	r.Get("/", s.handleDashboard)
 	r.Get("/logs", s.handleLogs)
@@ -185,9 +211,9 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/api/tools", s.handleAPITools)
 	r.Get("/api/tool/{id}", s.handleAPITool)
 	r.Get("/api/tool/{id}/manual-install", s.handleManualInstall)
-	r.Get("/api/prefix", s.handleGetPrefix)
-	r.Post("/api/prefix", s.handleSetPrefix)
-	r.Delete("/api/prefix", s.handleResetPrefix)
+	r.Get(pathAPIPrefix, s.handleGetPrefix)
+	r.Post(pathAPIPrefix, s.handleSetPrefix)
+	r.Delete(pathAPIPrefix, s.handleResetPrefix)
 	r.Get("/api/export", s.handleExport)
 	r.Post("/api/import", s.handleImport)
 	r.Get("/api/profiles", s.handleGetProfiles)
@@ -208,14 +234,14 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/remove-pkg/{id}/{pkg}", s.handleRemovePackage)
 	r.Post("/packages/upload", s.handlePackageUpload)
 	r.Delete("/packages/{id}", s.handlePackageDelete)
-	r.Get("/api/layout", s.handleGetLayout)
-	r.Post("/api/layout", s.handleSaveLayout)
-	r.Delete("/api/layout", s.handleResetLayout)
+	r.Get(pathAPILayout, s.handleGetLayout)
+	r.Post(pathAPILayout, s.handleSaveLayout)
+	r.Delete(pathAPILayout, s.handleResetLayout)
 	r.Post("/api/open-prefix", s.handleOpenPrefix)
 	r.Post("/api/tool/{id}/meta", s.handleSaveToolMeta)
 	r.Delete("/api/tool/{id}/meta", s.handleResetToolMeta)
 	r.Get("/api/health/tools", s.handleHealthTools)
-	r.Get("/shutdown", s.handleShutdown)
+	r.Post("/shutdown", s.handleShutdown)
 	return r
 }
 
@@ -401,12 +427,12 @@ func (s *Server) applyMetaOverride(t tools.Tool) tools.Tool {
 func (s *Server) handleSaveToolMeta(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if _, ok := s.findTool(id); !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 	var ov ToolMetaOverride
 	if err := json.NewDecoder(r.Body).Decode(&ov); err != nil {
-		jsonErr(w, "invalid body", 400)
+		jsonErr(w, errInvalidBody, 400)
 		return
 	}
 	s.mu.Lock()
@@ -441,7 +467,7 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 		TeamConfigRepo string `json:"team_config_repo"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		jsonErr(w, "invalid body", 400)
+		jsonErr(w, errInvalidBody, 400)
 		return
 	}
 	if err := validateRepoURL(body.TeamConfigRepo); err != nil {
@@ -544,14 +570,14 @@ func osLabel(goos string) string {
 func detectPrefix(currentOS string) string {
 	if currentOS == "windows" {
 		if la := winLocalAppData(); la != "" {
-			return filepath.Join(la, "airgap-cpp-devkit")
+			return filepath.Join(la, devkitDirName)
 		}
 	}
 	if _, err := os.Stat("/opt/airgap-cpp-devkit"); err == nil {
 		return "/opt/airgap-cpp-devkit"
 	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".local", "share", "airgap-cpp-devkit")
+	return filepath.Join(home, ".local", "share", devkitDirName)
 }
 
 func winLocalAppData() string {
@@ -568,10 +594,10 @@ func prefixOverridePath(_ string) string {
 	// Store outside the repo so it survives git operations and works when the
 	// repo is mounted read-only.
 	if cfgDir, err := os.UserConfigDir(); err == nil {
-		return filepath.Join(cfgDir, "airgap-cpp-devkit", "prefix")
+		return filepath.Join(cfgDir, devkitDirName, "prefix")
 	}
 	if home, err := os.UserHomeDir(); err == nil {
-		return filepath.Join(home, ".config", "airgap-cpp-devkit", "prefix")
+		return filepath.Join(home, ".config", devkitDirName, "prefix")
 	}
 	return filepath.Join(os.TempDir(), ".devkit-prefix")
 }
@@ -585,13 +611,13 @@ func readPrefixOverride(repoRoot string) string {
 }
 
 func jsonErr(w http.ResponseWriter, msg string, code int) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	w.WriteHeader(code)
 	fmt.Fprintf(w, `{"error":%q}`, msg)
 }
 
 func jsonOK(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	_ = json.NewEncoder(w).Encode(v)
 }
 
@@ -620,6 +646,28 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, map[string]string{"status": "ok", "version": AppVersion})
 }
 
+// detectPrivilege reports "admin" when the process appears to have
+// administrator/root rights, else "user". On Windows it probes writability of
+// Program Files; on Unix it checks for uid 0.
+func detectPrivilege() string {
+	if runtime.GOOS == "windows" {
+		if _, err := os.Stat(`C:\Program Files`); err != nil {
+			return "user"
+		}
+		f, err := os.CreateTemp(`C:\Program Files`, ".devkit-priv-*")
+		if err != nil {
+			return "user"
+		}
+		f.Close()
+		os.Remove(f.Name())
+		return "admin"
+	}
+	if os.Getuid() == 0 {
+		return "admin"
+	}
+	return "user"
+}
+
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	ts := s.getTools()
 
@@ -642,22 +690,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 
 	hostname, _ := os.Hostname()
 	osUsername := currentOSUsername()
-	privilege := "user"
-	if runtime.GOOS == "windows" {
-		// simple heuristic: check if we can write to Program Files
-		if _, err := os.Stat(`C:\Program Files`); err == nil {
-			f, err2 := os.CreateTemp(`C:\Program Files`, ".devkit-priv-*")
-			if err2 == nil {
-				f.Close()
-				os.Remove(f.Name())
-				privilege = "admin"
-			}
-		}
-	} else {
-		if os.Getuid() == 0 {
-			privilege = "admin"
-		}
-	}
+	privilege := detectPrivilege()
 
 	data := map[string]any{
 		"Config":         s.Config,
@@ -700,7 +733,7 @@ func (s *Server) handleAPITool(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 	jsonOK(w, tools.GetStatus(s.applyMetaOverride(t), s.currentPrefix(), s.OS))
@@ -809,7 +842,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	if s.Config.TeamName != "" {
 		filename = strings.ReplaceAll(strings.ToLower(s.Config.TeamName), " ", "-") + "-config.json"
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Write(data)
 }
@@ -857,7 +890,7 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 
@@ -868,7 +901,7 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save full install output to a timestamped log file
-	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(id, "/", "_"))
+	logDir := filepath.Join(s.RepoRoot, "devkit-logs", strings.ReplaceAll(t.ID, "/", "_"))
 	_ = os.MkdirAll(logDir, 0o750)
 	logFile := filepath.Join(logDir, time.Now().UTC().Format("20060102-150405")+".log")
 	ssePipe := newPipe(sse)
@@ -891,43 +924,54 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 	// Also append final line to log file
 	if f, err := os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY, 0o600); err == nil {
 		fmt.Fprintln(f, finalMsg)
-		f.Close()
-	}
-
-	// Post-install verification: run check_cmd to confirm the binary is reachable.
-	if rc == 0 && (t.CheckBinary != "" || t.ResolvedCheckCmd(runtime.GOOS) != "") {
-		sse.Send("── Verifying install ──")
-		res := s.runCheckCmd(t)
-		firstLine := strings.SplitN(strings.TrimSpace(res.Output), "\n", 2)[0]
-		if res.OK {
-			if firstLine != "" {
-				sse.Send("✓ " + firstLine)
-			} else {
-				sse.Send("✓ Check passed")
-			}
-		} else {
-			if firstLine != "" {
-				sse.Send("⚠ Check after install: " + firstLine)
-			}
-			if res.Error != "" {
-				sse.Send("  " + res.Error)
-			}
-			sse.Send("  Binary may not be on PATH until you restart your shell.")
+		if cerr := f.Close(); cerr != nil {
+			sse.Send("WARNING: could not finalize install log: " + cerr.Error())
 		}
 	}
 
+	// Post-install verification: run check_cmd to confirm the binary is reachable.
+	if rc == 0 {
+		s.verifyAfterInstall(sse, t)
+	}
+
 	sse.Done(doneStatus)
+}
+
+// verifyAfterInstall runs the tool's check command (if any) and streams a
+// human-readable pass/fail summary over the SSE channel.
+func (s *Server) verifyAfterInstall(sse *sseWriter, t tools.Tool) {
+	if t.CheckBinary == "" && t.ResolvedCheckCmd(runtime.GOOS) == "" {
+		return
+	}
+	sse.Send("── Verifying install ──")
+	res := s.runCheckCmd(t)
+	firstLine := strings.SplitN(strings.TrimSpace(res.Output), "\n", 2)[0]
+	if res.OK {
+		if firstLine != "" {
+			sse.Send("✓ " + firstLine)
+		} else {
+			sse.Send("✓ Check passed")
+		}
+		return
+	}
+	if firstLine != "" {
+		sse.Send("⚠ Check after install: " + firstLine)
+	}
+	if res.Error != "" {
+		sse.Send("  " + res.Error)
+	}
+	sse.Send("  Binary may not be on PATH until you restart your shell.")
 }
 
 func (s *Server) handleUninstall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	clean := strings.ReplaceAll(t.ReceiptName, "/", string(os.PathSeparator))
 	installDir := filepath.Join(s.currentPrefix(), clean)
 	if _, err := os.Stat(installDir); os.IsNotExist(err) {
@@ -1066,24 +1110,32 @@ func (s *Server) checkEnv(t tools.Tool) []string {
 // returning the full path if found or the original name if not.
 // This is necessary because exec.Command resolves names using the server
 // process's own PATH, not the child's modified PATH set via cmd.Env.
+// probeExecutable looks for binary (and, on Windows, its .exe/.cmd/.bat
+// variants) inside dir. Returns the full path if found, or "" otherwise.
+func probeExecutable(dir, binary string) string {
+	candidate := filepath.Join(dir, binary)
+	if fi, err := os.Stat(candidate); err == nil && !fi.IsDir() {
+		return candidate
+	}
+	if runtime.GOOS == "windows" {
+		for _, ext := range []string{".exe", ".cmd", ".bat"} {
+			c := candidate + ext
+			if fi, err := os.Stat(c); err == nil && !fi.IsDir() {
+				return c
+			}
+		}
+	}
+	return ""
+}
+
 func resolveInExtendedPath(binary string, env []string) string {
 	for _, e := range env {
 		if !strings.HasPrefix(strings.ToUpper(e), "PATH=") {
 			continue
 		}
 		for _, dir := range strings.Split(e[5:], string(os.PathListSeparator)) {
-			candidate := filepath.Join(dir, binary)
-			fi, err := os.Stat(candidate)
-			if err == nil && !fi.IsDir() {
-				return candidate
-			}
-			if runtime.GOOS == "windows" {
-				for _, ext := range []string{".exe", ".cmd", ".bat"} {
-					c := candidate + ext
-					if fi, err2 := os.Stat(c); err2 == nil && !fi.IsDir() {
-						return c
-					}
-				}
+			if found := probeExecutable(dir, binary); found != "" {
+				return found
 			}
 		}
 		break
@@ -1129,12 +1181,12 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 	}
 
 	if checkCmd == "" {
-		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
+		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: noneLabel}
 	}
 
 	parts := strings.Fields(checkCmd)
 	if len(parts) == 0 {
-		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: "(none)"}
+		return runCheckResult{OK: false, Error: "no check_cmd configured", CheckCmd: noneLabel}
 	}
 	env := s.checkEnv(t)
 	binPath := resolveInExtendedPath(parts[0], env)
@@ -1149,39 +1201,45 @@ func (s *Server) runCheckCmd(t tools.Tool) runCheckResult {
 	return runCheckResult{OK: true, Output: string(out), CheckCmd: checkCmd}
 }
 
+// writeReceiptFallback responds with the tool's install receipt details when no
+// check command is configured, or an explanatory error if no receipt exists.
+func (s *Server) writeReceiptFallback(w http.ResponseWriter, t tools.Tool) {
+	receipt := tools.GetReceipt(s.currentPrefix(), t.ReceiptName)
+	if !receipt.Exists {
+		jsonOK(w, map[string]any{
+			"ok":        false,
+			"error":     "No check_cmd defined for this tool and no receipt file found.\nAdd a \"check_cmd\" field to its devkit.json to enable live version probing.",
+			"check_cmd": noneLabel,
+		})
+		return
+	}
+	lines := []string{"(no check_cmd defined — showing install receipt)", ""}
+	if receipt.Version != "" {
+		lines = append(lines, "Version:      "+receipt.Version)
+	}
+	if receipt.Status != "" {
+		lines = append(lines, "Status:       "+receipt.Status)
+	}
+	if receipt.Date != "" {
+		lines = append(lines, "Installed on: "+receipt.Date)
+	}
+	if receipt.InstallPath != "" {
+		lines = append(lines, "Install path: "+receipt.InstallPath)
+	}
+	jsonOK(w, map[string]any{"ok": true, "output": strings.Join(lines, "\n"), "check_cmd": "(receipt file)"})
+}
+
 func (s *Server) handleCheck(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 
 	// No check configured: fall back to reading the install receipt.
 	if t.CheckBinary == "" && t.ResolvedCheckCmd(runtime.GOOS) == "" {
-		receipt := tools.GetReceipt(s.currentPrefix(), t.ReceiptName)
-		if receipt.Exists {
-			lines := []string{"(no check_cmd defined — showing install receipt)", ""}
-			if receipt.Version != "" {
-				lines = append(lines, "Version:      "+receipt.Version)
-			}
-			if receipt.Status != "" {
-				lines = append(lines, "Status:       "+receipt.Status)
-			}
-			if receipt.Date != "" {
-				lines = append(lines, "Installed on: "+receipt.Date)
-			}
-			if receipt.InstallPath != "" {
-				lines = append(lines, "Install path: "+receipt.InstallPath)
-			}
-			jsonOK(w, map[string]any{"ok": true, "output": strings.Join(lines, "\n"), "check_cmd": "(receipt file)"})
-		} else {
-			jsonOK(w, map[string]any{
-				"ok":        false,
-				"error":     "No check_cmd defined for this tool and no receipt file found.\nAdd a \"check_cmd\" field to its devkit.json to enable live version probing.",
-				"check_cmd": "(none)",
-			})
-		}
+		s.writeReceiptFallback(w, t)
 		return
 	}
 
@@ -1198,7 +1256,7 @@ func (s *Server) handleToolLog(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 	prefix := s.currentPrefix()
@@ -1340,7 +1398,7 @@ func (s *Server) handleHealthTools(w http.ResponseWriter, r *http.Request) {
 			if !hasCheck {
 				hr.OK = true
 				hr.NoCheck = true
-				hr.CheckCmd = "(none)"
+				hr.CheckCmd = noneLabel
 				results[idx] = hr
 				return
 			}
@@ -1415,8 +1473,13 @@ func slugify(name string) string {
 	return strings.Trim(s, "-")
 }
 
+const maxUploadBytes = 300 << 20 // 300 MB request cap
+
 func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(512 << 20); err != nil {
+	// Cap the whole request body, then keep only a small slice in memory and
+	// spool the rest to a temp file rather than buffering the full upload in RAM.
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
+	if err := r.ParseMultipartForm(16 << 20); err != nil {
 		jsonErr(w, "request too large or not multipart", 400)
 		return
 	}
@@ -1432,26 +1495,9 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Read entire zip into memory so we can inspect it first
-	data, err := io.ReadAll(file)
-	if err != nil {
-		jsonErr(w, "failed to read upload: "+err.Error(), 500)
-		return
-	}
-
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		jsonErr(w, "invalid zip: "+err.Error(), 400)
-		return
-	}
-
-	var totalUncompressed uint64
-	for _, f := range zr.File {
-		totalUncompressed += f.UncompressedSize64
-	}
-	if totalUncompressed > maxZipUncompressed {
-		jsonErr(w, fmt.Sprintf("zip expands to %.0f MB which exceeds the %.0f MB limit",
-			float64(totalUncompressed)/(1<<20), float64(maxZipUncompressed)/(1<<20)), 400)
+	zr, code, errMsg := readValidatedZip(file)
+	if errMsg != "" {
+		jsonErr(w, errMsg, code)
 		return
 	}
 
@@ -1468,108 +1514,17 @@ func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
-	for _, f := range zr.File {
-		target := filepath.Join(destDir, filepath.Clean(f.Name))
-		rel, err := filepath.Rel(safeRoot, target+string(os.PathSeparator))
-		if err != nil || strings.HasPrefix(rel, "..") || !strings.HasPrefix(target, safeRoot) {
-			continue
-		}
-		if f.FileInfo().IsDir() {
-			_ = os.MkdirAll(target, 0o750)
-			continue
-		}
-		_ = os.MkdirAll(filepath.Dir(target), 0o750)
-		rc, err := f.Open()
-		if err != nil {
-			continue
-		}
-		out, err := os.Create(target)
-		if err != nil {
-			rc.Close()
-			continue
-		}
-		n, cpErr := io.Copy(out, io.LimitReader(rc, maxZipSingleEntry))
-		out.Close()
-		rc.Close()
-		if cpErr != nil || n >= maxZipSingleEntry {
-			os.Remove(target)
-			jsonErr(w, "zip entry exceeds maximum allowed size", 400)
-			return
-		}
+	if code, errMsg := extractZipTo(zr, destDir); errMsg != "" {
+		jsonErr(w, errMsg, code)
+		return
 	}
 
 	uploadedBy := currentOSUsername()
 	uploadedAt := time.Now().UTC().Format("2006-01-02 15:04 UTC")
 
-	// Generate devkit.json if not included in the zip
-	devkitJSON := filepath.Join(destDir, "devkit.json")
-	if _, err := os.Stat(devkitJSON); os.IsNotExist(err) {
-		manifest := map[string]any{
-			"id":           toolID,
-			"name":         base,
-			"version":      "1.0.0",
-			"category":     "Developer Tools",
-			"platform":     "both",
-			"description":  "User-uploaded package: " + base,
-			"setup":        "setup.sh",
-			"receipt_name": toolID,
-			"source":       "user",
-			"uploaded_by":  uploadedBy,
-			"uploaded_at":  uploadedAt,
-		}
-		mjson, _ := json.MarshalIndent(manifest, "", "  ")
-		_ = os.WriteFile(devkitJSON, mjson, 0o600)
-
-		// Generate a minimal setup.sh
-		setupSh := filepath.Join(destDir, "setup.sh")
-		setupContent := fmt.Sprintf(`#!/usr/bin/env bash
-set -euo pipefail
-TOOL_DIR="${INSTALL_PREFIX}"
-mkdir -p "$TOOL_DIR"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cp -r "$SCRIPT_DIR/"* "$TOOL_DIR/" 2>/dev/null || true
-{
-  echo "Status: success"
-  echo "Version: 1.0.0"
-  echo "Installed-At: $(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
-  echo "Install-Path: $TOOL_DIR"
-} > "$TOOL_DIR/INSTALL_LOG.txt"
-echo "✓ %s installed to $TOOL_DIR"
-`, base)
-		_ = os.WriteFile(setupSh, []byte(setupContent), 0o755)
-	}
-
-	// Sanitize the devkit.json (whether auto-generated or user-provided).
-	// Enforce the slug-safe toolID as the id, strip JS-unsafe chars from name
-	// and all package item names/descriptions, and stamp upload metadata.
-	if raw, readErr := os.ReadFile(devkitJSON); readErr == nil {
-		var meta map[string]any
-		if json.Unmarshal(raw, &meta) == nil {
-			meta["id"] = toolID
-			meta["source"] = "user"
-			meta["uploaded_by"] = uploadedBy
-			meta["uploaded_at"] = uploadedAt
-			if n, ok := meta["name"].(string); ok {
-				meta["name"] = sanitizeDisplayName(n)
-			}
-			if pkgs, ok := meta["packages"].([]any); ok {
-				for _, p := range pkgs {
-					if pm, ok := p.(map[string]any); ok {
-						if n, ok := pm["name"].(string); ok {
-							pm["name"] = sanitizeDisplayName(n)
-						}
-						if d, ok := pm["description"].(string); ok {
-							pm["description"] = sanitizeDisplayName(d)
-						}
-					}
-				}
-			}
-			if mjson, err := json.MarshalIndent(meta, "", "  "); err == nil {
-				_ = os.WriteFile(devkitJSON, mjson, 0o600)
-			}
-		}
-	}
+	devkitJSON := filepath.Join(destDir, devkitJSONFile)
+	writeDefaultPackageManifest(devkitJSON, destDir, toolID, base, uploadedBy, uploadedAt)
+	sanitizePackageManifest(devkitJSON, toolID, uploadedBy, uploadedAt)
 
 	// Reload tool list
 	s.mu.Lock()
@@ -1584,6 +1539,158 @@ echo "✓ %s installed to $TOOL_DIR"
 		"name":    base,
 		"message": fmt.Sprintf("Package '%s' uploaded and registered as tool '%s'", base, toolID),
 	})
+}
+
+// readValidatedZip reads the uploaded file fully, opens it as a zip archive,
+// and enforces the total uncompressed-size limit. On failure it returns an HTTP
+// status code and message; on success errMsg is "".
+func readValidatedZip(file io.Reader) (zr *zip.Reader, code int, errMsg string) {
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, 500, "failed to read upload: " + err.Error()
+	}
+	zr, err = zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, 400, "invalid zip: " + err.Error()
+	}
+	var totalUncompressed uint64
+	for _, f := range zr.File {
+		totalUncompressed += f.UncompressedSize64
+	}
+	if totalUncompressed > maxZipUncompressed {
+		return nil, 400, fmt.Sprintf("zip expands to %.0f MB which exceeds the %.0f MB limit",
+			float64(totalUncompressed)/(1<<20), float64(maxZipUncompressed)/(1<<20))
+	}
+	return zr, 0, ""
+}
+
+// extractZipTo unpacks the archive into destDir, guarding against path
+// traversal. Returns an HTTP status and message on a fatal error (errMsg == ""
+// on success); unreadable individual entries are skipped.
+func extractZipTo(zr *zip.Reader, destDir string) (code int, errMsg string) {
+	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
+	for _, f := range zr.File {
+		target := filepath.Join(destDir, filepath.Clean(f.Name))
+		rel, err := filepath.Rel(safeRoot, target+string(os.PathSeparator))
+		if err != nil || strings.HasPrefix(rel, "..") || !strings.HasPrefix(target, safeRoot) {
+			continue
+		}
+		if f.FileInfo().IsDir() {
+			_ = os.MkdirAll(target, 0o750)
+			continue
+		}
+		if code, errMsg := extractZipEntry(f, target); errMsg != "" {
+			return code, errMsg
+		}
+	}
+	return 0, ""
+}
+
+// extractZipEntry writes a single zip file entry to target, capping the size at
+// maxZipSingleEntry. Unreadable entries are skipped (errMsg ""); a size overrun
+// is fatal.
+func extractZipEntry(f *zip.File, target string) (code int, errMsg string) {
+	_ = os.MkdirAll(filepath.Dir(target), 0o750)
+	rc, err := f.Open()
+	if err != nil {
+		return 0, ""
+	}
+	defer rc.Close()
+	out, err := os.Create(target)
+	if err != nil {
+		return 0, ""
+	}
+	n, cpErr := io.Copy(out, io.LimitReader(rc, maxZipSingleEntry))
+	out.Close()
+	if cpErr != nil || n >= maxZipSingleEntry {
+		os.Remove(target)
+		return 400, "zip entry exceeds maximum allowed size"
+	}
+	return 0, ""
+}
+
+// writeDefaultPackageManifest generates a devkit.json and minimal setup.sh for
+// a user-uploaded package when the archive did not include its own devkit.json.
+func writeDefaultPackageManifest(devkitJSON, destDir, toolID, base, uploadedBy, uploadedAt string) {
+	if _, err := os.Stat(devkitJSON); !os.IsNotExist(err) {
+		return
+	}
+	manifest := map[string]any{
+		"id":           toolID,
+		"name":         base,
+		"version":      "1.0.0",
+		"category":     "Developer Tools",
+		"platform":     "both",
+		"description":  "User-uploaded package: " + base,
+		"setup":        "setup.sh",
+		"receipt_name": toolID,
+		"source":       "user",
+		"uploaded_by":  uploadedBy,
+		"uploaded_at":  uploadedAt,
+	}
+	mjson, _ := json.MarshalIndent(manifest, "", "  ")
+	_ = os.WriteFile(devkitJSON, mjson, 0o600)
+
+	setupSh := filepath.Join(destDir, "setup.sh")
+	setupContent := fmt.Sprintf(`#!/usr/bin/env bash
+set -euo pipefail
+TOOL_DIR="${INSTALL_PREFIX}"
+mkdir -p "$TOOL_DIR"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cp -r "$SCRIPT_DIR/"* "$TOOL_DIR/" 2>/dev/null || true
+{
+  echo "Status: success"
+  echo "Version: 1.0.0"
+  echo "Installed-At: $(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
+  echo "Install-Path: $TOOL_DIR"
+} > "$TOOL_DIR/INSTALL_LOG.txt"
+echo "✓ %s installed to $TOOL_DIR"
+`, base)
+	_ = os.WriteFile(setupSh, []byte(setupContent), 0o755)
+}
+
+// sanitizePackageManifest re-reads the devkit.json (auto-generated or
+// user-provided), enforces the slug-safe id, strips JS-unsafe characters from
+// display strings, and stamps upload metadata.
+func sanitizePackageManifest(devkitJSON, toolID, uploadedBy, uploadedAt string) {
+	raw, err := os.ReadFile(devkitJSON)
+	if err != nil {
+		return
+	}
+	var meta map[string]any
+	if json.Unmarshal(raw, &meta) != nil {
+		return
+	}
+	meta["id"] = toolID
+	meta["source"] = "user"
+	meta["uploaded_by"] = uploadedBy
+	meta["uploaded_at"] = uploadedAt
+	if n, ok := meta["name"].(string); ok {
+		meta["name"] = sanitizeDisplayName(n)
+	}
+	if pkgs, ok := meta["packages"].([]any); ok {
+		sanitizePackageItems(pkgs)
+	}
+	if mjson, err := json.MarshalIndent(meta, "", "  "); err == nil {
+		_ = os.WriteFile(devkitJSON, mjson, 0o600)
+	}
+}
+
+// sanitizePackageItems strips JS-unsafe characters from each package item's
+// name and description in place.
+func sanitizePackageItems(pkgs []any) {
+	for _, p := range pkgs {
+		pm, ok := p.(map[string]any)
+		if !ok {
+			continue
+		}
+		if n, ok := pm["name"].(string); ok {
+			pm["name"] = sanitizeDisplayName(n)
+		}
+		if d, ok := pm["description"].(string); ok {
+			pm["description"] = sanitizeDisplayName(d)
+		}
+	}
 }
 
 func (s *Server) handlePackageDelete(w http.ResponseWriter, r *http.Request) {
@@ -1633,7 +1740,7 @@ func (s *Server) handleSaveSetup(w http.ResponseWriter, r *http.Request) {
 		TeamConfigRepo string `json:"team_config_repo"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		jsonErr(w, "invalid body", 400)
+		jsonErr(w, errInvalidBody, 400)
 		return
 	}
 	if err := validateRepoURL(body.TeamConfigRepo); err != nil {
@@ -1675,7 +1782,7 @@ func validateRepoURL(u string) error {
 	if u == "" {
 		return nil
 	}
-	for _, prefix := range []string{"https://", "http://", "ssh://", "git://"} {
+	for _, prefix := range []string{"https://", "ssh://"} {
 		if strings.HasPrefix(u, prefix) {
 			return nil
 		}
@@ -1683,7 +1790,7 @@ func validateRepoURL(u string) error {
 	if reGitSSH.MatchString(u) {
 		return nil
 	}
-	return fmt.Errorf("unsupported git URL scheme — use https://, ssh://, git://, or git@host:path")
+	return fmt.Errorf("unsupported git URL scheme — use an encrypted transport: https://, ssh://, or git@host:path")
 }
 
 // ── Team config repo ─────────────────────────────────────────────────────────
@@ -1694,6 +1801,21 @@ func (s *Server) syncTeamConfig() {
 	s.mu.RUnlock()
 
 	if repoURL == "" {
+		return
+	}
+
+	// Cloning the team-config repo reaches the network, so honor the same egress
+	// switch that gates update downloads.
+	s.mu.RLock()
+	allowEgress := s.Config.AllowEgress
+	s.mu.RUnlock()
+	if !allowEgress {
+		s.mu.Lock()
+		s.teamStatus.Configured = true
+		s.teamStatus.RepoURL = repoURL
+		s.teamStatus.LastSync = time.Now().UTC()
+		s.teamStatus.Error = "egress disabled — set allow_egress: true in devkit.config.json to sync team config"
+		s.mu.Unlock()
 		return
 	}
 
@@ -1801,7 +1923,7 @@ func (s *Server) handleManualInstall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 

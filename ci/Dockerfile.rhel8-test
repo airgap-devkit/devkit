@@ -22,6 +22,10 @@ FROM registry.access.redhat.com/ubi8/ubi:8.10
 # tar/xz/bzip2: needed by many setup.sh archives
 # findutils/which/file: standard tooling used by setup.sh guards
 # sudo: lets the test user do privilege escalation for /opt installs
+# A single layer: install base packages, then create a non-root user that
+# mirrors a typical developer account. Pre-create the install prefix owned by
+# devkit so no sudo is needed at all. A narrow sudo allowlist covers edge cases
+# in setup.sh scripts that still need to write to /opt paths not pre-created.
 RUN dnf install -y \
       bash \
       git \
@@ -36,23 +40,22 @@ RUN dnf install -y \
       perl \
       sudo \
       shadow-utils \
-    && dnf clean all
-
-# Create a non-root user that mirrors a typical developer account.
-# Pre-create the install prefix owned by devkit so no sudo is needed at all.
-# A narrow sudo allowlist covers edge cases in setup.sh scripts that still
-# need to write to /opt paths not pre-created here.
-RUN useradd -m -s /bin/bash devkit \
+ && dnf clean all \
+ && useradd -m -s /bin/bash devkit \
  && mkdir -p /opt/airgap-cpp-devkit \
  && chown -R devkit:devkit /opt/airgap-cpp-devkit \
  && echo "devkit ALL=(ALL) NOPASSWD: /usr/bin/install, /bin/mkdir, /bin/cp, /bin/chown, /bin/chmod" \
     >> /etc/sudoers.d/devkit \
  && chmod 0440 /etc/sudoers.d/devkit
 
-# Copy the repo into the container.
+# Copy the repo into the container. Files stay owned by root so the
+# unprivileged runtime user (USER devkit, below) can read and execute them but
+# not modify the toolkit sources — installs target /opt and $HOME, never
+# /workspace. A .dockerignore keeps credentials, tokens, and runtime state out
+# of the build context.
 # In CI, make sure the prebuilt/ submodule is checked out first:
 #   git submodule update --init prebuilt
-COPY --chown=devkit:devkit . /workspace
+COPY . /workspace
 
 WORKDIR /workspace
 USER devkit
@@ -61,12 +64,4 @@ USER devkit
 # Override DEVKIT_PROFILE to test a different profile (minimal, devops, full).
 ENV DEVKIT_PROFILE=cpp-dev
 
-CMD bash -c "\
-  echo '==> airgap-devkit RHEL 8 integration test' && \
-  echo '    Profile: ${DEVKIT_PROFILE}' && \
-  echo \"    glibc: $(ldd --version | head -1)\" && \
-  echo '' && \
-  bash scripts/internal/install-cli.sh --yes --profile \"\${DEVKIT_PROFILE}\" && \
-  echo '' && \
-  bash tests/run-tests.sh --verbose \
-"
+CMD ["bash", "/workspace/ci/rhel8-test-entrypoint.sh"]

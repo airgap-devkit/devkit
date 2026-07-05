@@ -18,6 +18,10 @@ import json
 import os
 import sys
 
+EXT_TAR_GZ = ".tar.gz"
+EXT_TAR_XZ = ".tar.xz"
+PART_MARKER = ".part-"
+
 
 def sha256file(path: str) -> str:
     h = hashlib.sha256()
@@ -38,9 +42,9 @@ def _extract_cmd(fname: str) -> str:
     """Return the OS-native extraction command for a whole archive."""
     if fname.endswith(".zip"):
         return f"unzip -o {fname}"
-    if fname.endswith(".tar.gz") or fname.endswith(".tgz"):
+    if fname.endswith(EXT_TAR_GZ) or fname.endswith(".tgz"):
         return f"tar -xzf {fname}"
-    if fname.endswith(".tar.xz"):
+    if fname.endswith(EXT_TAR_XZ):
         return f"tar -xJf {fname}"
     return ""
 
@@ -49,11 +53,20 @@ def _reassemble_cmd(base: str) -> str:
     """Return the command that concatenates parts and extracts the whole archive."""
     if base.endswith(".zip"):
         return f"cat {base}.part-* > {base} && unzip -o {base}"
-    if base.endswith(".tar.gz") or base.endswith(".tgz"):
+    if base.endswith(EXT_TAR_GZ) or base.endswith(".tgz"):
         return f"cat {base}.part-* | tar -xz"
-    if base.endswith(".tar.xz"):
+    if base.endswith(EXT_TAR_XZ):
         return f"cat {base}.part-* | tar -xJ"
     return f"cat {base}.part-* > {base}"
+
+
+def _payload_key(ext: str) -> str:
+    """Map a bare file extension to its manifest payload key."""
+    if ext in ("rpm", "deb"):
+        return "package"
+    if ext == "exe":
+        return "installer"
+    return "archive"
 
 
 def make_entry(fname: str, sha: str = None, parts: dict = None) -> dict:
@@ -67,8 +80,38 @@ def make_entry(fname: str, sha: str = None, parts: dict = None) -> dict:
     if cmd:
         return {"archive": fname, "sha256": sha, "reassemble": cmd}
     ext = fname.rsplit(".", 1)[-1]
-    key = "package" if ext in ("rpm", "deb") else ("installer" if ext == "exe" else "archive")
-    return {key: fname, "sha256": sha}
+    return {_payload_key(ext): fname, "sha256": sha}
+
+
+def _build_platforms(dest_dir: str, all_entries: list) -> tuple:
+    """Build the platforms map from staged files. Returns (platforms, has_parts)."""
+    part_files = [f for f in all_entries if PART_MARKER in f]
+    whole_files = [f for f in all_entries if PART_MARKER not in f]
+
+    # Group part files by base archive name
+    parts_by_base: dict[str, dict] = {}
+    for pf in sorted(part_files):
+        base = pf[: pf.index(PART_MARKER)]
+        parts_by_base.setdefault(base, {})[pf] = sha256file(os.path.join(dest_dir, pf))
+
+    platforms: dict = {}
+    for fn in sorted(whole_files):
+        entry = make_entry(fn, sha256file(os.path.join(dest_dir, fn)))
+        platforms.setdefault("linux-x64" if is_linux(fn) else "windows", entry)
+    for base, parts in sorted(parts_by_base.items()):
+        entry = make_entry(base, parts=parts)
+        platforms.setdefault("linux-x64" if is_linux(base) else "windows", entry)
+
+    return platforms, bool(part_files)
+
+
+def _archive_format(entry: dict) -> str:
+    """Return the canonical compression suffix for a manifest entry (or "")."""
+    name = entry.get("archive") or entry.get("package") or entry.get("installer") or ""
+    for ext in (EXT_TAR_GZ, EXT_TAR_XZ, ".zip", ".rpm", ".deb", ".exe"):
+        if name.endswith(ext):
+            return ext.lstrip(".")
+    return ""
 
 
 def main():
@@ -84,37 +127,11 @@ def main():
         if not f.startswith(".") and f != "manifest.json"
         and os.path.isfile(os.path.join(dest_dir, f))   # skip subdirs (e.g. wheels/)
     ]
-    part_files  = [f for f in all_entries if ".part-" in f]
-    whole_files = [f for f in all_entries if ".part-" not in f]
-
-    # Group part files by base archive name
-    parts_by_base: dict[str, dict] = {}
-    for pf in sorted(part_files):
-        base = pf[: pf.index(".part-")]
-        parts_by_base.setdefault(base, {})[pf] = sha256file(os.path.join(dest_dir, pf))
-
-    platforms: dict = {}
-
-    for fn in sorted(whole_files):
-        entry = make_entry(fn, sha256file(os.path.join(dest_dir, fn)))
-        plat  = "linux-x64" if is_linux(fn) else "windows"
-        platforms.setdefault(plat, entry)
-
-    for base, parts in sorted(parts_by_base.items()):
-        entry = make_entry(base, parts=parts)
-        plat  = "linux-x64" if is_linux(base) else "windows"
-        platforms.setdefault(plat, entry)
 
     # Canonical staged formats: .zip (Windows) / .tar.gz (Linux). Report whichever
     # formats actually appear so the manifest self-documents without assuming xz.
-    def _fmt(entry: dict) -> str:
-        name = entry.get("archive") or entry.get("package") or entry.get("installer") or ""
-        for ext in (".tar.gz", ".tar.xz", ".zip", ".rpm", ".deb", ".exe"):
-            if name.endswith(ext):
-                return ext.lstrip(".")
-        return ""
-
-    formats = sorted({f for f in (_fmt(e) for e in platforms.values()) if f})
+    platforms, has_parts = _build_platforms(dest_dir, all_entries)
+    formats = sorted({f for f in (_archive_format(e) for e in platforms.values()) if f})
 
     manifest: dict = {
         "tool":        tool_id,
@@ -123,7 +140,7 @@ def main():
         "platforms":   platforms,
         "compression": "+".join(formats) if formats else "",
     }
-    if part_files:
+    if has_parts:
         manifest["part_size_mb"] = 50
 
     manifest_path = os.path.join(dest_dir, "manifest.json")

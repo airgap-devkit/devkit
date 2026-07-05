@@ -196,7 +196,7 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
 	if t.GithubRepo == "" {
@@ -225,16 +225,7 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 	sse.Send(fmt.Sprintf("Checking latest release for %s (%s)...", t.Name, t.GithubRepo))
 	client := &http.Client{Timeout: 15 * time.Second}
 
-	assetMatch := t.AssetMatch
-	if assetMatch == "" {
-		if s.OS == "windows" {
-			assetMatch = "64-bit.exe"
-		} else {
-			assetMatch = "linux"
-		}
-	}
-
-	tag, ver, dlURL, assetName, err := fetchGitHubLatest(client, t.GithubRepo, assetMatch, t.TagPrefix)
+	tag, ver, dlURL, assetName, err := fetchGitHubLatest(client, t.GithubRepo, s.resolveAssetMatch(t), t.TagPrefix)
 	if err != nil {
 		sse.Send("ERROR: " + err.Error())
 		sse.Done("failed")
@@ -254,91 +245,20 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 	sse.Send(fmt.Sprintf("Asset           : %s", assetName))
 	sse.Send(fmt.Sprintf("URL             : %s", dlURL))
 
-	// Destination under prebuilt/
-	destDir := filepath.Join(s.PrebuiltDir, "dev-tools",
-		strings.ReplaceAll(id, "/", string(os.PathSeparator)), ver)
-	destFile := filepath.Join(destDir, assetName)
+	// Destination under prebuilt/ (built from the resolved tool id, not the raw
+	// request parameter, and from the release tag rather than caller input).
+	destDir := filepath.Join(s.PrebuiltDir, devToolsDir,
+		strings.ReplaceAll(t.ID, "/", string(os.PathSeparator)), ver)
+	destFile := filepath.Join(destDir, filepath.Base(assetName))
 
-	if _, statErr := os.Stat(destFile); statErr == nil {
-		sse.Send(fmt.Sprintf("File already cached: %s", destFile))
-	} else {
-		if err := os.MkdirAll(destDir, 0o750); err != nil {
-			sse.Send("ERROR: cannot create directory: " + err.Error())
-			sse.Done("failed")
-			return
-		}
-
-		sse.Send("Downloading...")
-		dlClient := &http.Client{Timeout: 20 * time.Minute}
-		dlResp, dlErr := dlClient.Get(dlURL)
-		if dlErr != nil {
-			sse.Send("ERROR: download failed: " + dlErr.Error())
-			sse.Done("failed")
-			return
-		}
-		defer dlResp.Body.Close()
-
-		f, fErr := os.Create(destFile)
-		if fErr != nil {
-			sse.Send("ERROR: cannot write file: " + fErr.Error())
-			sse.Done("failed")
-			return
-		}
-		written, cpErr := io.Copy(f, dlResp.Body)
-		f.Close()
-		if cpErr != nil {
-			os.Remove(destFile)
-			sse.Send("ERROR: download incomplete: " + cpErr.Error())
-			sse.Done("failed")
-			return
-		}
-		sse.Send(fmt.Sprintf("Downloaded %.1f MB → %s", float64(written)/1024/1024, destFile))
+	if !ensureAssetDownloaded(sse, dlURL, destDir, destFile) {
+		return
 	}
 
-	// Compute and record the checksum so subsequent air-gapped installs can
-	// verify this asset (the bash install path checks it via manifest.json).
-	sum, sumErr := sha256File(destFile)
-	if sumErr != nil {
-		sse.Send("WARNING: could not compute sha256: " + sumErr.Error())
-	} else {
-		sse.Send("sha256          : " + sum)
-		if err := writePrebuiltManifest(destDir, id, ver, s.OS, assetName, dlURL, sum); err != nil {
-			sse.Send(fmt.Sprintf("WARNING: could not write manifest.json: %v", err))
-		} else {
-			sse.Send("Wrote manifest.json with checksum.")
-		}
-	}
+	sum := s.recordChecksum(sse, destDir, destFile, id, ver, assetName, dlURL)
+	s.applyVersionBump(sse, id, t.Version, ver)
+	s.reloadToolRegistry(sse)
 
-	// Update devkit.json version
-	devkitPath := findDevkitJSON(s.RepoRoot, id)
-	if devkitPath != "" {
-		if err := updateDevkitVersion(devkitPath, ver); err != nil {
-			sse.Send(fmt.Sprintf("WARNING: could not update devkit.json: %v", err))
-		} else {
-			sse.Send(fmt.Sprintf("Updated devkit.json version → %s", ver))
-		}
-		// Update VERSION= in setup.sh next to devkit.json
-		setupPath := filepath.Join(filepath.Dir(devkitPath), "setup.sh")
-		if err := updateSetupVersion(setupPath, t.Version, ver); err != nil {
-			sse.Send(fmt.Sprintf("WARNING: could not update setup.sh: %v", err))
-		} else {
-			sse.Send(fmt.Sprintf("Updated setup.sh VERSION → %s", ver))
-		}
-	}
-
-	// Reload tool list
-	if loaded, lErr := tools.Load(s.RepoRoot); lErr == nil {
-		s.mu.Lock()
-		s.allTools = loaded
-		s.mu.Unlock()
-		// Bust update cache
-		_updateCache.mu.Lock()
-		_updateCache.checkedAt = time.Time{}
-		_updateCache.mu.Unlock()
-		sse.Send("Tool registry refreshed.")
-	}
-
-	// Persist update history record
 	hostname, _ := os.Hostname()
 	s.appendUpdateHistory(UpdateHistoryEntry{
 		ToolID:      id,
@@ -353,6 +273,121 @@ func (s *Server) handleDownloadUpdate(w http.ResponseWriter, r *http.Request) {
 
 	sse.Send(fmt.Sprintf("✓ %s %s ready — click Install to deploy.", t.Name, ver))
 	sse.Done("success")
+}
+
+// resolveAssetMatch returns the release-asset name filter for a tool, falling
+// back to an OS-appropriate default when the tool defines none.
+func (s *Server) resolveAssetMatch(t tools.Tool) string {
+	if t.AssetMatch != "" {
+		return t.AssetMatch
+	}
+	if s.OS == "windows" {
+		return "64-bit.exe"
+	}
+	return "linux"
+}
+
+// ensureAssetDownloaded downloads dlURL to destFile unless it is already
+// cached. Progress is streamed over sse; it returns false (after emitting a
+// failure event) when a fatal error occurred.
+func ensureAssetDownloaded(sse *sseWriter, dlURL, destDir, destFile string) bool {
+	// Only fetch over TLS so the transport cannot be downgraded or MITM'd; the
+	// recorded checksum then pins the bytes for later air-gapped installs.
+	if !strings.HasPrefix(strings.ToLower(dlURL), "https://") {
+		sse.Send("ERROR: refusing non-https download URL: " + dlURL)
+		sse.Done("failed")
+		return false
+	}
+	if _, statErr := os.Stat(destFile); statErr == nil {
+		sse.Send(fmt.Sprintf("File already cached: %s", destFile))
+		return true
+	}
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
+		sse.Send("ERROR: cannot create directory: " + err.Error())
+		sse.Done("failed")
+		return false
+	}
+
+	sse.Send("Downloading...")
+	dlClient := &http.Client{Timeout: 20 * time.Minute}
+	dlResp, dlErr := dlClient.Get(dlURL)
+	if dlErr != nil {
+		sse.Send("ERROR: download failed: " + dlErr.Error())
+		sse.Done("failed")
+		return false
+	}
+	defer dlResp.Body.Close()
+
+	f, fErr := os.Create(destFile)
+	if fErr != nil {
+		sse.Send("ERROR: cannot write file: " + fErr.Error())
+		sse.Done("failed")
+		return false
+	}
+	written, cpErr := io.Copy(f, dlResp.Body)
+	f.Close()
+	if cpErr != nil {
+		os.Remove(destFile)
+		sse.Send("ERROR: download incomplete: " + cpErr.Error())
+		sse.Done("failed")
+		return false
+	}
+	sse.Send(fmt.Sprintf("Downloaded %.1f MB → %s", float64(written)/1024/1024, destFile))
+	return true
+}
+
+// recordChecksum computes the asset's SHA-256 and writes the prebuilt
+// manifest.json so air-gapped installs can verify it. Returns the checksum, or
+// "" if it could not be computed.
+func (s *Server) recordChecksum(sse *sseWriter, destDir, destFile, id, ver, assetName, dlURL string) string {
+	sum, sumErr := sha256File(destFile)
+	if sumErr != nil {
+		sse.Send("WARNING: could not compute sha256: " + sumErr.Error())
+		return ""
+	}
+	sse.Send("sha256          : " + sum)
+	if err := writePrebuiltManifest(destDir, id, ver, s.OS, assetName, dlURL, sum); err != nil {
+		sse.Send(fmt.Sprintf("WARNING: could not write manifest.json: %v", err))
+	} else {
+		sse.Send("Wrote manifest.json with checksum.")
+	}
+	return sum
+}
+
+// applyVersionBump updates the tool's devkit.json and sibling setup.sh to
+// newVer, streaming a status line for each.
+func (s *Server) applyVersionBump(sse *sseWriter, id, oldVer, newVer string) {
+	devkitPath := findDevkitJSON(s.RepoRoot, id)
+	if devkitPath == "" {
+		return
+	}
+	if err := updateDevkitVersion(devkitPath, newVer); err != nil {
+		sse.Send(fmt.Sprintf("WARNING: could not update devkit.json: %v", err))
+	} else {
+		sse.Send(fmt.Sprintf("Updated devkit.json version → %s", newVer))
+	}
+	setupPath := filepath.Join(filepath.Dir(devkitPath), "setup.sh")
+	if err := updateSetupVersion(setupPath, oldVer, newVer); err != nil {
+		sse.Send(fmt.Sprintf("WARNING: could not update setup.sh: %v", err))
+	} else {
+		sse.Send(fmt.Sprintf("Updated setup.sh VERSION → %s", newVer))
+	}
+}
+
+// reloadToolRegistry reloads the tool list from disk and busts the update
+// cache so the newly downloaded version is reflected immediately.
+func (s *Server) reloadToolRegistry(sse *sseWriter) {
+	loaded, lErr := tools.Load(s.RepoRoot)
+	if lErr != nil {
+		return
+	}
+	s.mu.Lock()
+	s.allTools = loaded
+	s.mu.Unlock()
+	_updateCache.mu.Lock()
+	_updateCache.checkedAt = time.Time{}
+	_updateCache.mu.Unlock()
+	sse.Send("Tool registry refreshed.")
 }
 
 // ── Update history ─────────────────────────────────────────────────────────
@@ -447,14 +482,21 @@ type ToolVersion struct {
 	Files   []string `json:"files"`
 }
 
+// safeVersion accepts only a single path segment with no separators or parent
+// references, so a version parameter cannot traverse outside its tool directory.
+func safeVersion(v string) bool {
+	return v != "" && v != "." && v != ".." &&
+		!strings.ContainsAny(v, `/\`) && !strings.Contains(v, "..")
+}
+
 func (s *Server) handleToolVersions(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
-	baseDir := filepath.Join(s.PrebuiltDir, "dev-tools", id)
+	baseDir := filepath.Join(s.PrebuiltDir, devToolsDir, t.ID)
 	dirEntries, err := os.ReadDir(baseDir)
 	if err != nil {
 		jsonOK(w, map[string]any{"versions": []any{}})
@@ -498,16 +540,22 @@ func (s *Server) handleDeleteVersion(w http.ResponseWriter, r *http.Request) {
 	ver := chi.URLParam(r, "ver")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
+		return
+	}
+	if !safeVersion(ver) {
+		jsonErr(w, "invalid version", 400)
 		return
 	}
 	if ver == t.Version {
 		jsonErr(w, "cannot delete the current version — switch to another version first", 400)
 		return
 	}
-	verDir := filepath.Join(s.PrebuiltDir, "dev-tools", id, ver)
-	// Safety: path must stay inside prebuilt
-	if !strings.HasPrefix(filepath.Clean(verDir), filepath.Clean(s.PrebuiltDir)) {
+	verDir := filepath.Join(s.PrebuiltDir, devToolsDir, t.ID, ver)
+	// Safety: path must stay inside prebuilt. Compare against the base plus a
+	// separator so a sibling like "<prebuilt>-x" cannot satisfy the prefix.
+	base := filepath.Clean(s.PrebuiltDir) + string(os.PathSeparator)
+	if !strings.HasPrefix(filepath.Clean(verDir)+string(os.PathSeparator), base) {
 		jsonErr(w, "invalid version path", 400)
 		return
 	}
@@ -527,15 +575,19 @@ func (s *Server) handleUseVersion(w http.ResponseWriter, r *http.Request) {
 	ver := chi.URLParam(r, "ver")
 	t, ok := s.findTool(id)
 	if !ok {
-		jsonErr(w, "tool not found", 404)
+		jsonErr(w, errToolNotFound, 404)
 		return
 	}
-	verDir := filepath.Join(s.PrebuiltDir, "dev-tools", id, ver)
+	if !safeVersion(ver) {
+		jsonErr(w, "invalid version", 400)
+		return
+	}
+	verDir := filepath.Join(s.PrebuiltDir, devToolsDir, t.ID, ver)
 	if _, err := os.Stat(verDir); os.IsNotExist(err) {
 		jsonErr(w, "version not found in prebuilt", 404)
 		return
 	}
-	devkitPath := findDevkitJSON(s.RepoRoot, id)
+	devkitPath := findDevkitJSON(s.RepoRoot, t.ID)
 	if devkitPath == "" {
 		jsonErr(w, "devkit.json not found", 404)
 		return
@@ -560,9 +612,9 @@ func (s *Server) handleUseVersion(w http.ResponseWriter, r *http.Request) {
 
 func findDevkitJSON(repoRoot, toolID string) string {
 	patterns := []string{
-		filepath.Join(repoRoot, "tools", "dev-tools", toolID, "devkit.json"),
-		filepath.Join(repoRoot, "tools", "build-tools", toolID, "devkit.json"),
-		filepath.Join(repoRoot, "tools", "languages", toolID, "devkit.json"),
+		filepath.Join(repoRoot, "tools", devToolsDir, toolID, devkitJSONFile),
+		filepath.Join(repoRoot, "tools", "build-tools", toolID, devkitJSONFile),
+		filepath.Join(repoRoot, "tools", "languages", toolID, devkitJSONFile),
 	}
 	for _, p := range patterns {
 		if _, err := os.Stat(p); err == nil {
