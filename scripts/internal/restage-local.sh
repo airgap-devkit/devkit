@@ -69,8 +69,8 @@ process_dir() {
     while IFS= read -r f; do
         local b; b="$(basename "$f")"
         case "$b" in
-            *.part-aa) bases["${b%.part-aa}"]=split ;;
-            *.tar.xz|*.7z) [[ "$b" == *.part-* ]] || bases["$b"]=whole ;;
+            *.part-aa) bases["${b%.part-aa}"]="split" ;;
+            *.tar.xz|*.7z) [[ "$b" == *.part-* ]] || bases["$b"]="whole" ;;
         esac
     done < <(find "$src_dir" -maxdepth 1 -type f \( -name '*.tar.xz' -o -name '*.7z' -o -name '*.tar.xz.part-aa' -o -name '*.7z.part-aa' \))
 
