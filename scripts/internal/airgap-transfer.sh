@@ -5,15 +5,13 @@
 #
 # Build a self-verifying air-gap TRANSFER package of this git super-repo and its
 # submodules, then verify one on the far side. Self-contained: uses git bundles
-# + a portable SHA256SUMS manifest (`sha256sum -c`), so neither side needs a
-# dso-suite checkout or the checksum engine at runtime.
+# + a portable SHA256SUMS manifest (`sha256sum -c`), so neither side needs any
+# extra checkout or the checksum engine at runtime.
 #
-# This mirrors the dso-suite `git_bundles` + `scripts/airgap-package.sh` contract
-# (bundle super-repo + submodules, whole-payload SHA-256 manifest, bundled
-# verify.sh, TRANSFER-RECEIPT.md, exit 3 on drift), so packages are interoperable
-# with the dso-suite hub tooling that operates across every project. For a richer
-# manifest with drift metrics, the cross-project engine is also available via
-# scripts/internal/checksum-verify.sh.
+# The package bundles the super-repo + submodules, a whole-payload SHA-256
+# manifest, a bundled verify.sh, and a TRANSFER-RECEIPT.md (exit 3 on drift).
+# For a richer manifest with drift metrics, the whole-tree engine is also
+# available via scripts/internal/checksum-verify.sh.
 #
 # USAGE:
 #   bash scripts/internal/airgap-transfer.sh build  [--repo DIR] [--out DIR] [--name NAME]

@@ -9,33 +9,31 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [1.3.61] — 2026-07-06
+
 ### Added
 
-#### dso-suite integration (hub + independent spokes)
-- **Shared Jenkins CI backbone.** `Jenkinsfile` opts into `dso-jenkins-lib` via
-  `@Library` for offline version stamping (`computeVersion`), build naming
-  (`stampBuild`), and config-driven `notify` in `post{}`. All calls are guarded
-  so a controller without the library still runs the pipeline. Added
-  `dso-ci.properties.example` + `ci/jenkins/DSO-SHARED-LIBRARY.md`.
+#### Integrity & air-gap transfer tooling
 - **Conan ↔ gRPC ABI-matched profiles.** `conan-airgap/config/profiles/`
   `windows-msvc-v14{2,3,5}-grpc` use the static CRT (`/MT`) so Conan deps link
   cleanly against the matching prebuilt gRPC toolset package.
-- **Cross-project integrity gate.** Vendored the dso-suite stdlib `checksum_generator`
-  engine (`scripts/internal/lib/checksum_generator.py`) with a wrapper
-  `scripts/internal/checksum-verify.sh` (whole-tree drift gate, exit 3). Additive —
+- **Whole-tree integrity gate.** `scripts/internal/checksum-verify.sh`, backed by
+  the stdlib-only `scripts/internal/lib/checksum_generator.py` engine, produces a
+  uniform whole-tree SHA-256 manifest + drift gate (exit 3). Additive —
   does not replace the prebuilt manifests or SBOM checksum flow.
 - **Self-verifying air-gap transfer.** `scripts/internal/airgap-transfer.sh` bundles
   the super-repo + submodules with a `SHA256SUMS` manifest and a dependency-free
-  `verify.sh` (exit 3 on drift), interoperable with dso-suite's `git_bundles` /
-  `airgap-package.sh` contract. Overview: `ci/DSO-INTEGRATION.md`.
+  `verify.sh` (exit 3 on drift).
 
 ### Changed
 
-#### gRPC — replaced with dso-suite prebuilt distribution (1.80.0 → 1.81.1)
+#### gRPC — replaced source build with prebuilt distribution (1.80.0 → 1.81.1)
 - The gRPC tool now ships the complete, relocatable **prebuilt gRPC 1.81.1** SDK
-  (bin + include + lib + cmake + `activate.ps1` + `grpc-toolchain.cmake`) vendored
-  from the dso-suite maintainer build. This replaces the previous source-only
-  package and its unreliable ~40-minute source-build path.
+  (bin + include + lib + cmake + `activate.ps1` + `grpc-toolchain.cmake`) from a
+  maintainer build. This replaces the previous source-only package and its
+  unreliable ~40-minute source-build path.
 - **Per-MSVC-toolset packages with a user-facing selector.** Three release
   packages ship — `v142` (Visual Studio 2019), `v143` (Visual Studio 2022,
   default), and `v145` (Visual Studio 2026). devkit-ui shows a Visual Studio
@@ -46,9 +44,9 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   MSVC toolset/CMake and prints the matching package + configure command), a
   tool README, and a vendored `example-project/` copy-and-go starter (echo
   service, cross-IDE `CMakePresets.json`, VS Code / VS 2022 / VS 2026 walkthrough).
-- Added `scripts/internal/import-grpc-prebuilt.sh` — the upstream→downstream sync
-  that stages the dso-suite release packages into `prebuilt/` as checksummed
-  split parts with a multi-variant `manifest.json`.
+- Added `scripts/internal/import-grpc-prebuilt.sh` — the sync that stages the
+  maintainer release packages into `prebuilt/` as checksummed split parts with a
+  multi-variant `manifest.json`.
 
 ### Fixed
 - `install-cli.sh` invoked a non-existent `setup_grpc.sh`; it now calls the real

@@ -141,6 +141,34 @@ Two options, from most to least infrastructure:
 - Keep `allow_egress: false` on air-gapped hosts (blocks the update checker's
   outbound calls).
 
+### 8. Large package uploads
+
+The **Packages → Upload Package** area accepts multi-GB `.zip` archives. Uploads
+are sent in resumable chunks (tus protocol): a dropped connection or a page
+reload continues from the last byte the server stored rather than restarting.
+
+Relevant `devkit.config.json` keys (all optional; sane defaults applied):
+
+| Key | Default | Purpose |
+|---|---|---|
+| `upload_max_bytes` | 8 GiB | largest archive accepted |
+| `upload_chunk_size` | 16 MiB | bytes per chunk request |
+| `zip_max_uncompressed` | 16 GiB | expansion guard |
+| `zip_max_entry_bytes` | 8 GiB | per-file cap inside the archive |
+| `upload_temp_dir` | `<repo>/.devkit-uploads` | chunk-assembly scratch space |
+| `upload_session_ttl_hours` | 24 | abandoned uploads reaped after this |
+
+- **Disk headroom:** `upload_temp_dir` needs room for the archive **plus** its
+  extraction (~2× the largest package). Point it at a roomy volume on a shared
+  server.
+- **Reverse proxy:** because each request carries only one chunk, an nginx/Apache
+  front end only needs `client_max_body_size` ≥ `upload_chunk_size` (not the full
+  file). A too-small value returns `413` mid-upload.
+- **Localhost shortcut:** on a per-user local install (Mode 2) set
+  `allow_path_import: true` to reveal an **Import from path** field that installs
+  a `.zip` directly off local disk — no transfer, no size ceiling beyond free
+  disk. It is refused for non-loopback callers, so leave it off on a team server.
+
 ---
 
 ## Mode 2 — Per-user local (no admin rights)

@@ -58,7 +58,7 @@ done
 # Find a Python that has 'build' and 'twine' installed.
 PYTHON=""
 for candidate in \
-    "/c/Users/n1mz/AppData/Local/Python/pythoncore-3.14-64/python.exe" \
+    "$HOME/AppData/Local/Python/pythoncore-3.14-64/python.exe" \
     "python3" "python"; do
     if "$candidate" -c "import build, twine" 2>/dev/null; then
         PYTHON="$candidate"

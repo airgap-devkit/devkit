@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nimzshafie/airgap-devkit/server/internal/timefmt"
 	"github.com/nimzshafie/airgap-devkit/server/internal/tools"
 )
 
@@ -401,6 +402,9 @@ type UpdateHistoryEntry struct {
 	Sha256      string `json:"sha256,omitempty"`
 	Host        string `json:"host"`
 	PerformedAt string `json:"performed_at"`
+	// PerformedAtDisplay is the Pacific-time rendering shown in the UI; the
+	// machine-readable PerformedAt above stays RFC3339 for sorting and parsing.
+	PerformedAtDisplay string `json:"performed_at_display,omitempty"`
 }
 
 // sha256File returns the hex-encoded SHA-256 of the file at path.
@@ -469,6 +473,11 @@ func (s *Server) handleUpdateHistory(w http.ResponseWriter, r *http.Request) {
 	}
 	if entries == nil {
 		entries = []UpdateHistoryEntry{}
+	}
+	// Render each timestamp in Pacific time for display; this normalises older
+	// entries written before the format was standardised.
+	for i := range entries {
+		entries[i].PerformedAtDisplay = timefmt.Normalize(entries[i].PerformedAt)
 	}
 	jsonOK(w, map[string]any{"entries": entries})
 }

@@ -18,6 +18,7 @@
       "vscode-extensions"
     ],
     "Developer Tools": [
+      "osslsigncode",
       "git",
       "vscode",
       "servy",
@@ -32,8 +33,8 @@
       "sourcetree"
     ],
     "Frameworks": [
-      "grpc",
-      "zlib"
+      "conan-airgap",
+      "grpc"
     ],
     "Languages": [
       "python",

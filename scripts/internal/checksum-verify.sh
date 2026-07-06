@@ -3,14 +3,13 @@
 # =============================================================================
 # scripts/internal/checksum-verify.sh
 #
-# Cross-project integrity gate built on the dso-suite `checksum_generator`
-# engine (stdlib-only, vendored at scripts/internal/lib/checksum_generator.py).
+# Whole-tree integrity gate built on the `checksum_generator` engine
+# (stdlib-only, vendored at scripts/internal/lib/checksum_generator.py).
 #
 # This is ADDITIVE — it does not replace airgap-devkit's prebuilt manifests
 # (scripts/internal/lib/generate-manifest.py) or the SBOM checksum flow. It
 # provides a uniform whole-tree SHA-256 manifest + drift gate (exit 3) that runs
-# identically across every dso-suite-family project (airgap-devkit, oxide-sloc,
-# dso-suite) and over any files/repos/artifacts — the shared checksum contract.
+# over any files/repos/artifacts.
 #
 # USAGE:
 #   # Generate a manifest of a tree (default: repo root -> checksums/)

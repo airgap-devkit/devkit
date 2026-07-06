@@ -390,18 +390,26 @@ input, select, textarea { font-family: inherit; }
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
 }
+/* OS logos ship in their official brand colors (some are dark, e.g. macOS,
+   AlmaLinux, SUSE). A white plate guarantees contrast on any theme. */
 .os-icon-sm {
-  height: 14px;
-  width: auto;
+  height: 18px;
+  width: 18px;
   object-fit: contain;
   display: inline-block;
   vertical-align: middle;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px;
+  box-sizing: border-box;
 }
 .os-icon-chip {
   width: 44px;
   height: 44px;
   object-fit: contain;
-  padding: 8px;
+  padding: 7px;
+  background: #fff;
+  border-radius: 9px;
 }
 
 /* ── Progress icon idle state ── */
@@ -691,6 +699,7 @@ button.upload-zone {
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 10px;
   font-size: 1.1rem;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen);
 }
 .profile-card-tools {
   font-size: 0.72rem;
@@ -698,7 +707,6 @@ button.upload-zone {
   margin-top: 8px;
 }
 /* Color variants */
-.profile-card-icon { box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen); }
 .profile-blue .profile-card-icon  { background: var(--grad-chip-blue);   color: #1d4ed8; }
 .profile-green .profile-card-icon { background: var(--grad-chip-green);  color: #15803d; }
 .profile-gray .profile-card-icon  { background: var(--grad-chip-slate);  color: #475569; }
@@ -715,6 +723,38 @@ button.upload-zone {
 }
 .progress-body { display: none; transition: none; }
 .progress-drawer.drawer-expanded .progress-body { display: flex; flex-direction: column; }
+
+/* Drag-to-resize grip along the top edge (only usable while expanded) */
+.drawer-resize-handle { display: none; }
+.progress-drawer.drawer-expanded .drawer-resize-handle {
+  display: block;
+  height: 7px;
+  cursor: row-resize;
+  background: var(--term-header-bg);
+  border-top: 1px solid var(--term-border);
+  position: relative;
+  touch-action: none;
+}
+.progress-drawer.drawer-expanded .drawer-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 2px; left: 50%;
+  transform: translateX(-50%);
+  width: 46px; height: 3px;
+  border-radius: 3px;
+  background: var(--term-border);
+}
+.progress-drawer.drawer-expanded .drawer-resize-handle:hover::before,
+.progress-drawer.drawer-resizing .drawer-resize-handle::before {
+  background: var(--term-muted);
+}
+.progress-drawer.drawer-resizing { user-select: none; }
+
+/* Maximised: the whole terminal covers ~80% of the viewport height
+   (80vh minus the header, status bar and resize grip chrome). */
+.progress-drawer.drawer-maximized .progress-log {
+  height: calc(80vh - 90px);
+}
 .progress-drawer-header {
   display: flex;
   align-items: center;
@@ -738,7 +778,7 @@ button.upload-zone {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   padding: 0;
-  height: 200px;
+  height: var(--drawer-log-h, 312px);
   overflow-y: auto;
   color: var(--term-text);
   background: var(--term-bg);
@@ -981,7 +1021,7 @@ button.upload-zone {
   text-align: center;
   padding: 16px 24px 8px;
   font-size: 0.72rem;
-  color: var(--text-light);
+  color: var(--text-muted);
   border-top: 1px solid var(--border-soft);
   margin-top: 40px;
   line-height: 1.7;
@@ -990,22 +1030,20 @@ button.upload-zone {
   display: block;
 }
 .site-footer .footer-meta {
-  color: var(--text-light);
-  opacity: 0.85;
+  color: var(--text-muted);
   font-size: 0.68rem;
 }
 .site-footer .footer-ver {
   font-family: var(--font-mono);
-  color: var(--accent);
-  font-weight: 600;
 }
 .site-footer a {
-  color: var(--text-muted);
-  text-decoration: none;
-}
-.site-footer a:hover {
   color: var(--accent);
   text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 2px;
+}
+.site-footer a:hover {
+  text-decoration-color: currentColor;
 }
 
 /* ── Favorite button on tool cards ── */
@@ -1256,6 +1294,8 @@ button.upload-zone {
 
 /* ── Upload zone ── */
 .upload-zone {
+  width: 100%;
+  box-sizing: border-box;
   border: 2px dashed var(--border);
   border-radius: var(--radius-lg);
   padding: 32px 24px;
@@ -1288,6 +1328,31 @@ button.upload-zone {
 }
 .upload-zone-text { font-size: 0.95rem; font-weight: 600; color: var(--text-body); }
 .upload-zone-sub  { font-size: 0.8rem; color: var(--text-muted); }
+
+/* ── Upload progress ── */
+.upload-progress { margin-top: 12px; }
+.upload-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+/* ── Import-from-disk panel (localhost only) ── */
+.import-path-panel {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
 
 /* ── Utility ── */
 .flex        { display: flex; }
@@ -2065,6 +2130,138 @@ button.upload-zone {
   font-style: italic;
 }
 
+/* ── View switch (Card / List segmented control) ── */
+.view-switch {
+  display: inline-flex;
+  margin: 0 0 0 auto;
+  padding: 0;
+  min-inline-size: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.view-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.view-switch-btn + .view-switch-btn { border-left: 1px solid var(--border); }
+.view-switch-btn:hover { color: var(--text-primary); background: var(--surface-3, var(--surface-2)); }
+.view-switch-btn.active {
+  color: #fff;
+  background: var(--accent);
+}
+.view-switch-btn svg { flex-shrink: 0; }
+
+/* ── Sortable list-view tables (Tools + Plugins) ── */
+/* In list mode, hide the grouped sections and the layout-edit controls */
+#panel-tools.view-list .tool-section { display: none !important; }
+#panel-tools.view-list #layout-edit-btn,
+#panel-tools.view-list .layout-toolbar > button:not(.view-switch-btn),
+#panel-tools.view-list .layout-edit-hint { display: none !important; }
+
+.tools-list-view { overflow-x: auto; }
+
+.devkit-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.86rem;
+  background: var(--grad-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.devkit-table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--grad-surface-2, var(--surface-2));
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+.devkit-table thead th.sortable { cursor: pointer; transition: color 0.12s, background 0.12s; }
+.devkit-table thead th.sortable:hover { color: var(--text-primary); background: var(--surface-3, var(--surface-2)); }
+.th-arrow { font-size: 0.75rem; color: var(--text-light, var(--text-muted)); opacity: 0.6; margin-left: 2px; }
+.th-arrow.active { color: var(--accent); opacity: 1; }
+
+.devkit-table tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+.devkit-table tbody tr:last-child td { border-bottom: none; }
+.devkit-table tbody tr:hover td { background: var(--surface-2); }
+.devkit-table .table-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 22px 14px;
+  font-size: 0.85rem;
+}
+.devkit-table .mono { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+
+/* Status accent stripe on the leading cell */
+.devkit-table tbody tr.installed td.col-title { box-shadow: inset 3px 0 0 var(--success); }
+.devkit-table tbody tr.update-available td.col-title { box-shadow: inset 3px 0 0 var(--warning); }
+.devkit-table tbody tr.plugin-card-installed td.col-title { box-shadow: inset 3px 0 0 var(--success); }
+.devkit-table tbody tr.unavailable { opacity: 0.55; }
+
+/* Columns */
+.col-title { font-weight: 700; }
+.tbl-name-btn {
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.tbl-name-btn:hover { color: var(--accent); text-decoration: underline; }
+.plugin-list-name { font-weight: 700; color: var(--text-primary); }
+.col-desc { color: var(--text-muted); }
+.col-desc span {
+  display: block;
+  max-width: 460px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tbl-cat { font-size: 0.62rem !important; padding: 1px 6px !important; border-radius: 10px !important; }
+.col-status, .col-actions, .col-source { white-space: nowrap; }
+.col-actions { text-align: right; }
+.col-actions .btn {
+  margin-left: 6px;
+  min-width: 84px;
+  justify-content: center;
+  text-align: center;
+}
+/* Plugin action buttons (smaller than tool buttons) still share one width */
+.col-actions .plugin-action-btn { min-width: 78px; }
+.plugin-status-cell { display: flex; align-items: center; gap: 6px; }
+.col-actions .plugin-card-actions { margin-left: auto; justify-content: flex-end; }
+
+@media (max-width: 900px) {
+  .devkit-table .col-desc { display: none; }
+}
+
 /* Section header gets a drag grip when in edit mode */
 .section-drag-handle {
   display: none;
@@ -2179,30 +2376,7 @@ button.upload-zone {
 }
 .pkg-search-input:focus { border-color: var(--accent); }
 
-.pkg-mgr-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.84rem;
-}
-.pkg-mgr-table th {
-  text-align: left;
-  padding: 6px 10px;
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.pkg-mgr-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-soft);
-  vertical-align: middle;
-}
-.pkg-mgr-table tr:last-child td { border-bottom: none; }
-.pkg-mgr-table tr:hover td    { background: var(--surface-2); }
-
+/* The Package Manager table reuses the shared .devkit-table styling. */
 .pkg-source-badge {
   font-size: 0.65rem;
   padding: 1px 7px;
@@ -2264,6 +2438,7 @@ button.upload-zone {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  overflow-x: auto;
 }
 
 .plugins-cat-label {
@@ -2389,6 +2564,18 @@ button.upload-zone {
 [data-theme="dark"] .plugin-card-installed {
   background: linear-gradient(135deg, rgba(22, 163, 74, 0.09) 0%, var(--surface-2) 55%);
 }
+
+/* ── Plugins header controls ── */
+.plugins-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.plugins-header-controls .view-switch { margin-left: 0; }
+
+/* ── Plugins list-view table ── */
+/* The plugins tables reuse .devkit-table (defined with the Tools table above). */
+.plugins-table .plugin-cat-chip { display: inline-block; }
 
 @media (max-width: 768px) {
   .plugins-card-grid { grid-template-columns: 1fr; }

@@ -7,8 +7,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
+
+	"github.com/nimzshafie/airgap-devkit/server/internal/timefmt"
 )
+
+// execCommand is a seam over exec.Command so the system-install probe can be
+// tested without the real toolchain binaries present.
+var execCommand = exec.Command
 
 type Receipt struct {
 	Exists      bool   `json:"exists"`
@@ -91,26 +96,8 @@ func parseReceipt(path string) (Receipt, bool) {
 	return r, true
 }
 
-var dateFmts = []string{
-	"01/02/2006 15:04",
-	"200601021504",
-	"Mon Jan 02 15:04:05 MST 2006",
-	"Mon Jan 02 15:04:05 2006",
-	"2006-01-02T15:04:05Z",
-	"2006-01-02T15:04:05",
-	"2006-01-02 15:04:05",
-	"2006-01-02 15:04",
-	"2006-01-02",
-}
-
 func normaliseDate(raw string) string {
-	raw = strings.TrimSpace(raw)
-	for _, fmt := range dateFmts {
-		if t, err := time.Parse(fmt, raw); err == nil {
-			return t.Format("01/02/2006 15:04")
-		}
-	}
-	return raw
+	return timefmt.Normalize(raw)
 }
 
 // probeSystemInstall runs check_cmd to detect a system-installed tool (no receipt).
@@ -125,9 +112,9 @@ func probeSystemInstall(checkCmd, goos string) string {
 	}
 	var cmd *exec.Cmd
 	if goos == "windows" {
-		cmd = exec.Command("cmd", append([]string{"/c"}, parts...)...)
+		cmd = execCommand("cmd", append([]string{"/c"}, parts...)...)
 	} else {
-		cmd = exec.Command(parts[0], parts[1:]...)
+		cmd = execCommand(parts[0], parts[1:]...)
 	}
 	out, err := cmd.Output()
 	if err != nil {
@@ -160,6 +147,9 @@ func extractVersion(out string) string {
 }
 
 func GetStatus(t Tool, prefix, currentOS string) ToolStatus {
+	// Render upload timestamps consistently regardless of how they were stored;
+	// t is a copy, so only the response is touched, never the on-disk manifest.
+	t.UploadedAt = timefmt.Normalize(t.UploadedAt)
 	receipt := GetReceipt(prefix, t.ReceiptName)
 	installed := receipt.Status == "success"
 	available := t.Platform == "both" || t.Platform == currentOS
