@@ -1,11 +1,17 @@
 # airgap-cpp-devkit
 
-**Author: Nima Shafie** · [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) [![GitHub Actions](https://github.com/NimaShafie/airgap-cpp-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/NimaShafie/airgap-cpp-devkit/actions)
+**Author: Nima Shafie**
+
+[![CI](https://github.com/airgap-devkit/devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/airgap-devkit/devkit/actions/workflows/ci.yml)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20RHEL%208-informational)](docs/DEPLOYMENT.md)
+[![Air-gapped](https://img.shields.io/badge/air--gapped-offline--first-success)](docs/DEPLOYMENT.md)
+[![Latest Release](https://badgen.net/github/release/airgap-devkit/devkit?label=release&color=blue)](https://github.com/airgap-devkit/devkit/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/airgap-devkit?label=pypi&color=orange)](https://pypi.org/project/airgap-devkit/)
 
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.3.6** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.61** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -556,10 +562,6 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the CLA, c
 
 ## License
 
-Copyright (C) 2026 Nima Shafie \<nimzshafie@gmail.com\>
+AGPL-3.0-or-later — see [LICENSE](LICENSE). A commercial license is available for use cases that can't accept AGPL terms; contact nimzshafie@gmail.com.
 
-This project is licensed under the **GNU Affero General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
-
-**Dual licensing:** Organizations that cannot accept AGPL obligations (e.g., closed-source enterprise deployments) may obtain a commercial license. Contact **nimzshafie@gmail.com** for details.
-
-> AGPL v3 requires that modifications to this software — including when run as a network service — be made available under the same license. If that is not acceptable for your use case, a commercial license removes this requirement.
+OS/distribution logos under [`server/web/static/img/`](server/web/static/img/) are from [Simple Icons](https://github.com/simple-icons/simple-icons) (CC0-1.0); see [docs/THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md) for attributions.

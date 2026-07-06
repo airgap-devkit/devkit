@@ -1167,6 +1167,146 @@
       "attributionTexts": [
         "windows: SourceTreeSetup-3.4.30.exe SHA256:07271493c0de23157563b10151db1f9fd7cc8bfcf2507ea3894087e5f9c3529f"
       ]
+    },
+    {
+      "SPDXID": "SPDXRef-dep-tusd",
+      "name": "github.com/tus/tusd/v2",
+      "versionInfo": "2.10.0",
+      "supplier": "Organization: tus",
+      "downloadLocation": "https://github.com/tus/tusd",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "Go dependency vendored under server/vendor. Provides the resumable (tus) upload protocol handler and on-disk filestore for large package uploads. go.sum: h1:2yOGmkrDl9RQmRIt/00DR2WvYWOoiEu3CoygILb+WRw=",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "db23869a4ac397d45099122dff4d034765af6163a8884bb70a8ca020b6fe591c"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-dep-golang-x-exp",
+      "name": "golang.org/x/exp",
+      "versionInfo": "0.0.0-20250106191152-7588d65b2ba8",
+      "supplier": "Organization: Go",
+      "downloadLocation": "https://pkg.go.dev/golang.org/x/exp",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "Transitive Go dependency of tusd (slog/slices), vendored under server/vendor. go.sum: h1:yqrTHse8TCMW1M1ZCP+VAR/l0kKxwaAIqN/il7x4voA=",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "caaad31ec7bc4c2316d4cd5908ff95011fe5d242b1c1a008a8dfe297bc78be80"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-dep-tus-js-client",
+      "name": "tus-js-client",
+      "versionInfo": "4.3.1",
+      "supplier": "Organization: tus",
+      "downloadLocation": "https://github.com/tus/tus-js-client",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "LIBRARY",
+      "comment": "Vendored browser client (UMD) at server/web/static/tus.min.js. Drives resumable chunked uploads from the dashboard. SHA-256 is of the vendored minified file.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8cbb1b63fccc3bba0ae73ad1deb160ce046c3750851d0c3e94921ae3ef070eb8"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-asset-os-logos",
+      "name": "os-distribution-logos",
+      "versionInfo": "retrieved-2026-07-05",
+      "supplier": "Organization: Simple Icons",
+      "originator": "Organization: Simple Icons Collaborators",
+      "downloadLocation": "https://github.com/simple-icons/simple-icons",
+      "filesAnalyzed": false,
+      "licenseConcluded": "CC0-1.0",
+      "licenseDeclared": "CC0-1.0",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE",
+      "comment": "Vendored OS/distribution logo set under server/web/static/img/ (rhel, rocky, almalinux, centos, fedora, ubuntu, debian, mint, opensuse, suse, arch, alpine, macos). SVG brand icons from the Simple Icons project, licensed CC0-1.0 (public domain). Shown in the devkit UI to identify the detected platform. Each attribution line is the SHA-256 of a vendored SVG; update on logo refresh.",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "266454a3b820e757097cc1997e85e7af4c4236ad0881fa2c5f32306847a39232"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "df497d30ad8eb310f1b991839a88d4bb27fefc21501c15bb58e3509fecef09b5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b43f215b8d4874ca51a2ffc35f48b53877f6f0ddada0d18d37277a9908afecf8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a0e28a0ca3a08fdd08dc42e09c8b0b5860b2afdf8f413aff708bc3195bab0368"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dafd9d19355dc0c89e8a14aac3740b224e2eb0e2fb42db050ba3832acaa7b106"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "05908333dce000b0775603cdc3d14b4a7d315d3625c9fa0b374804d6753643c3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a4772536243ad46258a015be1fe6e8192a111c9301d2632a959daf6aea64191b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e2e21527ebd3a8bd1b0fe74d139eb353b390c9934165796c78d9925dac681b66"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4bf06439a0f080cf5168dda7190770bd57a0d66db069b387d087992912a57234"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3b24734f168996f33da4a820dd7adea15baad45373a2cb8e5b57bb96a32366b5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1d45fa365b8308aa408565a649e6646232d43e4ccbc02b106021b8b2dcd65a4d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bad184f006a759abe6c02f71caa0f7b157b22c48a9469ec6e931c087beb74dac"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cbc36e6e70deb9764f033108a090de80df021a665b6209e4cf44f8bad06fd8db"
+        }
+      ],
+      "attributionTexts": [
+        "rhel.svg SHA256:266454a3b820e757097cc1997e85e7af4c4236ad0881fa2c5f32306847a39232",
+        "rocky.svg SHA256:df497d30ad8eb310f1b991839a88d4bb27fefc21501c15bb58e3509fecef09b5",
+        "almalinux.svg SHA256:b43f215b8d4874ca51a2ffc35f48b53877f6f0ddada0d18d37277a9908afecf8",
+        "centos.svg SHA256:a0e28a0ca3a08fdd08dc42e09c8b0b5860b2afdf8f413aff708bc3195bab0368",
+        "fedora.svg SHA256:dafd9d19355dc0c89e8a14aac3740b224e2eb0e2fb42db050ba3832acaa7b106",
+        "ubuntu.svg SHA256:05908333dce000b0775603cdc3d14b4a7d315d3625c9fa0b374804d6753643c3",
+        "debian.svg SHA256:a4772536243ad46258a015be1fe6e8192a111c9301d2632a959daf6aea64191b",
+        "mint.svg SHA256:e2e21527ebd3a8bd1b0fe74d139eb353b390c9934165796c78d9925dac681b66",
+        "opensuse.svg SHA256:4bf06439a0f080cf5168dda7190770bd57a0d66db069b387d087992912a57234",
+        "suse.svg SHA256:3b24734f168996f33da4a820dd7adea15baad45373a2cb8e5b57bb96a32366b5",
+        "arch.svg SHA256:1d45fa365b8308aa408565a649e6646232d43e4ccbc02b106021b8b2dcd65a4d",
+        "alpine.svg SHA256:bad184f006a759abe6c02f71caa0f7b157b22c48a9469ec6e931c087beb74dac",
+        "macos.svg SHA256:cbc36e6e70deb9764f033108a090de80df021a665b6209e4cf44f8bad06fd8db"
+      ]
     }
   ],
   "relationships": [
@@ -1284,6 +1424,26 @@
       "spdxElementId": "SPDXRef-airgap-cpp-devkit",
       "relationshipType": "CONTAINS",
       "relatedSpdxElement": "SPDXRef-dev-tools-sourcetree"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-dep-tusd"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-dep-golang-x-exp"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-dep-tus-js-client"
+    },
+    {
+      "spdxElementId": "SPDXRef-airgap-cpp-devkit",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-asset-os-logos"
     }
   ]
 }

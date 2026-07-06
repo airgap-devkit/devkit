@@ -31,7 +31,7 @@ Handoff notes to resume the `.7z`/`.tar.xz` → `.zip`/`.tar.gz` migration and t
 ## Resume steps
 
 ```bash
-cd /c/Users/n1mz/Desktop/airgap-devkit
+cd "$HOME/Desktop/airgap-devkit"
 
 # 1. Finish the offline re-stage (no internet needed; self-healing/resumable;
 #    converts every existing .tar.xz/.7z to native, regenerates manifests).

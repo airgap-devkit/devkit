@@ -14,6 +14,7 @@
 <link rel="icon" type="image/png" href="/static/img/airgap-devkit-favicon.png">
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/htmx.min.js" defer></script>
+<script src="/static/tus.min.js" defer></script>
 <script nonce="{{nonce}}">
 // ── Theme toggle ──
 function toggleTheme() {
@@ -121,6 +122,12 @@ function applyFilters() {
     });
     sec.style.display = (catMatch && (status === 'all' || visibleCards > 0)) ? '' : 'none';
   });
+
+  // Keep the flat list in sync when it is the active view
+  const toolsPanel = document.getElementById('panel-tools');
+  if (toolsPanel && toolsPanel.classList.contains('view-list') && typeof _renderToolsList === 'function') {
+    _renderToolsList();
+  }
 }
 
 // ── Network status & update checker ──
@@ -640,6 +647,58 @@ function clearDrawer() {
   drawer.setIdle();
 }
 
+// ── Drawer resize (drag) + maximise ──
+let _drawerMaximized = false;
+const _DRAWER_LOG_MIN = 100;
+function _drawerLogMax() { return Math.max(_DRAWER_LOG_MIN, window.innerHeight - 132); }
+
+function _setDrawerLogHeight(px) {
+  const drawerEl = document.getElementById('progress-drawer');
+  const h = Math.min(_drawerLogMax(), Math.max(_DRAWER_LOG_MIN, px));
+  drawerEl.style.setProperty('--drawer-log-h', h + 'px');
+  requestAnimationFrame(_syncMainPadding);
+}
+
+function toggleDrawerMaximize() {
+  const drawerEl = document.getElementById('progress-drawer');
+  // Maximising also expands the drawer if it is currently collapsed
+  if (_drawerCollapsed) toggleDrawerCollapse();
+  _drawerMaximized = !_drawerMaximized;
+  drawerEl.classList.toggle('drawer-maximized', _drawerMaximized);
+  const icon = document.getElementById('drawer-maximize-icon');
+  if (icon) icon.style.opacity = _drawerMaximized ? '0.55' : '';
+  requestAnimationFrame(_syncMainPadding);
+}
+
+function _initDrawerResize() {
+  const handle   = document.getElementById('drawer-resize-handle');
+  const drawerEl = document.getElementById('progress-drawer');
+  const log      = document.getElementById('progress-log');
+  if (!handle || !drawerEl || !log) return;
+  let startY = 0, startH = 0;
+  const onMove = (e) => {
+    // Dragging up (smaller clientY) grows the terminal
+    _setDrawerLogHeight(startH + (startY - e.clientY));
+  };
+  const onUp = (e) => {
+    drawerEl.classList.remove('drawer-resizing');
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    // A manual drag takes over from maximised mode
+    if (_drawerMaximized) toggleDrawerMaximize();
+    startY = e.clientY;
+    startH = log.getBoundingClientRect().height;
+    drawerEl.classList.add('drawer-resizing');
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+}
+
 // ── Copy log to clipboard ──
 function copyLog() {
   const log = document.getElementById('progress-log');
@@ -934,7 +993,7 @@ function _loadVersionHistory(id) {
           <span class="update-history-arrow">→</span>
           <span class="font-mono text-xs fw-700">${e.to_version}</span>
           <span class="update-history-host">${e.host || 'this machine'}</span>
-          <span class="update-history-time">${new Date(e.performed_at).toLocaleString()}</span>
+          <span class="update-history-time">${e.performed_at_display || e.performed_at}</span>
         </div>`).join('');
     })
     .catch(() => {});
@@ -1256,6 +1315,11 @@ function refreshCard(id) {
         footer.innerHTML = html;
         footer.onclick = e => e.stopPropagation();
       }
+      // Reflect the freshly-updated card status in the flat list when active
+      const tp = document.getElementById('panel-tools');
+      if (tp && tp.classList.contains('view-list') && typeof _renderToolsList === 'function') {
+        _renderToolsList();
+      }
     })
     .catch(() => {}); // silently ignore; user can reload manually
 
@@ -1353,6 +1417,23 @@ function resetPrefix() {
     .then(r => r.json())
     .then(d => { document.getElementById('prefix-input').value = d.prefix || ''; });
 }
+function saveTimeFormat() {
+  const sel = document.getElementById('time-format-select');
+  const status = document.getElementById('time-format-status');
+  fetch('/api/time-format', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({format: sel.value})})
+    .then(r => r.json())
+    .then(d => {
+      if (!status) return;
+      if (d.ok) {
+        status.textContent = 'Saved — reload to refresh existing times';
+        status.style.color = 'var(--success)';
+      } else {
+        status.textContent = d.error || 'Save failed';
+        status.style.color = 'var(--danger)';
+      }
+    })
+    .catch(() => { if (status) { status.textContent = 'Save failed'; status.style.color = 'var(--danger)'; } });
+}
 
 // ── Import team config ──
 function importConfig(input) {
@@ -1375,27 +1456,124 @@ function importConfig(input) {
 }
 
 // ── Package upload ──
+// Upload limits, fetched once so we can size chunks and reveal the localhost
+// import path only where it is actually available.
+let _uploadCfg = {max_bytes: 8 << 30, chunk_size: 16 << 20, allow_path_import: false};
+let _activeUpload = null;
+
+function initUploadPanel() {
+  fetch('/packages/upload-config')
+    .then(r => r.json())
+    .then(cfg => {
+      _uploadCfg = cfg;
+      const gib = (cfg.max_bytes / (1 << 30));
+      const label = document.getElementById('upload-limit-label');
+      if (label) label.textContent = 'Resumable · max ' + (gib >= 1 ? gib.toFixed(0) + ' GB' : (cfg.max_bytes >> 20) + ' MB');
+      if (cfg.allow_path_import) document.getElementById('import-path-panel').classList.remove('hidden');
+    })
+    .catch(() => {});
+}
+
 function handleDrop(e) {
   const file = e.dataTransfer.files[0];
   if (file) uploadPackage(file);
 }
+
+function humanBytes(n) {
+  if (n >= 1 << 30) return (n / (1 << 30)).toFixed(2) + ' GB';
+  if (n >= 1 << 20) return (n / (1 << 20)).toFixed(1) + ' MB';
+  return (n / 1024).toFixed(0) + ' KB';
+}
+
+// Resumable chunked upload via tus. Survives dropped connections and page
+// reloads (tus fingerprints the file and resumes from the last stored offset),
+// and never holds the whole archive in memory — client or server side.
 function uploadPackage(file) {
-  if (!file || !file.name.endsWith('.zip')) {
+  if (!file || !file.name.toLowerCase().endsWith('.zip')) {
     showUploadStatus('error', 'Only .zip files are supported.');
     return;
   }
+  if (file.size > _uploadCfg.max_bytes) {
+    showUploadStatus('error', file.name + ' is ' + humanBytes(file.size) + ', over the ' + humanBytes(_uploadCfg.max_bytes) + ' limit.');
+    return;
+  }
+  if (typeof tus === 'undefined') {
+    showUploadStatus('error', 'Upload client not loaded — refresh the page and try again.');
+    return;
+  }
+
+  const progress = document.getElementById('upload-progress');
+  const fill = document.getElementById('upload-progress-fill');
+  const text = document.getElementById('upload-progress-text');
+  progress.classList.remove('hidden');
+  fill.style.width = '0%';
+  text.textContent = 'Starting…';
   showUploadStatus('loading', 'Uploading ' + file.name + '…');
-  const fd = new FormData();
-  fd.append('package', file);
-  fetch('/packages/upload', {method: 'POST', body: fd})
+
+  const upload = new tus.Upload(file, {
+    endpoint: '/packages/upload/',
+    chunkSize: _uploadCfg.chunk_size,
+    retryDelays: [0, 1000, 3000, 5000, 10000],
+    removeFingerprintOnSuccess: true,
+    metadata: {filename: file.name, filetype: file.type || 'application/zip'},
+    onError: function(err) {
+      progress.classList.add('hidden');
+      // tusd surfaces finalize failures (bad zip, over-limit expansion) as the
+      // response body of the last request.
+      let msg = (err && err.originalResponse && err.originalResponse.getBody && err.originalResponse.getBody()) || String(err);
+      showUploadStatus('error', 'Upload failed: ' + msg);
+      _activeUpload = null;
+    },
+    onProgress: function(sent, total) {
+      const pct = total ? Math.round((sent / total) * 100) : 0;
+      fill.style.width = pct + '%';
+      text.textContent = pct + '% · ' + humanBytes(sent) + ' / ' + humanBytes(total);
+    },
+    onSuccess: function() {
+      progress.classList.add('hidden');
+      showUploadStatus('success', 'Package "' + file.name + '" uploaded and registered.');
+      _activeUpload = null;
+      loadPackageList();
+      setTimeout(() => location.reload(), 1500);
+    }
+  });
+
+  _activeUpload = upload;
+  // Resume a previously interrupted upload of the same file if one exists.
+  upload.findPreviousUploads().then(function(prev) {
+    if (prev.length) upload.resumeFromPreviousUpload(prev[0]);
+    upload.start();
+  });
+}
+
+function cancelUpload() {
+  if (_activeUpload) {
+    _activeUpload.abort(true);
+    _activeUpload = null;
+  }
+  document.getElementById('upload-progress').classList.add('hidden');
+  showUploadStatus('error', 'Upload cancelled.');
+}
+
+function importFromPath() {
+  const input = document.getElementById('import-path-input');
+  const path = input.value.trim();
+  if (!path) { showUploadStatus('error', 'Enter the absolute path to a .zip file.'); return; }
+  showUploadStatus('loading', 'Importing ' + path + '…');
+  fetch('/packages/import', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({path: path})
+  })
     .then(r => r.json())
     .then(d => {
       if (d.ok) {
         showUploadStatus('success', d.message);
+        input.value = '';
         loadPackageList();
         setTimeout(() => location.reload(), 1500);
       } else {
-        showUploadStatus('error', d.error || 'Upload failed');
+        showUploadStatus('error', d.error || 'Import failed');
       }
     })
     .catch(e => showUploadStatus('error', String(e)));
@@ -1712,6 +1890,17 @@ function _onCategoryClick(e) {
 
 // ── Package Manager ───────────────────────────────────────────────────────────
 
+// Shared "source of truth" badge — used by the Tools, Packages, and Plugins
+// tables so the Source column looks and reads the same everywhere.
+// builtin → bundled/included with the devkit; user → uploaded by a user.
+function _sourceBadge(source) {
+  const cls = source === 'user' ? 'source-user' : 'source-builtin';
+  const lbl = source === 'user' ? 'User Upload'
+            : source === 'system' ? 'System'
+            : 'Included';
+  return '<span class="pkg-source-badge ' + cls + '">' + escHtml(lbl) + '</span>';
+}
+
 let _pkgFilter = 'all';
 let _pkgSearch = '';
 
@@ -1748,33 +1937,31 @@ function renderPackageManager() {
   if (!tbody) return;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No packages match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No packages match this filter.</td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map(t => {
-    const srcCls  = t.source === 'builtin' ? 'source-builtin' : t.source === 'user' ? 'source-user' : '';
-    const srcLbl  = t.source === 'builtin' ? 'Prebuilt' : t.source === 'user' ? 'User' : (t.source || '—');
     const status  = t.installed
-      ? '<span class="badge badge-success badge-dot">Installed</span>'
+      ? '<span class="badge badge-success">Installed</span>'
       : t.available
-        ? '<span class="badge badge-gray badge-dot">Available</span>'
+        ? '<span class="badge badge-gray">Available</span>'
         : '<span class="badge badge-gray">N/A</span>';
     const esc = s => (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    const action  = !t.available ? '<span class="text-xs text-muted">N/A</span>'
+    const action  = !t.available ? '<span class="text-muted text-xs">N/A</span>'
       : t.installed
-        ? `<button class="btn btn-danger btn-sm" style="font-size:0.72rem;padding:3px 9px" onclick="uninstallTool('${esc(t.id)}','${esc(t.name)}',this)">Remove</button>`
-        : `<button class="btn btn-primary btn-sm" style="font-size:0.72rem;padding:3px 9px" onclick="installTool('${esc(t.id)}','${esc(t.name)}',this)">Install</button>`;
-    return `<tr>
-      <td>
-        <span class="fw-700" style="cursor:pointer;color:var(--accent)" onclick="showToolDetail('${esc(t.id)}')">${t.name||t.id}</span>
-        <span class="font-mono text-xs text-muted" style="margin-left:6px">${t.id}</span>
+        ? `<button class="btn btn-danger btn-sm" onclick="uninstallTool('${esc(t.id)}','${esc(t.name)}',this)">Remove</button>`
+        : `<button class="btn btn-primary btn-sm" onclick="installTool('${esc(t.id)}','${esc(t.name)}',this)">Install</button>`;
+    return `<tr class="${t.installed ? 'installed' : ''}">
+      <td class="col-title">
+        <button type="button" class="tbl-name-btn" onclick="showToolDetail('${esc(t.id)}')">${t.name||t.id}</button>
+        <span class="font-mono text-xs text-muted" style="margin-left:6px;font-weight:400">${t.id}</span>
       </td>
-      <td class="font-mono" style="font-size:0.79rem">${t.version||'—'}</td>
-      <td><span class="text-xs text-muted">${t.category||'—'}</span></td>
-      <td><span class="pkg-source-badge ${srcCls}">${srcLbl}</span></td>
-      <td>${status}</td>
-      <td style="text-align:right">${action}</td>
+      <td class="col-version mono">${t.version||'—'}</td>
+      <td class="col-category"><span class="text-xs text-muted">${t.category||'—'}</span></td>
+      <td class="col-source">${_sourceBadge(t.source)}</td>
+      <td class="col-status">${status}</td>
+      <td class="col-actions">${action}</td>
     </tr>`;
   }).join('');
 }
@@ -1843,8 +2030,7 @@ window._toolCache = {};
       <strong>{{.InstalledCount}}</strong> / {{.TotalCount}} installed
     </div>
     <div class="navbar-stat">
-      {{if eq .OS "windows"}}<img src="/static/img/windows.png" class="os-icon-sm" alt="Windows">
-      {{else}}<img src="/static/img/linux.png" class="os-icon-sm" alt="Linux">{{end}}
+      <img src="/static/img/{{.OSIcon}}" class="os-icon-sm" alt="{{.OSLabel}}">
       <strong>{{.OS}}</strong>
     </div>
     <div class="navbar-stat">
@@ -1912,8 +2098,7 @@ window._toolCache = {};
       <div class="sidebar-stats-row">
         <span>Platform</span>
         <span class="sidebar-stats-val" style="display:flex;align-items:center;gap:4px;">
-          {{if eq .OS "windows"}}<img src="/static/img/windows.png" class="os-icon-sm" alt="Windows">
-          {{else}}<img src="/static/img/linux.png" class="os-icon-sm" alt="Linux">{{end}}
+          <img src="/static/img/{{.OSIcon}}" class="os-icon-sm" alt="{{.OSLabel}}">
           {{.OS}}
         </span>
       </div>
@@ -1949,8 +2134,7 @@ window._toolCache = {};
       </button>
       <div class="stat-chip">
         <div class="stat-chip-icon chip-slate" style="overflow:hidden;padding:0;">
-          {{if eq .OS "windows"}}<img src="/static/img/windows.png" alt="Windows" class="os-icon-chip">
-          {{else}}<img src="/static/img/linux.png" alt="Linux" class="os-icon-chip">{{end}}
+          <img src="/static/img/{{.OSIcon}}" alt="{{.OSLabel}}" class="os-icon-chip">
         </div>
         <div>
           <div class="stat-chip-val" style="font-size:0.85rem;padding-top:2px">{{.OSLabel}}</div>
@@ -2025,6 +2209,16 @@ window._toolCache = {};
         <span id="layout-edit-hint" class="layout-edit-hint" style="display:none">
           Drag cards to reorder · Drag the grip icon to move a category · Click a category name to rename
         </span>
+        <fieldset class="view-switch" aria-label="Tools view mode">
+          <button id="tools-view-card" class="view-switch-btn active" onclick="setToolsView('card')" title="Card view — grouped by category">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+            Cards
+          </button>
+          <button id="tools-view-list" class="view-switch-btn" onclick="setToolsView('list')" title="List view — flat, sorted A→Z">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"/></svg>
+            List
+          </button>
+        </fieldset>
       </div>
 
       <!-- ── Favorites section (shown when at least one tool is favorited) ── -->
@@ -2186,6 +2380,9 @@ window._toolCache = {};
         }
       })();
       </script>
+
+      <!-- ── Flat list view (populated by JS; shown in List mode) ── -->
+      <div id="tools-list-view" class="tools-list-view" style="display:none"></div>
     </div>
 
     <!-- ── Tab: Profiles ── -->
@@ -2215,7 +2412,7 @@ window._toolCache = {};
           <span class="card-title">Upload Package</span>
         </div>
         <div class="card-body">
-          <p class="text-muted text-sm mb-4">Upload a <code>.zip</code> archive to add a custom tool. The zip should contain all files needed for the tool. A <code>devkit.json</code> manifest and <code>setup.sh</code> will be auto-generated if not included.</p>
+          <p class="text-muted text-sm mb-4">Upload a <code>.zip</code> archive to add a custom tool. The zip should contain all files needed for the tool. A <code>devkit.json</code> manifest and <code>setup.sh</code> will be auto-generated if not included. Large uploads are sent in resumable chunks and continue automatically if the connection drops.</p>
           <button type="button" id="upload-zone" class="upload-zone"
                onclick="document.getElementById('pkg-file').click()"
                ondragover="event.preventDefault();this.classList.add('dragover')"
@@ -2223,10 +2420,28 @@ window._toolCache = {};
                ondrop="event.preventDefault();this.classList.remove('dragover');handleDrop(event)">
             <div style="font-size:2rem;margin-bottom:8px">📦</div>
             <div class="fw-700">Drop .zip here or click to browse</div>
-            <div class="text-xs text-muted mt-1">Max 512 MB</div>
+            <div class="text-xs text-muted mt-1" id="upload-limit-label">Resumable upload</div>
           </button>
           <input type="file" id="pkg-file" accept=".zip" class="hidden" onchange="uploadPackage(this.files[0])">
+
+          <!-- Upload progress -->
+          <div id="upload-progress" class="upload-progress hidden">
+            <div class="upload-progress-bar"><div id="upload-progress-fill" class="upload-progress-fill"></div></div>
+            <div class="flex-between mt-1">
+              <span id="upload-progress-text" class="text-xs text-muted">0%</span>
+              <button type="button" id="upload-cancel" class="btn btn-danger btn-sm" onclick="cancelUpload()">Cancel</button>
+            </div>
+          </div>
           <div id="upload-status" class="mt-3 hidden"></div>
+
+          <!-- Import from local disk (localhost only) -->
+          <div id="import-path-panel" class="import-path-panel hidden">
+            <div class="text-xs text-muted mb-1">On this machine you can skip the transfer and import a <code>.zip</code> straight from disk — the reliable path for very large archives.</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="import-path-input" class="pkg-search-input" style="flex:1" type="text" placeholder="Absolute path to .zip, e.g. D:\artifacts\toolchain.zip">
+              <button type="button" class="btn btn-primary btn-sm" onclick="importFromPath()">Import</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2252,19 +2467,19 @@ window._toolCache = {};
 
           <!-- Table -->
           <div style="overflow-x:auto;">
-            <table class="pkg-mgr-table">
+            <table class="devkit-table">
               <thead>
                 <tr>
-                  <th>Package</th>
-                  <th>Version</th>
-                  <th>Category</th>
-                  <th>Source</th>
-                  <th>Status</th>
-                  <th style="text-align:right">Action</th>
+                  <th class="col-title">Package</th>
+                  <th class="col-version">Version</th>
+                  <th class="col-category">Category</th>
+                  <th class="col-source">Source</th>
+                  <th class="col-status">Status</th>
+                  <th class="col-actions">Action</th>
                 </tr>
               </thead>
               <tbody id="pkg-mgr-tbody">
-                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">Loading…</td></tr>
+                <tr><td colspan="6" class="table-empty">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -2314,7 +2529,7 @@ window._toolCache = {};
                 <input class="input" id="repo-url-input" type="text"
                        value="{{.Config.TeamConfigRepo}}"
                        placeholder="https://gitlab.internal/acme/devkit-config.git"
-                       style="flex:1">
+                       style="flex:1;min-width:560px">
                 <button class="btn btn-primary btn-sm" onclick="saveRepoURL()" style="white-space:nowrap">Save & Sync</button>
               </div>
             </div>
@@ -2448,6 +2663,21 @@ window._toolCache = {};
               </div>
             </div>
             <div class="setting-row">
+              <div style="min-width:180px;max-width:360px;">
+                <div class="setting-label">Time Format</div>
+                <div class="setting-desc">How all timestamps (upload, install, logs) are displayed. Applied instantly.</div>
+              </div>
+              <div class="setting-control">
+                <select id="time-format-select" class="input" style="width:320px" onchange="saveTimeFormat()">
+                  {{$sel := .TimeFormat}}
+                  {{range .TimeFormats}}
+                  <option value="{{.ID}}" {{if eq .ID $sel}}selected{{end}}>{{.Label}} — {{.Example}}</option>
+                  {{end}}
+                </select>
+                <span id="time-format-status" class="text-sm text-muted" style="margin-left:8px;"></span>
+              </div>
+            </div>
+            <div class="setting-row">
               <div style="min-width:180px;max-width:320px;">
                 <div class="setting-label">Team Name</div>
                 <div class="setting-desc">Set in <code>devkit.config.json</code> at the repo root.</div>
@@ -2466,9 +2696,9 @@ window._toolCache = {};
               </div>
             </div>
             <div class="setting-row">
-              <div style="min-width:180px;max-width:320px;">
+              <div style="min-width:180px;max-width:none;">
                 <div class="setting-label">User Name</div>
-                <div class="setting-desc">Current OS login name. Used as the <strong>Source</strong> when you upload packages — read-only.</div>
+                <div class="setting-desc" style="white-space:nowrap;">Current OS login name. Used as the <strong>Source</strong> when you upload packages — read-only.</div>
               </div>
               <div class="setting-control">
                 <span class="badge badge-gray font-mono">{{.OSUsername}}</span>
@@ -2587,12 +2817,24 @@ window._toolCache = {};
           <div class="page-title">Plugins &amp; Extensions</div>
           <div class="page-subtitle">Manage pip packages and VS Code extensions — all installed offline from vendored bundles.</div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="_refreshPluginsTab()" title="Re-check install status">
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
-          </svg>
-          Refresh Status
-        </button>
+        <div class="plugins-header-controls">
+          <fieldset class="view-switch" aria-label="Plugins view mode">
+            <button id="plugins-view-list" class="view-switch-btn active" onclick="setPluginsView('list')" title="List view — flat, sorted A→Z">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"/></svg>
+              List
+            </button>
+            <button id="plugins-view-card" class="view-switch-btn" onclick="setPluginsView('card')" title="Card view — grouped by category">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+              Cards
+            </button>
+          </fieldset>
+          <button class="btn btn-ghost btn-sm" onclick="_refreshPluginsTab()" title="Re-check install status">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:5px">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+            </svg>
+            Refresh Status
+          </button>
+        </div>
       </div>
 
       <!-- Python Pip Packages -->
@@ -2605,7 +2847,7 @@ window._toolCache = {};
           <span class="badge badge-gray" id="plugins-pip-count" style="margin-left:auto;">Loading…</span>
         </div>
         <div class="card-body">
-          <p class="text-muted text-sm mb-4">Vendored pip wheels for data science, web, CLI, and testing. Requires Python to be installed first. Packages are sorted A→Z within each category.</p>
+          <p class="text-muted text-sm mb-4">Vendored pip wheels for data science, web, CLI, and testing. Requires Python to be installed first. Packages are sorted alphabetically.</p>
           <div id="plugins-pip-sections" class="plugins-pkg-sections">
             <div class="plugins-loading">
               <span class="pkg-status-spinner"></span>
@@ -2640,15 +2882,15 @@ window._toolCache = {};
     <footer class="site-footer">
       <span class="footer-line">
         <strong>{{.Config.DevkitName}}</strong> <span class="footer-ver">v{{.AppVersion}}</span>
-        &mdash; offline C++ developer toolkit for air-gapped environments
+        &mdash; C++ developer toolkit for air-gapped environments
       </span>
       <span class="footer-line footer-meta">
         Built by <a href="https://github.com/NimaShafie" target="_blank" rel="noopener">Nima Shafie</a>
         &nbsp;&middot;&nbsp; <strong>{{.InstalledCount}}</strong>/<strong>{{.TotalCount}}</strong> tools installed
         &nbsp;&middot;&nbsp; {{.OS}}
         &nbsp;&middot;&nbsp; <a href="https://github.com/airgap-devkit" target="_blank" rel="noopener">GitHub</a>
-        &nbsp;&middot;&nbsp; <a href="/api/tools" rel="noopener">REST API</a>
-        &nbsp;&middot;&nbsp; <a href="/health" rel="noopener">Health</a>
+        &nbsp;&middot;&nbsp; <a href="/api-docs" target="_blank" rel="noopener">REST API</a>
+        &nbsp;&middot;&nbsp; <a href="/status" target="_blank" rel="noopener">Health</a>
         &nbsp;&middot;&nbsp; &copy; 2026
       </span>
     </footer>
@@ -2883,6 +3125,7 @@ window._toolCache = {};
 
 <!-- ── Progress Drawer — always visible ── -->
 <div id="progress-drawer" class="progress-drawer">
+  <div class="drawer-resize-handle" id="drawer-resize-handle" title="Drag to resize the terminal"></div>
   <div class="progress-drawer-header">
     <button type="button" class="drawer-toggle-btn" onclick="toggleDrawerCollapse()" title="Click to expand/collapse">
       <div class="progress-icon-idle" id="progress-spinner" style="flex-shrink:0;">
@@ -2899,6 +3142,9 @@ window._toolCache = {};
         Copy
       </button>
       <button class="btn btn-ghost btn-sm" onclick="clearDrawer()" title="Clear log">Clear</button>
+      <button class="btn btn-ghost btn-sm btn-icon" id="drawer-maximize-btn" onclick="toggleDrawerMaximize()" title="Maximise / Restore">
+        <svg id="drawer-maximize-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/></svg>
+      </button>
       <button class="btn btn-ghost btn-sm btn-icon" id="drawer-collapse-btn" onclick="toggleDrawerCollapse()" title="Expand / Minimise">
         <svg id="drawer-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="transform:rotate(180deg)"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
       </button>
@@ -3285,7 +3531,179 @@ function _applyFavorites() {
   _updateFavSection();
 }
 
+// ── Tools view mode (Card / List) ───────────────────────────────────────────
+// List mode flattens every tool into a single A→Z list, ignoring category
+// grouping and favorites. Card mode keeps the grouped, drag-orderable layout.
+// Not persisted — Tools always opens in Card view by default.
+let _toolsView = 'card';
+
+function setToolsView(mode) {
+  _toolsView = (mode === 'list') ? 'list' : 'card';
+  _applyToolsView();
+}
+
+function _applyToolsView() {
+  const panel  = document.getElementById('panel-tools');
+  const listEl = document.getElementById('tools-list-view');
+  if (!panel || !listEl) return;
+  const isList  = _toolsView === 'list';
+  const cardBtn = document.getElementById('tools-view-card');
+  const listBtn = document.getElementById('tools-view-list');
+  if (cardBtn) cardBtn.classList.toggle('active', !isList);
+  if (listBtn) listBtn.classList.toggle('active', isList);
+  // Leaving edit mode when switching to list (reorder doesn't apply there)
+  if (isList && _layoutEditMode) toggleLayoutEdit();
+  panel.classList.toggle('view-list', isList);
+  if (isList) { _renderToolsList(); listEl.style.display = ''; }
+  else        { listEl.style.display = 'none'; }
+}
+
+// Build the flat list from the authoritative card nodes so status stays in sync
+// with whatever refreshCard()/favorites/DnD have already applied to the cards.
+function _collectToolItems() {
+  const seen  = new Set();
+  const items = [];
+  document.querySelectorAll('#panel-tools .tool-grid [data-tool-id], #panel-tools .bundle-grid [data-tool-id]')
+    .forEach(card => {
+      const id = card.dataset.toolId;
+      if (!id || seen.has(id)) return;
+      if (card.style.display === 'none') return; // hidden bundle (pip/vscode) proxies
+      seen.add(id);
+      const t = (window._toolCache && window._toolCache[id]) || {};
+      items.push({
+        id:          id,
+        name:        (card.querySelector('.tool-card-name')?.textContent || t.name || id).trim(),
+        version:     (card.querySelector('.tool-card-version')?.textContent || t.version || '').trim(),
+        desc:        (card.querySelector('.tool-card-desc')?.textContent || t.description || '').trim(),
+        estimate:    (t.estimate || '').trim(),
+        category:    t.category || card.closest('.tool-section')?.dataset.category || '',
+        source:      t.source || 'builtin',
+        installed:   card.classList.contains('installed'),
+        updateAvail: card.classList.contains('update-available'),
+        unavailable: card.classList.contains('unavailable'),
+      });
+    });
+  items.sort((a, b) => a.name.localeCompare(b.name));
+  return items;
+}
+
+// Sort state for the list-view table (persisted)
+let _toolsSort = (function() {
+  try { return JSON.parse(localStorage.getItem('devkit-tools-sort')) || null; } catch (e) { return null; }
+})() || { key: 'name', dir: 'asc' };
+
+// Numeric rank so the Status column sorts in a sensible order
+function _toolStatusRank(t) {
+  if (t.updateAvail)  return 0; // Install Ready
+  if (t.installed)    return 1;
+  if (t.unavailable)  return 3; // N/A
+  return 2;                     // Available
+}
+
+function _toolSortValue(t, key) {
+  switch (key) {
+    case 'version':  return t.version || '';
+    case 'category': return t.category || '';
+    case 'status':   return _toolStatusRank(t);
+    case 'desc':     return t.desc || '';
+    default:         return t.name || '';
+  }
+}
+
+function _sortToolItems(items) {
+  const { key, dir } = _toolsSort;
+  const mul = dir === 'desc' ? -1 : 1;
+  return items.sort((a, b) => {
+    const va = _toolSortValue(a, key), vb = _toolSortValue(b, key);
+    let c;
+    if (typeof va === 'number' && typeof vb === 'number') c = va - vb;
+    else c = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
+    if (c === 0 && key !== 'name') c = (a.name || '').localeCompare(b.name || '');
+    return c * mul;
+  });
+}
+
+function setToolsSort(key) {
+  if (_toolsSort.key === key) _toolsSort.dir = _toolsSort.dir === 'asc' ? 'desc' : 'asc';
+  else _toolsSort = { key: key, dir: 'asc' };
+  localStorage.setItem('devkit-tools-sort', JSON.stringify(_toolsSort));
+  _renderToolsList();
+}
+
+function _sortArrow(key) {
+  if (_toolsSort.key !== key) return '<span class="th-arrow">↕</span>';
+  return '<span class="th-arrow active">' + (_toolsSort.dir === 'asc' ? '↑' : '↓') + '</span>';
+}
+
+function _toolTableRow(t) {
+  let status;
+  if (t.updateAvail)      status = '<span class="badge badge-success" title="Bundled and ready to install offline">Install Ready</span>';
+  else if (t.installed)   status = '<span class="badge badge-success">Installed</span>';
+  else if (t.unavailable) status = '<span class="badge badge-gray">N/A</span>';
+  else                    status = '<span class="badge badge-gray">Available</span>';
+
+  let actions = '';
+  if (!t.unavailable) {
+    if (t.installed) {
+      actions += `<button class="btn btn-danger btn-sm" onclick="uninstallTool('${escJs(t.id)}','${escJs(t.name)}',this)">Remove</button>`;
+      if (t.updateAvail) {
+        const lbl = /^various$/i.test(t.version) ? 'Install' : 'Install v' + escHtml(t.version);
+        actions += `<button class="btn btn-primary btn-sm" title="Installs bundled v${escHtml(t.version)} to this machine (offline)" onclick="installTool('${escJs(t.id)}','${escJs(t.name)}',this)">${lbl}</button>`;
+      }
+    } else {
+      actions += `<button class="btn btn-primary btn-sm" onclick="installTool('${escJs(t.id)}','${escJs(t.name)}',this)">Install</button>`;
+    }
+  } else {
+    actions += `<span class="text-muted text-xs">Not available on ${escHtml('{{.OS}}')}</span>`;
+  }
+
+  const cls = 'tool-tr' +
+    (t.installed ? ' installed' : '') +
+    (t.updateAvail ? ' update-available' : '') +
+    (t.unavailable ? ' unavailable' : '');
+  return `<tr class="${cls}" data-list-id="${escHtml(t.id)}">
+    <td class="col-title"><button type="button" class="tbl-name-btn" onclick="showToolDetail('${escJs(t.id)}')" title="View ${escHtml(t.name)} details">${escHtml(t.name)}</button></td>
+    <td class="col-desc"><span title="${escHtml(t.desc)}">${escHtml(t.desc)}</span></td>
+    <td class="col-version mono">${escHtml(t.version)}</td>
+    <td class="col-category">${t.category ? `<span class="badge badge-gray tbl-cat">${escHtml(t.category)}</span>` : '<span class="text-muted">—</span>'}</td>
+    <td class="col-source">${_sourceBadge(t.source)}</td>
+    <td class="col-status">${status}</td>
+    <td class="col-actions">${actions}</td>
+  </tr>`;
+}
+
+function _renderToolsList() {
+  const listEl = document.getElementById('tools-list-view');
+  if (!listEl) return;
+  let items = _collectToolItems();
+  // Respect the active status/category filters so the sidebar chips still work
+  if (_activeStatusFilter === 'installed') items = items.filter(t => t.installed || t.updateAvail);
+  if (_activeCatFilter !== 'all')          items = items.filter(t => t.category === _activeCatFilter);
+  _sortToolItems(items);
+
+  const header =
+    '<thead><tr>' +
+      `<th class="col-title sortable" onclick="setToolsSort('name')">Software Title ${_sortArrow('name')}</th>` +
+      '<th class="col-desc">Description</th>' +
+      `<th class="col-version sortable" onclick="setToolsSort('version')">Version ${_sortArrow('version')}</th>` +
+      `<th class="col-category sortable" onclick="setToolsSort('category')">Category ${_sortArrow('category')}</th>` +
+      '<th class="col-source">Source</th>' +
+      `<th class="col-status sortable" onclick="setToolsSort('status')">Status ${_sortArrow('status')}</th>` +
+      '<th class="col-actions">Actions</th>' +
+    '</tr></thead>';
+
+  if (items.length === 0) {
+    listEl.innerHTML = '<table class="devkit-table tools-table">' + header +
+      '<tbody><tr><td colspan="7" class="table-empty">No tools match the current filter.</td></tr></tbody></table>';
+    return;
+  }
+  listEl.innerHTML = '<table class="devkit-table tools-table">' + header +
+    '<tbody>' + items.map(_toolTableRow).join('') + '</tbody></table>';
+}
+
 // Extend showTab to init package manager, profiles list, logs, and plugins on tab open
+document.addEventListener('DOMContentLoaded', initUploadPanel);
+
 const _origShowTab2 = showTab;
 showTab = function(id) {
   _origShowTab2(id);
@@ -3327,13 +3745,20 @@ function _renderLogsTab() {
 })();
 
 // ── Init layout + package manager on page load ──
-_loadAndApplyLayout().finally(_applyFavorites);
+_loadAndApplyLayout().finally(() => { _applyFavorites(); _applyToolsView(); });
 renderPackageManager();
 drawer.setIdle();
 
 // Sync main padding to drawer height on load and whenever the window resizes
+_initDrawerResize();
 _syncMainPadding();
-window.addEventListener('resize', _syncMainPadding);
+window.addEventListener('resize', () => {
+  // Keep a manually-set height within the new viewport bounds
+  const drawerEl = document.getElementById('progress-drawer');
+  const cur = drawerEl && drawerEl.style.getPropertyValue('--drawer-log-h');
+  if (cur) _setDrawerLogHeight(parseInt(cur, 10));
+  _syncMainPadding();
+});
 
 // ── Manual install fallback modal ──────────────────────────────────────────
 let _mimData = null;
@@ -3455,12 +3880,99 @@ function _renderMimModal() {
 
 var _pluginsLoaded = { 'pip-packages': false, 'vscode-extensions': false };
 
+// Plugins default to a flat A→Z list; Card mode restores category grouping.
+// Not persisted — Plugins always opens in List view by default.
+var _pluginsView = 'list';
+var _pluginsSort = (function() {
+  try { return JSON.parse(localStorage.getItem('devkit-plugins-sort')) || null; } catch (e) { return null; }
+})() || { key: 'name', dir: 'asc' };
+
+function setPluginsSort(key) {
+  if (_pluginsSort.key === key) _pluginsSort.dir = _pluginsSort.dir === 'asc' ? 'desc' : 'asc';
+  else _pluginsSort = { key: key, dir: 'asc' };
+  localStorage.setItem('devkit-plugins-sort', JSON.stringify(_pluginsSort));
+  _pluginsLoaded = { 'pip-packages': false, 'vscode-extensions': false };
+  loadPluginsTab();
+}
+
+function _pluginSortArrow(key) {
+  if (_pluginsSort.key !== key) return '<span class="th-arrow">↕</span>';
+  return '<span class="th-arrow active">' + (_pluginsSort.dir === 'asc' ? '↑' : '↓') + '</span>';
+}
+
+function _sortPluginPkgs(pkgs, isVscode) {
+  var key = _pluginsSort.key, mul = _pluginsSort.dir === 'desc' ? -1 : 1;
+  function val(p) {
+    if (key === 'sub')      return isVscode ? (p.id || '') : (p.version || '');
+    if (key === 'category') return p._cat || '';
+    return p.name || '';
+  }
+  return pkgs.slice().sort(function(a, b) {
+    var c = String(val(a)).localeCompare(String(val(b)), undefined, { numeric: true, sensitivity: 'base' });
+    if (c === 0 && key !== 'name') c = (a.name || '').localeCompare(b.name || '');
+    return c * mul;
+  });
+}
+
 function loadPluginsTab() {
+  // Sync toggle button state to the persisted preference on first open
+  var listBtn = document.getElementById('plugins-view-list');
+  var cardBtn = document.getElementById('plugins-view-card');
+  if (listBtn) listBtn.classList.toggle('active', _pluginsView === 'list');
+  if (cardBtn) cardBtn.classList.toggle('active', _pluginsView === 'card');
   ['pip-packages', 'vscode-extensions'].forEach(function(toolId) {
     if (_pluginsLoaded[toolId]) return;
     _pluginsLoaded[toolId] = true;
     _renderPluginSection(toolId);
   });
+}
+
+function setPluginsView(mode) {
+  _pluginsView = (mode === 'card') ? 'card' : 'list';
+  var listBtn = document.getElementById('plugins-view-list');
+  var cardBtn = document.getElementById('plugins-view-card');
+  if (listBtn) listBtn.classList.toggle('active', _pluginsView === 'list');
+  if (cardBtn) cardBtn.classList.toggle('active', _pluginsView === 'card');
+  // Re-render both sections from the already-cached package data
+  _pluginsLoaded = { 'pip-packages': false, 'vscode-extensions': false };
+  loadPluginsTab();
+}
+
+// Card cell — used in Card (grouped) view
+function _pluginCardHtml(toolId, p, isVscode) {
+  var pkgKey  = encodeURIComponent(p.id || p.name);
+  var actId   = _pkgActId(toolId, pkgKey);
+  var subline = isVscode ? escHtml(p.id || '') : escHtml(p.version || '');
+  return '<div class="plugin-card" id="plcard-' + actId + '">' +
+    '<div class="plugin-card-header">' +
+      '<div class="plugin-card-name">' + escHtml(p.name || '') + '</div>' +
+      '<div class="plugin-card-sub">' + subline + '</div>' +
+    '</div>' +
+    '<div class="plugin-card-desc">' + escHtml(p.description || '') + '</div>' +
+    '<div class="plugin-card-footer">' +
+      '<span class="badge badge-gray plugin-cat-chip">' + escHtml(p._cat) + '</span>' +
+      '<span class="badge badge-gray plugin-ver-badge">' + escHtml(p.version || '') + '</span>' +
+      '<div class="plugin-card-actions" id="' + actId + '">' +
+        '<span class="pkg-status-spinner"></span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+// Table row — used in List (flat, sortable) view
+function _pluginTableRow(toolId, p, isVscode) {
+  var pkgKey  = encodeURIComponent(p.id || p.name);
+  var actId   = _pkgActId(toolId, pkgKey);
+  var subline = isVscode ? escHtml(p.id || '') : escHtml(p.version || '');
+  return '<tr class="plugin-tr" id="plcard-' + actId + '">' +
+    '<td class="col-title"><span class="plugin-list-name">' + escHtml(p.name || '') + '</span></td>' +
+    '<td class="col-sub mono">' + (subline || '<span class="text-muted">—</span>') + '</td>' +
+    '<td class="col-desc"><span title="' + escHtml(p.description || '') + '">' + escHtml(p.description || '') + '</span></td>' +
+    '<td class="col-category"><span class="badge badge-gray plugin-cat-chip">' + escHtml(p._cat) + '</span></td>' +
+    '<td class="col-source">' + _sourceBadge(p._source) + '</td>' +
+    '<td class="col-status"><div class="plugin-status-cell" id="plstatus-' + actId + '"><span class="pkg-status-spinner"></span></div></td>' +
+    '<td class="col-actions"><div class="plugin-card-actions" id="' + actId + '"></div></td>' +
+  '</tr>';
 }
 
 function _renderPluginSection(toolId) {
@@ -3475,54 +3987,54 @@ function _renderPluginSection(toolId) {
   }
 
   var pkgs = toolData.packages;
+  var isVscode = toolId === 'vscode-extensions';
 
-  // Build category → packages map
-  var cats = {};
+  // Resolve each package's category + source once (used for chips and grouping)
   pkgs.forEach(function(p) {
-    var cat = (p.category && p.category.trim()) ||
-              (toolData.bundle_type === 'vscode' ? 'Extensions' : 'General');
-    if (!cats[cat]) cats[cat] = [];
-    cats[cat].push(p);
+    p._cat = (p.category && p.category.trim()) || (isVscode ? 'Extensions' : 'General');
+    p._source = p.source || (toolData && toolData.source) || 'builtin';
   });
 
-  // Sort packages A→Z within each category; sort categories A→Z
-  var sortedCats = Object.keys(cats).sort(function(a, b) { return a.localeCompare(b); });
-  sortedCats.forEach(function(cat) {
-    cats[cat].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
-  });
-
-  // Render skeleton from static cache data
-  sectionEl.innerHTML = sortedCats.map(function(cat) {
-    var items = cats[cat];
-    return '<div class="plugins-cat-group">' +
-      '<div class="plugins-cat-label">' + escHtml(cat) +
-        '<span class="plugins-cat-count">' + items.length + '</span>' +
-      '</div>' +
-      '<div class="plugins-card-grid">' +
-        items.map(function(p) {
-          var pkgKey = encodeURIComponent(p.id || p.name);
-          var actId  = _pkgActId(toolId, pkgKey);
-          var subline = toolId === 'vscode-extensions'
-            ? escHtml(p.id || '')
-            : escHtml(p.version || '');
-          return '<div class="plugin-card" id="plcard-' + actId + '">' +
-            '<div class="plugin-card-header">' +
-              '<div class="plugin-card-name">' + escHtml(p.name || '') + '</div>' +
-              '<div class="plugin-card-sub">' + subline + '</div>' +
-            '</div>' +
-            '<div class="plugin-card-desc">' + escHtml(p.description || '') + '</div>' +
-            '<div class="plugin-card-footer">' +
-              '<span class="badge badge-gray plugin-cat-chip">' + escHtml(cat) + '</span>' +
-              '<span class="badge badge-gray plugin-ver-badge">' + escHtml(p.version || '') + '</span>' +
-              '<div class="plugin-card-actions" id="' + actId + '">' +
-                '<span class="pkg-status-spinner"></span>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
-    '</div>';
-  }).join('');
+  if (_pluginsView === 'list') {
+    // Flat, sortable table — no category grouping
+    var sorted = _sortPluginPkgs(pkgs, isVscode);
+    var subLabel = isVscode ? 'Extension ID' : 'Version';
+    var header =
+      '<thead><tr>' +
+        '<th class="col-title sortable" onclick="setPluginsSort(\'name\')">Software Title ' + _pluginSortArrow('name') + '</th>' +
+        '<th class="col-sub sortable" onclick="setPluginsSort(\'sub\')">' + subLabel + ' ' + _pluginSortArrow('sub') + '</th>' +
+        '<th class="col-desc">Description</th>' +
+        '<th class="col-category sortable" onclick="setPluginsSort(\'category\')">Category ' + _pluginSortArrow('category') + '</th>' +
+        '<th class="col-source">Source</th>' +
+        '<th class="col-status">Status</th>' +
+        '<th class="col-actions">Actions</th>' +
+      '</tr></thead>';
+    sectionEl.innerHTML = '<table class="devkit-table plugins-table">' + header +
+      '<tbody>' + sorted.map(function(p) { return _pluginTableRow(toolId, p, isVscode); }).join('') +
+      '</tbody></table>';
+  } else {
+    // Card view — grouped by category, A→Z within each
+    var cats = {};
+    pkgs.forEach(function(p) {
+      if (!cats[p._cat]) cats[p._cat] = [];
+      cats[p._cat].push(p);
+    });
+    var sortedCats = Object.keys(cats).sort(function(a, b) { return a.localeCompare(b); });
+    sortedCats.forEach(function(cat) {
+      cats[cat].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+    });
+    sectionEl.innerHTML = sortedCats.map(function(cat) {
+      var items = cats[cat];
+      return '<div class="plugins-cat-group">' +
+        '<div class="plugins-cat-label">' + escHtml(cat) +
+          '<span class="plugins-cat-count">' + items.length + '</span>' +
+        '</div>' +
+        '<div class="plugins-card-grid">' +
+          items.map(function(p) { return _pluginCardHtml(toolId, p, isVscode); }).join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
 
   // Update count badge
   var countId = toolId === 'pip-packages' ? 'plugins-pip-count' : 'plugins-vscode-count';
@@ -3537,6 +4049,7 @@ function _renderPluginSection(toolId) {
     .then(function(r) { return r.json(); })
     .then(function(d) { _applyPluginStatus(toolId, d.packages || []); })
     .catch(function() {
+      sectionEl.querySelectorAll('.plugin-status-cell').forEach(function(el) { el.innerHTML = ''; });
       sectionEl.querySelectorAll('.plugin-card-actions').forEach(function(el) {
         el.innerHTML = '<span style="font-size:0.65rem;color:var(--danger)">unavailable</span>';
       });
@@ -3545,27 +4058,35 @@ function _renderPluginSection(toolId) {
 
 function _applyPluginStatus(toolId, packages) {
   packages.forEach(function(p) {
-    var pkgKey = encodeURIComponent(p.id || p.name);
-    var actEl  = document.getElementById(_pkgActId(toolId, pkgKey));
-    var cardEl = document.getElementById('plcard-' + _pkgActId(toolId, pkgKey));
+    var pkgKey  = encodeURIComponent(p.id || p.name);
+    var actId   = _pkgActId(toolId, pkgKey);
+    var actEl   = document.getElementById(actId);
+    var cardEl  = document.getElementById('plcard-' + actId);
+    // Present only in the list-view table, where Status and Actions are split
+    // into two columns. In Card view this is null and the badge lives inline.
+    var statEl  = document.getElementById('plstatus-' + actId);
     if (!actEl) return;
 
     if (p.installed) {
       if (cardEl) cardEl.classList.add('plugin-card-installed');
       var ver = escHtml(p.installed_version || 'Installed');
-      actEl.innerHTML =
-        '<span class="badge badge-success plugin-installed-badge">' + ver + '</span>' +
-        '<button class="btn btn-ghost btn-sm plugin-action-btn" style="color:var(--danger)" ' +
+      var badge  = '<span class="badge badge-success plugin-installed-badge">' + ver + '</span>';
+      var button =
+        '<button class="btn btn-danger btn-sm plugin-action-btn" ' +
           'onclick="removePkg(\'' + escJs(toolId) + '\',\'' + pkgKey + '\',\'' + escJs(p.name || '') + '\',this)">' +
           'Remove' +
         '</button>';
+      if (statEl) { statEl.innerHTML = badge; actEl.innerHTML = button; }
+      else        { actEl.innerHTML = badge + button; }
     } else {
       if (cardEl) cardEl.classList.remove('plugin-card-installed');
-      actEl.innerHTML =
+      var installBtn =
         '<button class="btn btn-primary btn-sm plugin-action-btn" ' +
           'onclick="installPkg(\'' + escJs(toolId) + '\',\'' + pkgKey + '\',\'' + escJs(p.name || '') + '\',this)">' +
           'Install' +
         '</button>';
+      if (statEl) { statEl.innerHTML = '<span class="badge badge-gray">Available</span>'; actEl.innerHTML = installBtn; }
+      else        { actEl.innerHTML = installBtn; }
     }
   });
 }

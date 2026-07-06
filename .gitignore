@@ -1,9 +1,6 @@
 # Logs
 *.log
 
-# dso-jenkins-lib per-network config (the .example is tracked; the real one is not)
-/dso-ci.properties
-
 # Build output
 /build/
 /out/
@@ -55,6 +52,9 @@ reports/
 # Share bundles as .zip files instead of committing this directory.
 user-packages/
 mintty*.png
+
+# In-progress resumable uploads (temp chunk assembly; reaped on TTL)
+.devkit-uploads/
 
 # Claude Code
 CLAUDE.md

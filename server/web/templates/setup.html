@@ -125,9 +125,25 @@
   font-size: .875rem;
   color: var(--text-muted);
   line-height: 1.6;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   animation: fadeUp .4s .20s both;
 }
+
+/* ─── detected platform pill ──────────────────────────────────── */
+.setup-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .8rem;
+  color: var(--text-muted);
+  background: var(--surface-2, rgba(148, 163, 184, .12));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .35rem .7rem;
+  margin-bottom: 2rem;
+  animation: fadeUp .4s .22s both;
+}
+.setup-platform strong { color: var(--text-primary); font-weight: 600; }
 
 /* ─── divider ─────────────────────────────────────────────────── */
 .setup-divider {
@@ -315,6 +331,12 @@
     <div class="setup-sub">
       This takes 30 seconds. Tell us about your team and optionally connect a
       config repository so everyone on your team stays in sync automatically.
+    </div>
+
+    <!-- Detected platform -->
+    <div class="setup-platform">
+      <img src="/static/img/{{.OSIcon}}" class="os-icon-sm" alt="{{.OSLabel}}">
+      <span>Detected platform: <strong>{{.OSLabel}}</strong></span>
     </div>
 
     <!-- Identity -->

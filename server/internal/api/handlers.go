@@ -2,7 +2,6 @@ package api
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -26,6 +25,7 @@ import (
 	devconfig "github.com/nimzshafie/airgap-devkit/server/internal/config"
 	"github.com/nimzshafie/airgap-devkit/server/internal/export"
 	"github.com/nimzshafie/airgap-devkit/server/internal/team"
+	"github.com/nimzshafie/airgap-devkit/server/internal/timefmt"
 	"github.com/nimzshafie/airgap-devkit/server/internal/tools"
 )
 
@@ -35,16 +35,20 @@ const nonceKey ctxKey = iota
 
 // Shared literals used across the api package.
 const (
-	pathSetup     = "/setup"
-	pathAPIPrefix = "/api/prefix"
-	pathAPILayout = "/api/layout"
+	pathSetup       = "/setup"
+	pathAPIPrefix   = "/api/prefix"
+	pathAPILayout   = "/api/layout"
+	pathAPIProfiles = "/api/profiles"
 
 	errToolNotFound = "tool not found"
 	errInvalidBody  = "invalid body"
+	errSaveConfig   = "failed to save config: "
 
 	devkitDirName     = "airgap-cpp-devkit"
 	devToolsDir       = "dev-tools"
 	devkitJSONFile    = "devkit.json"
+	setupScriptName   = "setup.sh"
+	userPackagesDir   = "user-packages"
 	headerContentType = "Content-Type"
 	mimeJSON          = "application/json"
 	noneLabel         = "(none)"
@@ -74,6 +78,7 @@ type Server struct {
 	Config      devconfig.Config
 	webFS       fs.FS
 	token       string
+	startTime   time.Time
 
 	mu            sync.RWMutex
 	allTools      []tools.Tool
@@ -106,6 +111,9 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 		return nil, err
 	}
 
+	// Apply the persisted timestamp style before any page renders.
+	timefmt.SetFormat(cfg.TimeFormat)
+
 	tok, err := loadOrCreateToken(repoRoot)
 	if err != nil {
 		return nil, fmt.Errorf("auth token: %w", err)
@@ -124,6 +132,7 @@ func New(repoRoot, prebuiltDir, currentOS string, cfg devconfig.Config, webFS fs
 		Config:      cfg,
 		webFS:       webFS,
 		token:       tok,
+		startTime:   time.Now(),
 		allTools:    loaded,
 		prefix:      detectPrefix(currentOS),
 		profiles:    defaultProfiles(repoRoot, allIDs),
@@ -201,6 +210,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/", s.handleDashboard)
 	r.Get("/logs", s.handleLogs)
 	r.Get("/health", s.handleHealth)
+	r.Get("/status", s.handleStatusPage)
+	r.Get("/api-docs", s.handleAPIDocs)
 	r.Get("/api/network", s.handleNetworkStatus)
 	r.Get("/api/updates", s.handleCheckUpdates)
 	r.Get("/api/update-history", s.handleUpdateHistory)
@@ -216,10 +227,11 @@ func (s *Server) Routes() http.Handler {
 	r.Delete(pathAPIPrefix, s.handleResetPrefix)
 	r.Get("/api/export", s.handleExport)
 	r.Post("/api/import", s.handleImport)
-	r.Get("/api/profiles", s.handleGetProfiles)
-	r.Post("/api/profiles", s.handleSaveProfile)
+	r.Get(pathAPIProfiles, s.handleGetProfiles)
+	r.Post(pathAPIProfiles, s.handleSaveProfile)
 	r.Delete("/api/profiles/{id}", s.handleDeleteProfile)
 	r.Post("/api/config", s.handleSaveConfig)
+	r.Post("/api/time-format", s.handleSaveTimeFormat)
 	r.Get("/api/team/status", s.handleTeamStatus)
 	r.Post("/api/team/sync", s.handleTeamSync)
 	r.Get("/install/{id}", s.handleInstall)
@@ -232,7 +244,14 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/api/tool/{id}/packages/status", s.handleBundlePackageStatus)
 	r.Get("/install-pkg/{id}/{pkg}", s.handleInstallPackage)
 	r.Get("/remove-pkg/{id}/{pkg}", s.handleRemovePackage)
-	r.Post("/packages/upload", s.handlePackageUpload)
+	// Resumable chunked upload (tus protocol). The handler owns every method
+	// under this prefix (POST create, PATCH chunk, HEAD offset, DELETE abort).
+	if tush := s.tusHandler(); tush != nil {
+		r.Handle("/packages/upload", tush)
+		r.Handle("/packages/upload/*", tush)
+	}
+	r.Get("/packages/upload-config", s.handleUploadConfig)
+	r.Post("/packages/import", s.handlePackageImport)
 	r.Delete("/packages/{id}", s.handlePackageDelete)
 	r.Get(pathAPILayout, s.handleGetLayout)
 	r.Post(pathAPILayout, s.handleSaveLayout)
@@ -492,7 +511,7 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	if err := devconfig.Save(s.RepoRoot, cfg); err != nil {
-		jsonErr(w, "failed to save config: "+err.Error(), 500)
+		jsonErr(w, errSaveConfig+err.Error(), 500)
 		return
 	}
 	if repoChanged && body.TeamConfigRepo != "" {
@@ -502,6 +521,49 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 		go s.syncTeamConfig()
 	}
 	jsonOK(w, map[string]any{"ok": true})
+}
+
+// handleSaveTimeFormat persists the chosen timestamp style and applies it
+// immediately, so every subsequently rendered page and API response uses it.
+func (s *Server) handleSaveTimeFormat(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Format string `json:"format"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonErr(w, errInvalidBody, 400)
+		return
+	}
+	valid := false
+	for _, f := range timefmt.Formats() {
+		if f.ID == body.Format {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		jsonErr(w, "unknown time format", 400)
+		return
+	}
+	s.mu.Lock()
+	s.Config.TimeFormat = body.Format
+	cfg := s.Config
+	s.mu.Unlock()
+
+	if err := devconfig.Save(s.RepoRoot, cfg); err != nil {
+		jsonErr(w, errSaveConfig+err.Error(), 500)
+		return
+	}
+	timefmt.SetFormat(body.Format)
+	jsonOK(w, map[string]any{"ok": true, "format": body.Format})
+}
+
+// timeFormatID resolves a stored (possibly empty) format id to the concrete id
+// the dashboard should show as selected.
+func timeFormatID(stored string) string {
+	if stored == "" {
+		return timefmt.DefaultID
+	}
+	return stored
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -541,9 +603,28 @@ func (s *Server) installEnv(t tools.Tool) []string {
 }
 
 func osLabel(goos string) string {
-	if goos != "windows" {
+	switch goos {
+	case "windows":
+		return windowsLabel()
+	case "darwin":
+		if v := macOSVersion(); v != "" {
+			return "macOS " + v
+		}
+		return "macOS"
+	case "linux":
+		if pretty := osReleaseField("PRETTY_NAME"); pretty != "" {
+			return pretty
+		}
+		if name := osReleaseField("NAME"); name != "" {
+			return name
+		}
+		return "Linux"
+	default:
 		return goos
 	}
+}
+
+func windowsLabel() string {
 	productName := "Windows"
 	displayVersion := ""
 
@@ -565,6 +646,93 @@ func osLabel(goos string) string {
 		return productName + " " + displayVersion
 	}
 	return productName
+}
+
+func macOSVersion() string {
+	out, err := exec.Command("sw_vers", "-productVersion").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// osIcon returns the logo filename (under /static/img) that best represents the
+// running OS. On Linux it identifies the distribution from /etc/os-release,
+// falling back to a related family via ID_LIKE and finally to a generic Tux.
+func osIcon(goos string) string {
+	switch goos {
+	case "windows":
+		return "windows.png"
+	case "darwin":
+		return "macos.svg"
+	case "linux":
+		id, idLike := linuxDistroID()
+		if icon := distroIcon(id); icon != "" {
+			return icon
+		}
+		for _, like := range strings.Fields(idLike) {
+			if icon := distroIcon(like); icon != "" {
+				return icon
+			}
+		}
+		return "linux.png"
+	default:
+		return "linux.png"
+	}
+}
+
+// distroIcon maps an /etc/os-release ID (or ID_LIKE token) to a logo filename.
+// Returns "" when the id is unknown so the caller can fall back.
+func distroIcon(id string) string {
+	switch id {
+	case "rhel", "redhat", "redhatenterpriseserver":
+		return "rhel.svg"
+	case "rocky":
+		return "rocky.svg"
+	case "almalinux", "alma":
+		return "almalinux.svg"
+	case "centos":
+		return "centos.svg"
+	case "fedora":
+		return "fedora.svg"
+	case "ubuntu":
+		return "ubuntu.svg"
+	case "debian":
+		return "debian.svg"
+	case "linuxmint", "mint":
+		return "mint.svg"
+	case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "opensuse-microos":
+		return "opensuse.svg"
+	case "sles", "sles_sap", "sled", "suse":
+		return "suse.svg"
+	case "arch", "archlinux":
+		return "arch.svg"
+	case "alpine":
+		return "alpine.svg"
+	}
+	return ""
+}
+
+func linuxDistroID() (id, idLike string) {
+	return strings.ToLower(osReleaseField("ID")), strings.ToLower(osReleaseField("ID_LIKE"))
+}
+
+// osReleaseField reads a single field from /etc/os-release (falling back to the
+// /usr/lib copy). Surrounding quotes are stripped.
+func osReleaseField(key string) string {
+	for _, p := range []string{"/etc/os-release", "/usr/lib/os-release"} {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
+			if ok && k == key {
+				return strings.Trim(strings.TrimSpace(v), `"'`)
+			}
+		}
+	}
+	return ""
 }
 
 func detectPrefix(currentOS string) string {
@@ -702,12 +870,15 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"TotalCount":     len(ts),
 		"OS":             s.OS,
 		"OSLabel":        osLabel(s.OS),
+		"OSIcon":         osIcon(s.OS),
 		"Prefix":         s.currentPrefix(),
 		"Hostname":       hostname,
 		"OSUsername":     osUsername,
 		"Privilege":      privilege,
 		"Year":           time.Now().Year(),
 		"AppVersion":     AppVersion,
+		"TimeFormats":    timefmt.Formats(),
+		"TimeFormat":     timeFormatID(s.Config.TimeFormat),
 	}
 
 	if err := renderTemplate(s.webFS, "dashboard.html", w, r, data); err != nil {
@@ -1320,7 +1491,7 @@ func (s *Server) handleToolLogList(w http.ResponseWriter, r *http.Request) {
 		// Parse timestamp from filename 20060102-150405.log
 		ts := strings.TrimSuffix(e.Name(), ".log")
 		if t, err := time.ParseInLocation("20060102-150405", ts, time.UTC); err == nil {
-			ts = t.Format("Jan 02, 2006 15:04:05 UTC")
+			ts = timefmt.Display(t)
 		}
 		logs = append(logs, logEntry{File: e.Name(), Size: sz, Time: ts})
 	}
@@ -1452,11 +1623,11 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 }
 
 // ─── Package upload ──────────────────────────────────────────────────────────
-
-const (
-	maxZipUncompressed = 256 << 20 // 256 MB
-	maxZipSingleEntry  = 64 << 20  // 64 MB
-)
+//
+// The upload transport (resumable chunked upload via tus, plus the localhost
+// import-from-disk path) lives in upload.go. This file keeps the shared
+// archive-handling primitives — slug/name sanitisation, streaming extraction,
+// and manifest generation — that both intake paths converge on.
 
 var reSlug = regexp.MustCompile(`[^a-z0-9\-]`)
 
@@ -1473,101 +1644,11 @@ func slugify(name string) string {
 	return strings.Trim(s, "-")
 }
 
-const maxUploadBytes = 300 << 20 // 300 MB request cap
-
-func (s *Server) handlePackageUpload(w http.ResponseWriter, r *http.Request) {
-	// Cap the whole request body, then keep only a small slice in memory and
-	// spool the rest to a temp file rather than buffering the full upload in RAM.
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
-	if err := r.ParseMultipartForm(16 << 20); err != nil {
-		jsonErr(w, "request too large or not multipart", 400)
-		return
-	}
-	file, header, err := r.FormFile("package")
-	if err != nil {
-		jsonErr(w, "missing 'package' file field", 400)
-		return
-	}
-	defer file.Close()
-
-	if !strings.HasSuffix(strings.ToLower(header.Filename), ".zip") {
-		jsonErr(w, "only .zip packages are supported", 400)
-		return
-	}
-
-	zr, code, errMsg := readValidatedZip(file)
-	if errMsg != "" {
-		jsonErr(w, errMsg, code)
-		return
-	}
-
-	// Derive tool ID from filename: "My Tool 1.2.zip" → "my-tool"
-	base := strings.TrimSuffix(filepath.Base(header.Filename), ".zip")
-	toolID := slugify(base)
-	if toolID == "" {
-		toolID = "user-package"
-	}
-
-	destDir := filepath.Join(s.RepoRoot, "user-packages", toolID)
-	if err := os.MkdirAll(destDir, 0o750); err != nil {
-		jsonErr(w, "cannot create package dir: "+err.Error(), 500)
-		return
-	}
-
-	if code, errMsg := extractZipTo(zr, destDir); errMsg != "" {
-		jsonErr(w, errMsg, code)
-		return
-	}
-
-	uploadedBy := currentOSUsername()
-	uploadedAt := time.Now().UTC().Format("2006-01-02 15:04 UTC")
-
-	devkitJSON := filepath.Join(destDir, devkitJSONFile)
-	writeDefaultPackageManifest(devkitJSON, destDir, toolID, base, uploadedBy, uploadedAt)
-	sanitizePackageManifest(devkitJSON, toolID, uploadedBy, uploadedAt)
-
-	// Reload tool list
-	s.mu.Lock()
-	if loaded, err := tools.Load(s.RepoRoot); err == nil {
-		s.allTools = loaded
-	}
-	s.mu.Unlock()
-
-	jsonOK(w, map[string]any{
-		"ok":      true,
-		"id":      toolID,
-		"name":    base,
-		"message": fmt.Sprintf("Package '%s' uploaded and registered as tool '%s'", base, toolID),
-	})
-}
-
-// readValidatedZip reads the uploaded file fully, opens it as a zip archive,
-// and enforces the total uncompressed-size limit. On failure it returns an HTTP
-// status code and message; on success errMsg is "".
-func readValidatedZip(file io.Reader) (zr *zip.Reader, code int, errMsg string) {
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return nil, 500, "failed to read upload: " + err.Error()
-	}
-	zr, err = zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return nil, 400, "invalid zip: " + err.Error()
-	}
-	var totalUncompressed uint64
-	for _, f := range zr.File {
-		totalUncompressed += f.UncompressedSize64
-	}
-	if totalUncompressed > maxZipUncompressed {
-		return nil, 400, fmt.Sprintf("zip expands to %.0f MB which exceeds the %.0f MB limit",
-			float64(totalUncompressed)/(1<<20), float64(maxZipUncompressed)/(1<<20))
-	}
-	return zr, 0, ""
-}
-
 // extractZipTo unpacks the archive into destDir, guarding against path
-// traversal. Returns an HTTP status and message on a fatal error (errMsg == ""
-// on success); unreadable individual entries are skipped.
-func extractZipTo(zr *zip.Reader, destDir string) (code int, errMsg string) {
+// traversal. maxEntry caps each individual file. Returns an HTTP status and
+// message on a fatal error (errMsg == "" on success); unreadable individual
+// entries are skipped.
+func extractZipTo(zr *zip.Reader, destDir string, maxEntry int64) (code int, errMsg string) {
 	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
 	for _, f := range zr.File {
 		target := filepath.Join(destDir, filepath.Clean(f.Name))
@@ -1579,7 +1660,7 @@ func extractZipTo(zr *zip.Reader, destDir string) (code int, errMsg string) {
 			_ = os.MkdirAll(target, 0o750)
 			continue
 		}
-		if code, errMsg := extractZipEntry(f, target); errMsg != "" {
+		if code, errMsg := extractZipEntry(f, target, maxEntry); errMsg != "" {
 			return code, errMsg
 		}
 	}
@@ -1587,9 +1668,8 @@ func extractZipTo(zr *zip.Reader, destDir string) (code int, errMsg string) {
 }
 
 // extractZipEntry writes a single zip file entry to target, capping the size at
-// maxZipSingleEntry. Unreadable entries are skipped (errMsg ""); a size overrun
-// is fatal.
-func extractZipEntry(f *zip.File, target string) (code int, errMsg string) {
+// maxEntry. Unreadable entries are skipped (errMsg ""); a size overrun is fatal.
+func extractZipEntry(f *zip.File, target string, maxEntry int64) (code int, errMsg string) {
 	_ = os.MkdirAll(filepath.Dir(target), 0o750)
 	rc, err := f.Open()
 	if err != nil {
@@ -1600,20 +1680,25 @@ func extractZipEntry(f *zip.File, target string) (code int, errMsg string) {
 	if err != nil {
 		return 0, ""
 	}
-	n, cpErr := io.Copy(out, io.LimitReader(rc, maxZipSingleEntry))
+	n, cpErr := io.Copy(out, io.LimitReader(rc, maxEntry))
 	out.Close()
-	if cpErr != nil || n >= maxZipSingleEntry {
+	if cpErr != nil || n >= maxEntry {
 		os.Remove(target)
 		return 400, "zip entry exceeds maximum allowed size"
 	}
 	return 0, ""
 }
 
-// writeDefaultPackageManifest generates a devkit.json and minimal setup.sh for
-// a user-uploaded package when the archive did not include its own devkit.json.
-func writeDefaultPackageManifest(devkitJSON, destDir, toolID, base, uploadedBy, uploadedAt string) {
-	if _, err := os.Stat(devkitJSON); !os.IsNotExist(err) {
-		return
+// ensurePackageManifest guarantees destDir holds a valid devkit.json. A
+// well-formed manifest bundled in the archive is left untouched; a missing or
+// unparseable one is replaced with a generated default so the package always
+// registers even when its bundled manifest is malformed.
+func ensurePackageManifest(devkitJSON, toolID, base, uploadedBy, uploadedAt string) {
+	if raw, err := os.ReadFile(devkitJSON); err == nil {
+		var probe map[string]any
+		if json.Unmarshal(raw, &probe) == nil {
+			return // valid manifest provided — keep it
+		}
 	}
 	manifest := map[string]any{
 		"id":           toolID,
@@ -1622,7 +1707,7 @@ func writeDefaultPackageManifest(devkitJSON, destDir, toolID, base, uploadedBy, 
 		"category":     "Developer Tools",
 		"platform":     "both",
 		"description":  "User-uploaded package: " + base,
-		"setup":        "setup.sh",
+		"setup":        setupScriptName,
 		"receipt_name": toolID,
 		"source":       "user",
 		"uploaded_by":  uploadedBy,
@@ -1630,23 +1715,84 @@ func writeDefaultPackageManifest(devkitJSON, destDir, toolID, base, uploadedBy, 
 	}
 	mjson, _ := json.MarshalIndent(manifest, "", "  ")
 	_ = os.WriteFile(devkitJSON, mjson, 0o600)
+}
 
-	setupSh := filepath.Join(destDir, "setup.sh")
-	setupContent := fmt.Sprintf(`#!/usr/bin/env bash
-set -euo pipefail
-TOOL_DIR="${INSTALL_PREFIX}"
-mkdir -p "$TOOL_DIR"
+// ensurePackageSetup guarantees the installer referenced by the manifest exists.
+// A package that ships its own setup script is left as-is; when the referenced
+// script is missing, a robust default is generated. Generation is independent
+// of manifest generation so a package that bundles one file but not the other
+// still ends up with both.
+func ensurePackageSetup(destDir, devkitJSON, toolID, base string) {
+	setupName := setupScriptName
+	if raw, err := os.ReadFile(devkitJSON); err == nil {
+		var meta map[string]any
+		if json.Unmarshal(raw, &meta) == nil {
+			if s, ok := meta["setup"].(string); ok && strings.TrimSpace(s) != "" {
+				setupName = s
+			}
+		}
+	}
+	// Keep the resolved script inside the package directory.
+	target := filepath.Join(destDir, filepath.Clean(setupName))
+	safeRoot := filepath.Clean(destDir) + string(os.PathSeparator)
+	if !strings.HasPrefix(target, safeRoot) {
+		target = filepath.Join(destDir, setupScriptName)
+	}
+	if _, err := os.Stat(target); err == nil {
+		return // installer provided by the package
+	}
+	_ = os.MkdirAll(filepath.Dir(target), 0o750)
+	_ = os.WriteFile(target, []byte(generatedSetupScript(toolID, base)), 0o755)
+}
+
+// generatedSetupScript builds the fallback installer for a user-uploaded
+// package. It installs into a per-user location and degrades gracefully so it
+// never requires administrator rights: it honours the prefix the devkit passes
+// in, falls back to a user directory when that prefix is unset, and falls back
+// again to $HOME if the chosen directory cannot be created (e.g. an admin-owned
+// prefix the user cannot write to).
+func generatedSetupScript(toolID, base string) string {
+	return fmt.Sprintf(`#!/usr/bin/env bash
+# Auto-generated installer for the user-uploaded package %q.
+# Installs per-user; no administrator rights required.
+set -eo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cp -r "$SCRIPT_DIR/"* "$TOOL_DIR/" 2>/dev/null || true
+
+# 1) Honour the prefix the devkit provides; otherwise pick a per-user default.
+TOOL_DIR="${INSTALL_PREFIX:-}"
+if [ -z "$TOOL_DIR" ]; then
+  BASE="${LOCALAPPDATA:-$HOME/.local/share}"
+  BASE="${BASE//\\//}"
+  TOOL_DIR="$BASE/airgap-cpp-devkit/%s"
+fi
+
+# 2) If that location cannot be created, fall back to the user's home so the
+#    install still succeeds without elevation.
+if ! mkdir -p "$TOOL_DIR" 2>/dev/null; then
+  TOOL_DIR="$HOME/.local/share/airgap-cpp-devkit/%s"
+  mkdir -p "$TOOL_DIR"
+fi
+
+# 3) Copy the package payload, skipping generated metadata and this installer.
+shopt -s dotglob nullglob
+for entry in "$SCRIPT_DIR"/*; do
+  case "$(basename "$entry")" in
+    setup.sh|devkit.json|INSTALL_LOG.txt|INSTALL_RECEIPT.txt) continue ;;
+  esac
+  cp -r "$entry" "$TOOL_DIR/" 2>/dev/null || true
+done
+shopt -u dotglob nullglob
+
 {
   echo "Status: success"
   echo "Version: 1.0.0"
   echo "Installed-At: $(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
   echo "Install-Path: $TOOL_DIR"
 } > "$TOOL_DIR/INSTALL_LOG.txt"
+
 echo "✓ %s installed to $TOOL_DIR"
-`, base)
-	_ = os.WriteFile(setupSh, []byte(setupContent), 0o755)
+`, base, toolID, toolID, base)
 }
 
 // sanitizePackageManifest re-reads the devkit.json (auto-generated or
@@ -1695,7 +1841,7 @@ func sanitizePackageItems(pkgs []any) {
 
 func (s *Server) handlePackageDelete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	userPkgRoot := filepath.Clean(filepath.Join(s.RepoRoot, "user-packages"))
+	userPkgRoot := filepath.Clean(filepath.Join(s.RepoRoot, userPackagesDir))
 	destDir := filepath.Join(userPkgRoot, id)
 	if !strings.HasPrefix(destDir, userPkgRoot+string(os.PathSeparator)) {
 		jsonErr(w, "invalid package id", 400)
@@ -1725,9 +1871,16 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type setupData struct {
-		Config devconfig.Config
+		Config  devconfig.Config
+		OSIcon  string
+		OSLabel string
 	}
-	if err := renderTemplate(s.webFS, "setup.html", w, r, setupData{Config: s.Config}); err != nil {
+	data := setupData{
+		Config:  s.Config,
+		OSIcon:  osIcon(s.OS),
+		OSLabel: osLabel(s.OS),
+	}
+	if err := renderTemplate(s.webFS, "setup.html", w, r, data); err != nil {
 		http.Error(w, err.Error(), 500)
 	}
 }
@@ -1762,7 +1915,7 @@ func (s *Server) handleSaveSetup(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	if err := devconfig.Save(s.RepoRoot, cfg); err != nil {
-		jsonErr(w, "failed to save config: "+err.Error(), 500)
+		jsonErr(w, errSaveConfig+err.Error(), 500)
 		return
 	}
 

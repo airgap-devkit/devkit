@@ -22,6 +22,10 @@ var (
 	rePkgVersion = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.+!_-]*$`)
 )
 
+// execCommand is a seam over exec.Command so the pip/VS Code shell-outs can be
+// exercised in tests without a real Python or `code` binary.
+var execCommand = exec.Command
+
 func validPkgSpec(name, version string) bool {
 	if !rePkgName.MatchString(name) {
 		return false
@@ -196,7 +200,7 @@ func pipPython(prefix string) string {
 // using the same Python environment as pipInstallOne so results are consistent.
 func pipInstalledMap(prefix string) map[string]string {
 	py := pipPython(prefix)
-	out, err := exec.Command(py, "-m", "pip", "list", "--format=json").Output()
+	out, err := execCommand(py, "-m", "pip", "list", "--format=json").Output()
 	if err != nil {
 		return map[string]string{}
 	}
@@ -232,11 +236,11 @@ func pipInstallOne(sse *sseWriter, p *tools.PackageItem, prefix, prebuiltDir str
 	var cmd *exec.Cmd
 	if _, err := os.Stat(vendorDir); err == nil {
 		sse.Send(fmt.Sprintf("==> Installing %s from local vendor...", spec))
-		cmd = exec.Command(py, "-m", "pip", "install",
+		cmd = execCommand(py, "-m", "pip", "install",
 			"--find-links="+vendorDir, "--no-index", "--quiet", "--", spec)
 	} else {
 		sse.Send(fmt.Sprintf("==> Installing %s ...", spec))
-		cmd = exec.Command(py, "-m", "pip", "install", "--quiet", "--", spec)
+		cmd = execCommand(py, "-m", "pip", "install", "--quiet", "--", spec)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -260,7 +264,7 @@ func pipRemoveOne(sse *sseWriter, p *tools.PackageItem, prefix string) {
 		return
 	}
 	sse.Send(fmt.Sprintf("==> Removing %s ...", p.Name))
-	cmd := exec.Command(py, "-m", "pip", "uninstall", "-y", "--", p.Name)
+	cmd := execCommand(py, "-m", "pip", "uninstall", "-y", "--", p.Name)
 	out, err := cmd.CombinedOutput()
 	if len(out) > 0 {
 		sse.Send(strings.TrimSpace(string(out)))
@@ -278,7 +282,7 @@ func pipRemoveOne(sse *sseWriter, p *tools.PackageItem, prefix string) {
 
 // vsCodeInstalledSet returns a set of lowercase extension IDs that are installed.
 func vsCodeInstalledSet() map[string]bool {
-	out, err := exec.Command("code", "--list-extensions").Output()
+	out, err := execCommand("code", "--list-extensions").Output()
 	if err != nil {
 		return map[string]bool{}
 	}
@@ -332,10 +336,10 @@ func vscodeInstallOne(sse *sseWriter, p *tools.PackageItem, prebuiltDir string) 
 	switch {
 	case vsixPath != "":
 		sse.Send("    Source: " + vsixPath)
-		cmd = exec.Command("code", "--install-extension", vsixPath, "--force")
+		cmd = execCommand("code", "--install-extension", vsixPath, "--force")
 	case p.ID != "":
 		sse.Send("    Note: .vsix not found locally — using extension ID (requires internet)")
-		cmd = exec.Command("code", "--install-extension", p.ID, "--force")
+		cmd = execCommand("code", "--install-extension", p.ID, "--force")
 	default:
 		sse.Send(errLinePrefix + "no vsix file or extension ID available")
 		sse.Done("failed")
@@ -362,7 +366,7 @@ func vscodeRemoveOne(sse *sseWriter, p *tools.PackageItem) {
 		return
 	}
 	sse.Send(fmt.Sprintf("==> Uninstalling extension: %s (%s)", p.Name, p.ID))
-	cmd := exec.Command("code", "--uninstall-extension", p.ID)
+	cmd := execCommand("code", "--uninstall-extension", p.ID)
 	out, err := cmd.CombinedOutput()
 	if len(out) > 0 {
 		sse.Send(strings.TrimSpace(string(out)))

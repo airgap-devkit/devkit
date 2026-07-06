@@ -4,15 +4,10 @@
 // Requires: Pipeline Utility Steps plugin, Credentials Binding plugin,
 //           AnsiColor plugin (optional), linux + windows agent labels.
 //
-// Shared CI backbone: this pipeline opts into the dso-suite Jenkins shared
-// library for offline version stamping (computeVersion), build naming
-// (stampBuild), integrity manifests (sha256Manifest) and config-driven
-// notifications (notify). One-time controller setup + per-network config are
-// documented in ci/jenkins/DSO-SHARED-LIBRARY.md. All library steps below are
-// guarded so a controller without the library (or without dso-ci.properties)
-// degrades gracefully instead of failing the build.
+// Self-contained pipeline: version stamping uses `git describe` and needs no
+// shared library or external controller config. Every optional step is guarded
+// so a minimal controller still runs the pipeline end to end.
 // =============================================================================
-@Library('dso-jenkins-lib@v1') _
 
 pipeline {
     agent none
@@ -165,16 +160,16 @@ pipeline {
                     writeJSON file: 'devkit.config.json', json: cfg, pretty: 2
                     echo "devkit.config.json configured: team=${cfg.team_name}, profile=${cfg.default_profile}, port=${cfg.port}"
 
-                    // Offline, network-identical version stamp + build name via the
-                    // dso shared library. Guarded so a controller without the library
-                    // never fails this stage.
+                    // Offline, network-identical version stamp from git describe.
+                    // Guarded so a shallow checkout never fails this stage.
                     try {
-                        env.BUILD_VERSION = computeVersion()
-                        stampBuild(name: "#${env.BUILD_NUMBER} — ${env.BUILD_VERSION}",
-                                   description: "profile=${params.PROFILE} os=${params.TARGET_OS}")
+                        env.BUILD_VERSION = sh(returnStdout: true,
+                            script: 'git describe --tags --always --dirty 2>/dev/null || echo unknown').trim()
+                        currentBuild.displayName = "#${env.BUILD_NUMBER} — ${env.BUILD_VERSION}"
+                        currentBuild.description  = "profile=${params.PROFILE} os=${params.TARGET_OS}"
                         echo "Build version (git-describe, offline): ${env.BUILD_VERSION}"
                     } catch (ignored) {
-                        echo "dso-jenkins-lib not available — skipping version stamp (non-fatal)."
+                        echo "git describe unavailable — skipping version stamp (non-fatal)."
                     }
                 }
                 stash name: 'devkit-config', includes: 'devkit.config.json'
@@ -439,40 +434,14 @@ pipeline {
     post {
         success {
             echo "AirGap DevKit pipeline PASSED | profile=${params.PROFILE} | os=${params.TARGET_OS} | team=${params.TEAM_NAME}"
-            node('linux') {
-                script { _dsoNotify('success', 'AIRGAP DEVKIT — BUILD PASSED') }
-            }
         }
         failure {
             echo "AirGap DevKit pipeline FAILED — review stage logs above"
-            node('linux') {
-                script { _dsoNotify('failure', 'AIRGAP DEVKIT — BUILD FAILED') }
-            }
         }
         always {
             node('linux') {
                 sh 'rm -f /tmp/dk-config.json /tmp/dk-profile.json /tmp/dk-import.json 2>/dev/null || true'
             }
         }
-    }
-}
-
-// Config-driven notification via the dso shared library. dsoConfig() reads
-// dso-ci.properties (per-network) and no-ops both email and chat when their
-// targets are blank — correct air-gapped (silent) and connected (email + chat).
-// Fully guarded: a controller without the library never fails the build.
-def _dsoNotify(String status, String heading) {
-    try {
-        checkout scm
-        notify(status: status,
-               heading: heading,
-               subject: "${heading}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-               fields: ['Job':      env.JOB_NAME,
-                        'Build':    "#${env.BUILD_NUMBER}",
-                        'Version':  env.BUILD_VERSION ?: 'n/a',
-                        'Profile':  params.PROFILE,
-                        'Target':   params.TARGET_OS])
-    } catch (ignored) {
-        echo "dso-jenkins-lib not available — skipping ${status} notification (non-fatal)."
     }
 }

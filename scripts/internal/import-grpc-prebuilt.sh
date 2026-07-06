@@ -3,19 +3,18 @@
 # =============================================================================
 # scripts/internal/import-grpc-prebuilt.sh
 #
-# Import the dso-suite prebuilt gRPC release packages into airgap-devkit's
+# Import the prebuilt gRPC release packages into airgap-devkit's
 # `prebuilt/` submodule, split into commit-friendly parts with a checksum
-# manifest. This is the documented upstream->downstream sync mechanism: the
-# dso-suite `grpc/` project is the maintainer build source; airgap-devkit ships
-# a frozen, checksummed copy so it stays independently releasable.
+# manifest. This is the documented sync mechanism: the maintainer build is the
+# source; airgap-devkit ships a frozen, checksummed copy so it stays
+# independently releasable.
 #
 # It stages the RELEASE packages for every MSVC toolset (v142/v143/v145). The
-# Debug packages are intentionally NOT shipped in the product (too large); they
-# remain upstream in dso-suite for maintainers.
+# Debug packages are intentionally NOT shipped in the product (too large).
 #
 # USAGE:
 #   bash scripts/internal/import-grpc-prebuilt.sh \
-#       --from /c/Users/n1mz/Desktop/dso-suite/grpc/dist \
+#       --from "$HOME/grpc-prebuilt/dist" \
 #       [--version 1.81.1] [--toolsets 142,143,145] [--part-size 45m] [--prune-old]
 #
 # Requires: bash, split, sha256sum, python3 (all already devkit dependencies).
@@ -30,14 +29,14 @@ source "${SCRIPT_DIR}/lib/devkit-prebuilt.sh"
 # ---------------------------------------------------------------------------
 # Defaults / args
 # ---------------------------------------------------------------------------
-FROM_DIR="${DSO_GRPC_DIST:-/c/Users/n1mz/Desktop/dso-suite/grpc/dist}"
+FROM_DIR="${GRPC_DIST_DIR:-$HOME/grpc-prebuilt/dist}"
 VERSION="1.81.1"
 TOOLSETS="142,143,145"
 PART_SIZE="45m"
 PRUNE_OLD=false
 
-# VS-version labels per toolset (keep in sync with dso-suite Check-Environment.ps1
-# and tools/frameworks/grpc/devkit.json variants).
+# VS-version labels per toolset (keep in sync with
+# tools/frameworks/grpc/Check-Environment.ps1 and devkit.json variants).
 _vs_version() {
     case "$1" in
         141) echo "Visual Studio 2017" ;;
@@ -176,7 +175,7 @@ manifest = {
     "tool": "grpc",
     "version": version,
     "source": f"https://github.com/grpc/grpc/releases/tag/v{version}",
-    "provenance": "dso-suite/grpc (maintainer prebuilt, release configuration)",
+    "provenance": "grpc (maintainer prebuilt, release configuration)",
     "platforms": platforms,
     "compression": "zip",
     "part_size_mb": 45,
