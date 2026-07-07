@@ -267,7 +267,7 @@ if [[ "${OS}" == "linux" ]]; then
     if [[ -n "${install_dir}" ]]; then
         _print_installed "lcov" "${install_dir}" "${install_dir}/INSTALL_RECEIPT.txt"
     else
-        _print_not_installed "lcov" "bash tools/build-tools/lcov/setup.sh"
+        _print_not_installed "lcov" "bash tools/toolchains/lcov/setup.sh"
     fi
 else
     _print_platform_only "lcov" "Linux"
