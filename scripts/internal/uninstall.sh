@@ -101,7 +101,7 @@ ALL_TOOL_PATHS=(
     "gcc-linux-native:toolchains/gcc/linux/native"
     "gcc-linux-cross:toolchains/gcc/linux/cross"
     "cmake:build-tools/cmake"
-    "lcov:build-tools/lcov"
+    "lcov:toolchains/lcov"
     "python:languages/python"
     "servy:dev-tools/servy"
     "vscode-extensions:dev-tools/vscode-extensions"

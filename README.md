@@ -11,7 +11,7 @@
 Air-gapped C++ developer toolkit for network-restricted environments. All tools
 work offline. All dependencies are vendored in-repo or in the `prebuilt/` submodule.
 
-**v1.3.61** — DevKit Manager is a single pre-compiled Go binary with
+**v1.3.62** — DevKit Manager is a single pre-compiled Go binary with
 built-in session token authentication and optional HTTPS. No Python, no pip,
 no runtime dependencies required to run the UI.
 
@@ -311,7 +311,7 @@ or via the API (`GET /api/prefix`, `POST /api/prefix`).
 | [`tools/toolchains/clang/source-build/`](tools/toolchains/clang/source-build/README.md) | clang-format + clang-tidy from LLVM 22.1.3; prebuilt or source build | No |
 | [`tools/build-tools/cmake/`](tools/build-tools/cmake/README.md) | CMake 4.3.1 — prebuilt or source build; RHEL 8 + Windows | No |
 | [`tools/dev-tools/git-bundle/`](tools/dev-tools/git-bundle/README.md) | Transfers Git repos with nested submodules across air-gapped boundaries | Yes |
-| [`tools/build-tools/lcov/`](tools/build-tools/lcov/README.md) | Code coverage via lcov 2.4 + gcov; vendored Perl deps included | No |
+| [`tools/toolchains/lcov/`](tools/toolchains/lcov/) | Code coverage via lcov 2.5 + gcov; vendored Perl deps included | No |
 | [`tools/languages/python/`](tools/languages/python/README.md) | Portable Python 3.14.4 — Windows embeddable + Linux standalone | No |
 | [`tools/languages/dotnet/`](tools/languages/dotnet/README.md) | Portable .NET 10 SDK 10.0.202 — Windows + Linux, no installer | No |
 | [`tools/dev-tools/vscode-extensions/`](tools/dev-tools/vscode-extensions/README.md) | Offline VS Code extensions: C/C++, C++ TestMate, Python | No |
@@ -545,7 +545,6 @@ airgap-cpp-devkit/
 |
 +-- tools/                                 <- SUBMODULE (airgap-devkit/tools)
     +-- build-tools/cmake/
-    +-- build-tools/lcov/
     +-- dev-tools/
     +-- frameworks/grpc/
     +-- languages/

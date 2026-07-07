@@ -20,7 +20,7 @@
 #   - tools/toolchains/llvm   (clang-format + clang-tidy 22.1.4)
 #   - cmake                   4.3.2
 #   - python                  3.14.4  (portable interpreter)
-#   - lcov                    2.4  (Linux only)
+#   - lcov                    2.5  (Linux only)
 #   - style-formatter         pre-commit hook
 #
 # OPTIONAL tools (prompted, or selected via --profile):
@@ -141,7 +141,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo "    [2] cmake                    4.3.2"
     echo "    [3] python                   3.14.4 (portable interpreter)"
     if [[ "${OS}" == "linux" ]]; then
-    echo "    [4] lcov                     2.4 (Linux only)"
+    echo "    [4] lcov                     2.5 (Linux only)"
     fi
     echo "    [5] style-formatter          pre-commit hook"
     echo ""
@@ -316,7 +316,7 @@ if [[ "${AUTO_YES}" == "false" ]]; then
     echo ""
     echo "  Tools to install:"
     echo "    [OK] tools/toolchains/llvm, cmake 4.3.2, python 3.14.4, style-formatter"
-    [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.4"
+    [[ "${OS}" == "linux" ]]              && echo "    [OK] lcov 2.5"
     [[ "${INSTALL_SERVY}"   == "true" ]]  && echo "    [OK] servy 7.9 (Windows only)"
     [[ "${INSTALL_CONAN}"   == "true" ]]  && echo "    [OK] conan 2.30.0"
     [[ "${INSTALL_VSCODE}"  == "true" ]]  && echo "    [OK] tools/dev-tools/vscode-extensions"
@@ -523,9 +523,9 @@ _run_bootstrap "python" \
 # ---------------------------------------------------------------------------
 if [[ "${OS}" == "linux" ]]; then
     echo ""
-    echo "  [5/13] Installing lcov 2.4 (required on Linux)..."
+    echo "  [5/13] Installing lcov 2.5 (required on Linux)..."
     _run_bootstrap "lcov" \
-        "${REPO_ROOT}/tools/build-tools/lcov/setup.sh"
+        "${REPO_ROOT}/tools/toolchains/lcov/setup.sh"
 else
     echo ""
     echo "  [5/13] lcov -- skipped (Linux only)"

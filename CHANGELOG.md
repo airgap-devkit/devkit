@@ -11,6 +11,31 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.62] — 2026-07-06
+
+### Changed
+
+#### lcov — updated 2.4 → 2.5 and de-duplicated
+- Bumped **lcov 2.4 → 2.5** (`linux-test-project/lcov` v2.5). The prebuilt now
+  ships the repacked 2.5 source tree, the upstream `noarch` RPM, and the
+  carried-forward vendored Perl dependency (`Capture::Tiny`).
+- lcov 2.5 restructured its docs to Sphinx and made `make install` depend on a
+  doc rebuild. The vendored source tree is patched so `install` no longer
+  invokes Sphinx and installs the prebuilt man pages shipped under
+  `docs/_build/man/` — preserving the fully offline install on RHEL 8.
+
+### Fixed
+
+#### Removed duplicate lcov tool definition
+- lcov was defined twice (`tools/build-tools/lcov/` **and**
+  `tools/toolchains/lcov/`), which produced a duplicate row in the update
+  report and caused `apply-tool-update.sh` to target the wrong directory. The
+  redundant `build-tools/lcov/` copy is removed; `toolchains/lcov/` is now the
+  single source of truth. Installer, status, uninstall, README, and TOOLS docs
+  all point at it.
+
+---
+
 ## [1.3.61] — 2026-07-06
 
 ### Added

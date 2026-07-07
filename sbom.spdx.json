@@ -2,7 +2,7 @@
   "SPDXID": "SPDXRef-DOCUMENT",
   "spdxVersion": "SPDX-2.3",
   "creationInfo": {
-    "created": "2026-07-04T19:36:55Z",
+    "created": "2026-07-07T03:20:18Z",
     "creators": [
       "Organization: airgap-cpp-devkit",
       "Tool: airgap-cpp-devkit/scripts/internal/generate-sbom.sh"
@@ -635,7 +635,7 @@
     {
       "SPDXID": "SPDXRef-toolchains-lcov",
       "name": "toolchains/lcov",
-      "versionInfo": "2.4",
+      "versionInfo": "2.5",
       "supplier": "Organization: airgap-cpp-devkit",
       "downloadLocation": "https://airgap-cpp-devkit.internal",
       "filesAnalyzed": false,
@@ -647,16 +647,16 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "bcfef562a5e9c5c617ee21790e647cd7c1a6adeaa613b0ebb6a610a5f59b6e25"
+          "checksumValue": "34ddce86cbac7bfd80a9f9d7f325d50fe7fcc041f5c3bb4ba0bba0763eeebcd0"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1993bb929a4c5b24b891bae0ab5391895fb48da72f1da4bf5ce14f182f5ba006"
+          "checksumValue": "b976979c95ef213c85dca1637b2305c93d79fd84098f7c5c4d1d43ba65a830d1"
         }
       ],
       "attributionTexts": [
-        "linux-x64: linux-x64 SHA256:bcfef562a5e9c5c617ee21790e647cd7c1a6adeaa613b0ebb6a610a5f59b6e25",
-        "windows: lcov-2.4.zip SHA256:1993bb929a4c5b24b891bae0ab5391895fb48da72f1da4bf5ce14f182f5ba006"
+        "linux-x64: linux-x64 SHA256:34ddce86cbac7bfd80a9f9d7f325d50fe7fcc041f5c3bb4ba0bba0763eeebcd0",
+        "windows: lcov-2.5.zip SHA256:b976979c95ef213c85dca1637b2305c93d79fd84098f7c5c4d1d43ba65a830d1"
       ]
     },
     {

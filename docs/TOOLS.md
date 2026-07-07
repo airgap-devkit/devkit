@@ -32,7 +32,7 @@ All tools work without internet access. All dependencies are vendored.
 |------|---------|----------|-----------|----------|
 | **CMake** | 4.3.1 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
 | **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt/toolchains/clang/source-build/` |
-| **lcov** | 2.4 | Linux / RHEL 8 | Yes (vendored tarball) | `tools/build-tools/lcov/` |
+| **lcov** | 2.5 | Linux / RHEL 8 | Yes (vendored tarball) | `tools/toolchains/lcov/` |
 
 ---
 
@@ -281,7 +281,7 @@ bash install-cli.sh --yes --profile cpp-dev         # non-interactive with profi
 bash tools/toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
 bash tools/toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
 bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
-bash tools/build-tools/lcov/setup.sh                 # lcov 2.4 (Linux only)
+bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
 bash tools/dev-tools/conan/setup.sh                  # Conan 2.30.0
 bash tools/dev-tools/servy/setup.sh                  # Servy 7.9 (Windows only)
