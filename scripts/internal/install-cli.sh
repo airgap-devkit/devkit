@@ -83,6 +83,18 @@ case "$(uname -s)" in
     *) echo "ERROR: Unsupported platform." >&2; exit 1 ;;
 esac
 
+# Host C library family: "musl" (Alpine and friends) or "glibc". Detection keys
+# off libc, not the distro name — musl's ldd self-identifies, and its loader
+# lives at /lib/ld-musl-<arch>.so.1. Used to gate tools that ship a glibc-only
+# binary (e.g. conan): running such a binary on musl fails, so we skip it.
+LIBC="glibc"
+if [[ "${OS}" == "linux" ]]; then
+    if ldd --version 2>&1 | grep -qi 'musl' \
+       || compgen -G '/lib/ld-musl-*.so.1' >/dev/null 2>&1; then
+        LIBC="musl"
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # Source install-mode library
 # ---------------------------------------------------------------------------
@@ -620,7 +632,13 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "  [8/13] Conan 2.30.0 (optional)..."
-if [[ "${INSTALL_CONAN}" == "true" ]]; then
+if [[ "${INSTALL_CONAN}" == "true" && "${LIBC}" == "musl" ]]; then
+    # Conan ships as a PyInstaller-frozen glibc binary only — there is no musl
+    # build, and a glibc binary cannot run under the musl loader. Skip cleanly
+    # rather than installing a conan that fails the moment it is invoked.
+    echo "  [--]  Skipped: conan (no musl build for this host's C library)"
+    SKIPPED_TOOLS+=("conan (no musl build)")
+elif [[ "${INSTALL_CONAN}" == "true" ]]; then
     _run_setup "conan" "${REPO_ROOT}/tools/dev-tools/conan/setup.sh"
 else
     echo "  [--]  Skipped: conan"

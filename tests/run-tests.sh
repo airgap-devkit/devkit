@@ -242,7 +242,7 @@ _sep
 
 # Conan
 if command -v conan &>/dev/null; then
-  _check_bin "conan 2.27.1" conan --version
+  _check_bin "conan 2.31.2" conan --version
 else
   _skip "conan (not installed)"
 fi
@@ -281,6 +281,13 @@ if ! git -C "${REPO_ROOT}" rev-parse --git-dir &>/dev/null; then
   # (e.g. an unpacked source tarball) the style-formatter step is skipped by
   # the installer, so its absence here is expected, not a failure.
   _na "pre-commit hook (no git repository)"
+elif [[ -f "${REPO_ROOT}/scripts/internal/install-cli.sh" \
+     && -f "${REPO_ROOT}/tools/lib/devkit-install.sh" ]]; then
+  # This IS the devkit's own checkout. The style-formatter bootstrap deliberately
+  # refuses to drop a hook / .clang-format here (it would dirty the repo), so the
+  # hook is expected to be absent — mark N/A instead of failing. The formatter is
+  # meant for the user's project; it installs the hook when run inside that repo.
+  _na "pre-commit hook (devkit checkout — hook not installed here)"
 else
   [[ -f "${HOOK}" ]] && _ok "pre-commit hook installed" || _fail "pre-commit hook missing"
 fi
