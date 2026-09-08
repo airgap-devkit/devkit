@@ -6,8 +6,8 @@ github.com/go-chi/chi/v5
 github.com/tus/tusd/v2/internal/uid
 github.com/tus/tusd/v2/pkg/filestore
 github.com/tus/tusd/v2/pkg/handler
-# golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
-## explicit; go 1.22.0
+# golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
+## explicit; go 1.26.0
 golang.org/x/exp/slices
 golang.org/x/exp/slog
 golang.org/x/exp/slog/internal

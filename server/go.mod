@@ -9,5 +9,5 @@ require (
 
 require (
 	github.com/tus/tusd/v2 v2.10.0
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
+	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
 )

@@ -30,7 +30,7 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **CMake** | 4.4.2 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
+| **CMake** | 4.4.3 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
 | **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt/toolchains/clang/source-build/` |
 | **lcov** | 2.5 | Linux / RHEL/Rocky 8, 9, 10 | Yes (vendored tarball) | `tools/toolchains/lcov/` |
 
@@ -67,11 +67,11 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 |------|---------|----------|-----------|----------|
 | **FileZilla** | 3.70.6 | Windows + Linux | Yes | `tools/dev-tools/filezilla/` |
 | **GDB** | 17.2 | Linux | No (source build ~25 min) | `tools/dev-tools/gdb/` |
-| **Notepad++** | 8.9.7 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
+| **Notepad++** | 8.9.8 | Windows | Yes (portable zip + installer) | `tools/dev-tools/notepadpp/` |
 | **PuTTY** | 0.84 | Windows + Linux | Yes (Win MSI) / source build (Linux) | `tools/dev-tools/putty/` |
 | **SourceTree** | 3.4.31 | Windows | Yes | `tools/dev-tools/sourcetree/` |
-| **Servy** | 9.7 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
-| **Conan** | 2.31.2 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
+| **Servy** | 9.9 | Windows | Yes (single file ~80 MB) | `tools/dev-tools/servy/` |
+| **Conan** | 2.32.0 | Windows + Linux | Yes (self-contained) | `tools/dev-tools/conan/` |
 | **VS Code extensions** | Various | Windows + Linux | Yes (.vsix) | `tools/dev-tools/vscode-extensions/` |
 | **SQLite CLI** | 3.53.4 (Win) / 3.26.0 RPM (RHEL/Rocky 8) | Windows + Linux | Yes | `tools/dev-tools/sqlite/` |
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |

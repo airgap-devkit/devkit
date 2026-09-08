@@ -9,6 +9,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.71] — 2026-09-07
+
+### Changed
+
+- Tool version bumps:
+  - Notepad++ `8.9.7` → `8.9.8`
+  - Servy `9.7` → `9.9`
+  - Conan `2.31.2` → `2.32.0`
+  - CMake `4.4.2` → `4.4.3` (Windows + glibc from upstream; the
+    `linux-x86_64-musl` static build recompiled on Alpine so musl/Alpine
+    installs stay covered)
+  - LLVM / Clang `22.1.8` → `23.1.0` (Windows + glibc from upstream; the
+    per-distro `rhel8`/`rhel9`/`rhel10` and static `musl` clang-format /
+    clang-tidy variants rebuilt from source via the `build-llvm-linux` workflow)
+- `devkit-server` Go dependencies refreshed: `go-chi/chi/v5` `5.3.1` → `5.3.2`,
+  `golang.org/x/text` `0.40.0` → `0.41.0`, `golang.org/x/exp` bumped to the
+  latest revision; vendored tree re-synced.
+
 ## [1.3.70] — 2026-08-22
 
 ### Changed
