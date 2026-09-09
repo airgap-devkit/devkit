@@ -215,12 +215,12 @@ All .zip archives use deflate level 9 compression.
 | Python 3.14.4 Linux (.tar.gz) | 120MB | 2 | 99MB |
 | Clang/LLVM 23.1.0 Linux per-distro slim (.tar.xz, rhel8/9/10 + musl) | ~74–82MB each | 2 each | 50MB |
 | gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
-| CMake 4.4.2 Linux glibc (.tar.gz) | 62MB | 2 | 50MB |
-| CMake 4.4.2 Linux musl (.tar.gz) | 38MB | 1 | -- single file |
-| CMake 4.4.2 Windows (.zip) | 52MB | 2 | 50MB |
-| Servy 9.7 Windows (.exe) | 80MB | 2 | 50MB |
-| Conan 2.31.2 Windows (.zip) | 15MB | 1 | -- single file |
-| Conan 2.31.2 Linux (.tgz) | 27MB | 1 | -- single file |
+| CMake 4.4.3 Linux glibc (.tar.gz) | 62MB | 2 | 50MB |
+| CMake 4.4.3 Linux musl (.tar.gz) | 40MB | 1 | -- single file |
+| CMake 4.4.3 Windows (.zip) | 52MB | 2 | 50MB |
+| Servy 9.9 Windows (.exe) | 80MB | 2 | 50MB |
+| Conan 2.32.0 Windows (.zip) | 15MB | 1 | -- single file |
+| Conan 2.32.0 Linux (.tgz) | 27MB | 1 | -- single file |
 | Python 3.14.4 Windows embed (.zip) | 12MB | 1 | -- single file |
 | SQLite 3.53.4 Windows CLI (.zip) | 6.3MB | 1 | -- single file |
 | SQLite 3.53.4 Linux CLI (static glibc/musl) | 2.8/2.2MB | 1 | -- single file |
@@ -239,18 +239,18 @@ Linux support uses a **two libc family** model: a glibc 2.28 floor build covers 
 | GCC + MinGW-w64 | Yes | - | - | Windows native toolchain |
 | gcc-toolset 15 | - | Yes (RHEL/Rocky) | - | RHEL/Rocky RPMs only |
 | GCC cross/native | - | Yes | - | Linux only |
-| CMake 4.4.2 | Yes | Yes | Yes | Prebuilt for all (glibc + musl Linux variants) |
+| CMake 4.4.3 | Yes | Yes | Yes | Prebuilt for all (glibc + musl Linux variants) |
 | Ninja | Yes | Yes | Yes | Prebuilt for all |
 | gRPC 1.83.0 | Yes | Yes (RHEL/Rocky 8/9/10 x86_64) | - | Windows: per MSVC toolset (v142/v143/v145) × Release/Debug |
 | Python 3.14.6 | Yes | Yes (glibc standalone) | Yes (musl standalone) | python-build-standalone per libc family |
 | .NET SDK 10.0.202 | Yes | Yes | - | Portable, no installer |
 | FileZilla 3.70.6 | Yes | Yes | Yes | Prebuilt installer (Win) + binary tarball (Linux) |
 | GDB 17.2 | - | Yes | Yes | Linux source build; requires gcc, make, readline-devel |
-| Notepad++ 8.9.7 | Yes | - | - | Windows only; portable zip (no admin) + installer available |
+| Notepad++ 8.9.8 | Yes | - | - | Windows only; portable zip (no admin) + installer available |
 | PuTTY 0.84 | Yes (MSI) | Yes (source) | Yes (source) | Linux builds CLI tools only; requires cmake + gcc |
 | SourceTree 3.4.31 | Yes | - | - | Windows only; Squirrel installer targets %LocalAppData%\SourceTree |
-| Servy 9.7 | Yes | - | - | Windows only, graceful no-op on Linux |
-| Conan 2.31.2 | Yes | Yes | Yes | Self-contained, no Python required |
+| Servy 9.9 | Yes | - | - | Windows only, graceful no-op on Linux |
+| Conan 2.32.0 | Yes | Yes | Yes | Self-contained, no Python required |
 | VS Code extensions | Yes | Yes | Yes | Per-platform .vsix files |
 | SQLite CLI 3.53.4 | Yes | Yes (static glibc-floor binary; RHEL/Rocky fall back to distro RPM per el8/el9/el10) | Yes (fully-static musl binary) | Static per-libc binary preferred; RPM fallback on RHEL/Rocky only |
 | zlib 1.3.2 | Yes | Yes | Yes | Source build using host cc/gcc/clang; works on any distro |
@@ -303,15 +303,15 @@ bash tools/toolchains/llvm/style-formatter/bootstrap.sh  # pre-commit hook
 bash tools/build-tools/cmake/setup.sh                # CMake 4.4.3
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
 bash tools/languages/python/setup.sh                 # Python 3.14.6 + pip packages
-bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.2
-bash tools/dev-tools/servy/setup.sh                  # Servy 9.7 (Windows only)
+bash tools/dev-tools/conan/setup.sh                  # Conan 2.32.0
+bash tools/dev-tools/servy/setup.sh                  # Servy 9.9 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
 bash tools/dev-tools/matlab/setup.sh                 # MATLAB verification
 bash tools/dev-tools/vscode-extensions/setup.sh      # VS Code extensions
 bash tools/toolchains/gcc/windows/setup.sh x86_64    # GCC + MinGW-w64 (Windows only)
 bash tools/dev-tools/filezilla/setup.sh              # FileZilla 3.70.6
 bash tools/dev-tools/gdb/setup.sh                    # GDB 17.2 (Linux only, source build ~25 min)
-bash tools/dev-tools/notepadpp/setup.sh              # Notepad++ 8.9.7 (Windows only)
+bash tools/dev-tools/notepadpp/setup.sh              # Notepad++ 8.9.8 (Windows only)
 bash tools/dev-tools/putty/setup.sh                  # PuTTY 0.83
 bash tools/dev-tools/sourcetree/setup.sh             # SourceTree 3.4.30 (Windows only)
 ```
