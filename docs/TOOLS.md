@@ -14,11 +14,10 @@ All tools work without internet access. All dependencies are vendored.
 
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
-| **clang-format** | 22.1.3 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
-| **clang-tidy** | 22.1.3 | Windows + Linux | Yes | `tools/toolchains/clang/source-build/` |
-| **LLVM source** | 22.1.3 | Windows + Linux | - (source only) | `tools/toolchains/clang/source-build/llvm-src/` |
-| **llvm-mingw** | 20260616 | Windows + Linux | Yes | `prebuilt/toolchains/clang/mingw/` |
-| **Clang RPMs** | 20.1.8 | RHEL/Rocky 8, 9, 10 | Yes | `prebuilt/toolchains/clang/rhel8/` |
+| **clang-format** | 23.1.0 | Windows + Linux | Yes | `tools/toolchains/llvm/` |
+| **clang-tidy** | 23.1.0 | Windows + Linux | Yes | `tools/toolchains/llvm/` |
+| **LLVM source** | 22.1.3 | Windows + Linux | - (source only) | `tools/toolchains/llvm/sources/` |
+| **llvm-mingw** | 20260616 | Windows + Linux | Yes | `prebuilt/toolchains/llvm-mingw/` |
 | **GCC + MinGW-w64** | 16.2.0 + 14.0.0 UCRT | Windows | Yes | `tools/toolchains/gcc/windows/` |
 | **gcc-toolset** | 15 | RHEL/Rocky 8, 9, 10 | Yes | `prebuilt/toolchains/gcc/linux/` |
 | **GCC cross (x86_64-bionic)** | 15 | Linux | Yes | `tools/toolchains/gcc/linux/cross/` |
@@ -31,7 +30,7 @@ All tools work without internet access. All dependencies are vendored.
 | Tool | Version | Platform | Prebuilt? | Location |
 |------|---------|----------|-----------|----------|
 | **CMake** | 4.4.3 | Windows + Linux | Yes | `tools/build-tools/cmake/` |
-| **Ninja** | 1.13.2 | Windows + Linux | Yes | `prebuilt/toolchains/clang/source-build/` |
+| **Ninja** | 1.13.2 | Windows + Linux | Yes | `tools/toolchains/ninja/` |
 | **lcov** | 2.5 | Linux / RHEL/Rocky 8, 9, 10 | Yes (vendored tarball) | `tools/toolchains/lcov/` |
 
 ---
@@ -77,7 +76,7 @@ gRPC prebuilt includes: `bin/` (protoc, grpc_cpp_plugin, all plugins), `include/
 | **MATLAB verification** | - | Windows + Linux | - (checks existing install) | `tools/dev-tools/matlab/` |
 | **git-bundle transfer tool** | - | Windows + Linux | - (Python scripts) | `tools/dev-tools/git-bundle/` |
 | **devkit-ui** | - | Windows + Linux | - (Python web app) | `tools/dev-tools/devkit-ui/` |
-| **LLVM style formatter** | 22.1.3 | Windows + Linux | Yes (via pip wheel) | `tools/toolchains/clang/style-formatter/` |
+| **LLVM style formatter** | 22.1.8 | Windows + Linux | Yes (via pip wheel) | `tools/toolchains/llvm/style-formatter/` |
 
 ---
 
@@ -180,6 +179,12 @@ LLVM prebuilts are produced per libc family:
 - **glibc**: floor build (glibc 2.28 / rhel8) runs on all glibc distros; native rhel9 and rhel10 variants are preferred when the host matches. `devkit_linux_tag_fallbacks` drives the selection order.
 - **musl (Alpine)**: built static-libstdc++ on Alpine so it carries no external C++ runtime dependency.
 
+Three related versions can legitimately differ: the installed **clang-format / clang-tidy
+prebuilts** track the current tool version (**23.1.0**); the vendored **LLVM source** used by
+the fallback `build.sh` (`tools/toolchains/llvm/sources/`) lags at **22.1.3**; and the
+**style formatter** pip wheel (`tools/toolchains/llvm/style-formatter/`) is at **22.1.8**. Bump
+the source tarball and the style-formatter wheel when you want all three aligned on 23.1.0.
+
 ---
 
 ## MATLAB Notes
@@ -208,9 +213,7 @@ All .zip archives use deflate level 9 compression.
 | .NET SDK 10.0.302 Windows (.zip) | 283MB | 6 | 49MB |
 | .NET SDK 10.0.302 Linux (.tar.gz) | 224MB | 5 | 50MB |
 | Python 3.14.4 Linux (.tar.gz) | 120MB | 2 | 99MB |
-| Clang LLVM 22.1.3 Linux slim (.tar.xz) | 124MB | 3 | 50MB |
-| clang-tidy Linux | 95MB | 2 | 50MB |
-| Clang 20.1.8 RHEL8 RPMs (.tar) | 101MB | 2 | 50MB |
+| Clang/LLVM 23.1.0 Linux per-distro slim (.tar.xz, rhel8/9/10 + musl) | ~74–82MB each | 2 each | 50MB |
 | gcc-toolset-15 RHEL8 RPMs (.tar) | 87MB | 2 | 50MB |
 | CMake 4.4.2 Linux glibc (.tar.gz) | 62MB | 2 | 50MB |
 | CMake 4.4.2 Linux musl (.tar.gz) | 38MB | 1 | -- single file |
@@ -295,11 +298,11 @@ bash install-cli.sh                                 # full interactive wizard
 bash install-cli.sh --yes --profile cpp-dev         # non-interactive with profile
 
 # Individual tool installs (also available from the web UI)
-bash tools/toolchains/clang/source-build/setup.sh    # clang-format + clang-tidy
-bash tools/toolchains/clang/style-formatter/bootstrap.sh  # pre-commit hook
-bash tools/build-tools/cmake/setup.sh                # CMake 4.3.1
+bash tools/toolchains/llvm/setup.sh                  # clang-format + clang-tidy
+bash tools/toolchains/llvm/style-formatter/bootstrap.sh  # pre-commit hook
+bash tools/build-tools/cmake/setup.sh                # CMake 4.4.3
 bash tools/toolchains/lcov/setup.sh                 # lcov 2.5 (Linux only)
-bash tools/languages/python/setup.sh                 # Python 3.14.4 + pip packages
+bash tools/languages/python/setup.sh                 # Python 3.14.6 + pip packages
 bash tools/dev-tools/conan/setup.sh                  # Conan 2.31.2
 bash tools/dev-tools/servy/setup.sh                  # Servy 9.7 (Windows only)
 bash tools/dev-tools/sqlite/setup.sh                 # SQLite CLI
