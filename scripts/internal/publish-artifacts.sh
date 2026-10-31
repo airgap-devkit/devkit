@@ -31,6 +31,7 @@ DO_BUNDLES=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --root)    PREBUILT="$2"; shift 2 ;;   # artifact root to publish (default: prebuilt)
         --dest)    DEST="$2"; shift 2 ;;
         --gh)      GH_TAG="$2"; shift 2 ;;
         --bundles) DO_BUNDLES=true; shift ;;
