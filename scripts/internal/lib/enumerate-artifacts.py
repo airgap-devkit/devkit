@@ -45,6 +45,23 @@ def _emit_entry(entry: dict) -> None:
         print(f"{portable}\t{portable_sha}")
 
 
+def _emit_named(name: str, entry: dict) -> None:
+    """Emit lines for a filename-keyed entry (extensions / files schema).
+
+    The key IS the filename; the entry carries sha256 or a part_sha256 split set.
+    Used by the `extensions` schema (vscode-extensions) and the generic `files`
+    schema (e.g. python wheels), neither of which is platform-keyed.
+    """
+    parts = entry.get("part_sha256")
+    if parts:
+        for pname, sha in parts.items():
+            print(f"{pname}\t{sha}")
+        return
+    sha = entry.get("sha256")
+    if name and sha:
+        print(f"{name}\t{sha}")
+
+
 def main() -> int:
     if len(sys.argv) < 3:
         sys.stderr.write("usage: enumerate-artifacts.py <manifest.json> <windows|linux|all>\n")
@@ -56,9 +73,18 @@ def main() -> int:
         sys.stderr.write(f"skip (unreadable manifest): {manifest}: {e}\n")
         return 0
 
+    # Platform-keyed payloads (tool archives/installers), filtered by platform.
     for key, entry in (d.get("platforms") or {}).items():
         if want_platform(key, want) and isinstance(entry, dict):
             _emit_entry(entry)
+
+    # Filename-keyed payloads with no platform key: vscode extensions and the
+    # generic `files` set (python wheels). These are not platform-selectable
+    # here (install-time filtering handles per-OS selection), so emit for all.
+    for schema in ("extensions", "files"):
+        for name, entry in (d.get(schema) or {}).items():
+            if isinstance(entry, dict):
+                _emit_named(name, entry)
 
     return 0
 

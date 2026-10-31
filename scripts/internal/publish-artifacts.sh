@@ -67,12 +67,25 @@ fi
 
 if [[ -n "$GH_TAG" ]]; then
     command -v gh >/dev/null 2>&1 || fail "gh CLI required for --gh"
-    log "Uploading artifacts to GitHub release $GH_TAG"
+    log "Uploading artifacts to GitHub release $GH_TAG (resumable, retried)"
+    # Assets already present (by flat name) are skipped so re-runs resume.
+    existing="$(gh release view "$GH_TAG" --json assets -q '.assets[].name' 2>/dev/null || true)"
+    up=0 skip=0
     while IFS= read -r rel; do
-        echo "    upload: $rel"
-        gh release upload "$GH_TAG" "$PREBUILT/$rel" --clobber
+        base="$(basename "$rel")"
+        if grep -qxF "$base" <<<"$existing"; then
+            skip=$((skip + 1)); continue
+        fi
+        ok_up=0
+        for attempt in 1 2 3; do
+            echo "    upload ($attempt): $rel"
+            if gh release upload "$GH_TAG" "$PREBUILT/$rel" --clobber; then ok_up=1; break; fi
+            echo "    retry in 3s..."; sleep 3
+        done
+        [[ "$ok_up" == 1 ]] || fail "upload failed after 3 attempts: $rel"
+        up=$((up + 1))
     done < <(artifact_files)
-    ok "Uploaded artifacts to $GH_TAG"
+    ok "Uploaded $up artifact(s), skipped $skip already-present, to $GH_TAG"
 fi
 
 if [[ "$DO_BUNDLES" == true ]]; then

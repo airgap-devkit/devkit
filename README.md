@@ -27,6 +27,20 @@ cd airgap-cpp-devkit
 git submodule update --init --recursive
 ```
 
+> **Prebuilt binaries live outside git (Option B).** The `prebuilt/` submodule
+> carries only `manifest.json` checksums + the small DevKit Manager server
+> binaries — not the ~14 GB of tool archives, which are published as release
+> assets. The Manager still launches straight from a clone. Before **installing
+> tools**, rehydrate the binaries on a connected staging host (one time):
+>
+> ```bash
+> DEVKIT_ARTIFACT_BASE=https://github.com/airgap-devkit/devkit/releases/download/v1.3.71 \
+>   bash scripts/internal/fetch-artifacts.sh --platform all
+> ```
+>
+> For fully air-gapped networks, use an offline bundle instead
+> (`scripts/internal/build-bundle.sh`). See [docs/OFFLINE-DISTRIBUTION.md](docs/OFFLINE-DISTRIBUTION.md).
+
 ### Step 2 — Start the DevKit Manager
 
 **Windows (Git Bash) and Linux:**

@@ -93,7 +93,18 @@ fetch_one() {
         rm -f "$out"
     fi
 
-    local src="$BASE/$relpath"
+    # GitHub Releases expose assets as FLAT names (no directory tree), so for a
+    # release-download base we request just the basename. Every other base
+    # (Bitbucket raw, Nexus/Artifactory, file share, USB) preserves the tree.
+    # Artifact basenames are globally unique, so the flat mapping is unambiguous.
+    # GitHub also sanitizes '%' → '.' in the stored asset name (it preserves
+    # '@', '-', '.', '_'); mirror that so URL-encoded names (e.g. the upstream
+    # clang%2Bllvm-*.zip parts) resolve to the actual asset.
+    local remotepath="$relpath"
+    case "$BASE" in
+        *://*/releases/download/*) remotepath="$(basename "$relpath" | tr '%' '.')" ;;
+    esac
+    local src="$BASE/$remotepath"
     echo "    fetch: $relpath"
     case "$BASE" in
         http://*|https://*)

@@ -7,6 +7,16 @@
 [[ -n "${_DEVKIT_PREBUILT_SH:-}" ]] && return 0
 _DEVKIT_PREBUILT_SH=1
 
+# Portability: these scripts call `python3`, but some hosts (notably Windows
+# Git Bash / MINGW64) ship the Python 3 interpreter as `python` with no
+# `python3` alias. Provide a fallback shim so every `python3 ...` call works.
+# Subshells (including process substitution) inherit this function.
+if ! command -v python3 >/dev/null 2>&1; then
+    if command -v python >/dev/null 2>&1; then
+        python3() { command python "$@"; }
+    fi
+fi
+
 log()  { printf '\n==> %s\n' "$*"; }
 ok()   { printf '    [OK] %s\n' "$*"; }
 warn() { printf '    [WARN] %s\n' "$*" >&2; }
