@@ -8,6 +8,6 @@ require (
 )
 
 require (
-	github.com/tus/tusd/v2 v2.10.0
+	github.com/tus/tusd/v2 v2.10.1
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
 )
